@@ -19,3 +19,13 @@
 
 # Go workspace file
 go.work
+
+# Environment variables file
+.env
+
+# Credentials
+
+token.json
+
+# Whoop date folder
+data/
