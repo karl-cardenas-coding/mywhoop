@@ -15,6 +15,7 @@ func (u *User) ExportDataToFile(filePath string) error {
 	// MarshalIndent the data
 	jsonData, err := json.MarshalIndent(u, "", "  ")
 	if err != nil {
+		LogError(err)
 		slog.Error("unable to marshal data", err)
 		return err
 	}
@@ -26,6 +27,7 @@ func (u *User) ExportDataToFile(filePath string) error {
 	// write the data to a file in the data folder in the current directory
 	err = WriteToFile(filePath, jsonData)
 	if err != nil {
+		LogError(err)
 		slog.Error("unable to write to file", err)
 		return err
 	}
@@ -42,6 +44,7 @@ func WriteToFile(path string, data []byte) error {
 		// create the data folder
 		err := os.Mkdir("data", 0755)
 		if err != nil {
+			LogError(err)
 			slog.Error("unable to create data folder", err)
 			return err
 		}
@@ -51,6 +54,7 @@ func WriteToFile(path string, data []byte) error {
 	if _, err := os.Stat(path); err == nil {
 		err := os.Remove(path)
 		if err != nil {
+			LogError(err)
 			slog.Error("unable to remove file", err)
 			return err
 		}
@@ -58,6 +62,7 @@ func WriteToFile(path string, data []byte) error {
 
 	f, err := os.Create(path)
 	if err != nil {
+		LogError(err)
 		slog.Error("unable to create file", err)
 		return err
 	}
@@ -68,6 +73,7 @@ func WriteToFile(path string, data []byte) error {
 
 	_, err = f.WriteString(dataPretty)
 	if err != nil {
+		LogError(err)
 		slog.Error("unable to write to file", err)
 		return err
 	}
