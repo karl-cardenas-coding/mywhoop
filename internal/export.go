@@ -6,17 +6,25 @@ import (
 	"os"
 )
 
-func (u *User) ExportData(data *User) error {
+// ExportDataToFile exports the user data to a file
+// The file path is optional, if not provided, the file will be created in the data folder in the current directory
+// The file will be named user.json
+// Example usage: user.ExportDataToFile("data/user.json")
+func (u *User) ExportDataToFile(filePath string) error {
 
 	// MarshalIndent the data
-	jsonData, err := json.MarshalIndent(data, "", "  ")
+	jsonData, err := json.MarshalIndent(u, "", "  ")
 	if err != nil {
 		slog.Error("unable to marshal data", err)
 		return err
 	}
 
+	if filePath == "" {
+		filePath = "data/user.json"
+	}
+
 	// write the data to a file in the data folder in the current directory
-	err = WriteToFile("data/user.json", jsonData)
+	err = WriteToFile(filePath, jsonData)
 	if err != nil {
 		slog.Error("unable to write to file", err)
 		return err

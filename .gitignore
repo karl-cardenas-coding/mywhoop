@@ -29,3 +29,5 @@ token.json
 
 # Whoop date folder
 data/
+
+internal/data/
