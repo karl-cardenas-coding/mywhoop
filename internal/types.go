@@ -158,8 +158,8 @@ type WorkoutRecords struct {
 
 type ConfigurationData struct {
 	Export struct {
-		Method     string            `yaml:"method" validate:"required_if:export"`
-		FileExport export.FileExport `yaml:"fileExport" validate:"required_if: export"`
+		Method     string            `yaml:"method" validate:"oneof=file s3"`
+		FileExport export.FileExport `yaml:"fileExport" validate:"required_if=Method file"`
 	} `yaml:"export" validate:"required"`
 	Debug bool `yaml:"debug"`
 }

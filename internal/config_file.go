@@ -125,9 +125,12 @@ func validateConfiguration(config ConfigurationData) error {
 			slog.Info(
 				"The following field failed validation",
 				"field", err.Field(),
-				"error", err.Tag(),
-			)
+				"error", err.ActualTag())
+			slog.Debug("Additional Context: ", "params", err)
+
 		}
+		slog.Debug("Configuration Received", "config", config)
+
 		return err
 	}
 
