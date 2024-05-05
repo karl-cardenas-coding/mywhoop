@@ -12,8 +12,8 @@ import (
 // meCmd represents the me command
 var meCmd = &cobra.Command{
 	Use:   "dump",
-	Short: "Dump all your data to a file.",
-	Long:  "Dump all your data to a file.",
+	Short: "Dump all your Whoop data to a file.",
+	Long:  "Dump all your Whoo[ data to a file.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		return dump(rootCmd.Context())
@@ -29,6 +29,14 @@ func dump(ctx context.Context) error {
 	var user internal.User
 
 	InitLogger()
+
+	// authToken, err := internal.RefreshToken(ctx, AuthToken, RefreshToken, GlobalHTTPClient)
+	// if err != nil {
+	// 	internal.LogError(err)
+	// 	return err
+	// }
+	// slog.Debug(authToken)
+	// slog.Info("Token refreshed")
 
 	data, err := user.GetUserProfileData(ctx, GlobalHTTPClient, AuthToken)
 	if err != nil {
