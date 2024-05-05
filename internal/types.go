@@ -1,11 +1,21 @@
 package internal
 
-import "time"
+import (
+	"time"
+
+	"github.com/karl-cardenas-coding/mywhoop/export"
+)
+
+/*
+* Whoop API Data Structures
+ */
 
 type User struct {
-	UserData         UserData         `json:"user_data"`
-	UserMesaurements UserMesaurements `json:"user_mesaurements"`
-	SleepCollection  SleepCollection  `json:"sleep_collection"`
+	UserData           UserData           `json:"user_data"`
+	UserMesaurements   UserMesaurements   `json:"user_mesaurements"`
+	SleepCollection    SleepCollection    `json:"sleep_collection"`
+	RecoveryCollection RecoveryCollection `json:"recovery_collection"`
+	WorkoutCollection  WorkoutCollection  `json:"workout_collection"`
 }
 
 type UserData struct {
@@ -82,4 +92,74 @@ type CycleRecords struct {
 	TimezoneOffset string      `json:"timezone_offset"`
 	ScoreState     string      `json:"score_state"`
 	Score          CycleScore  `json:"score"`
+}
+
+type RecoveryCollection struct {
+	RecoveryRecords []RecoveryRecords `json:"records"`
+	NextToken       string            `json:"next_token"`
+}
+type RecoveryScore struct {
+	UserCalibrating  bool    `json:"user_calibrating"`
+	RecoveryScore    float64 `json:"recovery_score"`
+	RestingHeartRate float64 `json:"resting_heart_rate"`
+	HrvRmssdMilli    float64 `json:"hrv_rmssd_milli"`
+	Spo2Percentage   float64 `json:"spo2_percentage"`
+	SkinTempCelsius  float64 `json:"skin_temp_celsius"`
+}
+type RecoveryRecords struct {
+	CycleID    int           `json:"cycle_id"`
+	SleepID    int           `json:"sleep_id"`
+	UserID     int           `json:"user_id"`
+	CreatedAt  time.Time     `json:"created_at"`
+	UpdatedAt  time.Time     `json:"updated_at"`
+	ScoreState string        `json:"score_state"`
+	Score      RecoveryScore `json:"score"`
+}
+
+type WorkoutCollection struct {
+	Records   []WorkoutRecords `json:"records"`
+	NextToken string           `json:"next_token"`
+}
+type ZoneDuration struct {
+	ZoneZeroMilli  int `json:"zone_zero_milli"`
+	ZoneOneMilli   int `json:"zone_one_milli"`
+	ZoneTwoMilli   int `json:"zone_two_milli"`
+	ZoneThreeMilli int `json:"zone_three_milli"`
+	ZoneFourMilli  int `json:"zone_four_milli"`
+	ZoneFiveMilli  int `json:"zone_five_milli"`
+}
+type WorkoutScore struct {
+	Strain              float64      `json:"strain"`
+	AverageHeartRate    int          `json:"average_heart_rate"`
+	MaxHeartRate        int          `json:"max_heart_rate"`
+	Kilojoule           float64      `json:"kilojoule"`
+	PercentRecorded     float64      `json:"percent_recorded"`
+	DistanceMeter       float64      `json:"distance_meter"`
+	AltitudeGainMeter   float64      `json:"altitude_gain_meter"`
+	AltitudeChangeMeter float64      `json:"altitude_change_meter"`
+	ZoneDuration        ZoneDuration `json:"zone_duration"`
+}
+type WorkoutRecords struct {
+	ID             int          `json:"id"`
+	UserID         int          `json:"user_id"`
+	CreatedAt      time.Time    `json:"created_at"`
+	UpdatedAt      time.Time    `json:"updated_at"`
+	Start          time.Time    `json:"start"`
+	End            time.Time    `json:"end"`
+	TimezoneOffset string       `json:"timezone_offset"`
+	SportID        int          `json:"sport_id"`
+	ScoreState     string       `json:"score_state"`
+	Score          WorkoutScore `json:"score"`
+}
+
+/*
+* Configuration File Data Structures
+ */
+
+type ConfigurationData struct {
+	Export struct {
+		Method     string            `yaml:"method" validate:"required_if:export"`
+		FileExport export.FileExport `yaml:"fileExport" validate:"required_if: export"`
+	} `yaml:"export" validate:"required"`
+	Debug bool `yaml:"debug"`
 }

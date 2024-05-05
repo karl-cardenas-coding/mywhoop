@@ -1,4 +1,4 @@
-.PHONY: license
+.PHONY: license tests
 
 
 

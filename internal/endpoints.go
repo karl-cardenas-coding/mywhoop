@@ -12,7 +12,7 @@ import (
 )
 
 // getUserProfile returns the user profile from the Whoop API
-func (u User) GetData(ctx context.Context, client *http.Client, authToken string) (*UserData, error) {
+func (u User) GetUserProfileData(ctx context.Context, client *http.Client, authToken string) (*UserData, error) {
 
 	const (
 		url    = "https://api.prod.whoop.com/developer/v1/user/profile/basic"
@@ -141,6 +141,10 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authT
 			}
 			defer response.Body.Close()
 
+			if response.StatusCode != 200 {
+				slog.Error("Error getting sleep records", "Status Code", response.StatusCode)
+			}
+
 			body, err := io.ReadAll(response.Body)
 			if err != nil {
 				slog.Error("unable to read response body from sleep collection payload", err)
@@ -165,7 +169,7 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authT
 			return err
 
 		}, bo, func(err error, duration time.Duration) {
-			slog.Info("Too many requests. Error getting registries", "Retrying in: ", duration.String())
+			slog.Info("Too many requests. Error getting sleep records", "Retrying in: ", duration.String())
 		})
 
 		if err != nil {
@@ -177,4 +181,187 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authT
 
 	return &sleep, nil
 
+}
+
+func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, authToken string, filters string) (*RecoveryCollection, error) {
+	const (
+		url    = "https://api.prod.whoop.com/developer/v1/recovery?"
+		method = "GET"
+	)
+
+	var recovery RecoveryCollection
+	var recoveryRecords []RecoveryRecords
+	var continueLoop = true
+	var nextLoopUrl string
+
+	urlWithFilters := url
+
+	if filters != "" {
+		urlWithFilters = url + filters
+	}
+
+	bo := backoff.NewExponentialBackOff()
+	bo.InitialInterval = 500 * time.Millisecond
+	bo.Multiplier = 1.5
+	bo.RandomizationFactor = 0.5
+
+	for continueLoop {
+
+		slog.Info(("Requesting recovery collection from Whoop API"))
+		slog.Debug("URL", slog.String("URL", urlWithFilters))
+
+		if nextLoopUrl == "" {
+			nextLoopUrl = urlWithFilters
+		}
+		req, err := http.NewRequestWithContext(ctx, method, nextLoopUrl, nil)
+		if err != nil {
+			LogError(err)
+			return nil, err
+		}
+		authHeader := "Bearer " + authToken
+		req.Header.Add("Authorization", authHeader)
+		// Reset nextLoopUrl
+		nextLoopUrl = ""
+
+		err = backoff.RetryNotify(func() error {
+
+			response, err := client.Do(req)
+			if err != nil {
+				LogError(err)
+				return err
+			}
+			defer response.Body.Close()
+
+			if response.StatusCode != 200 {
+				slog.Error("Error getting recovery records", "Status Code", response.StatusCode)
+			}
+
+			body, err := io.ReadAll(response.Body)
+			if err != nil {
+				slog.Error("unable to read response body from sleep collection payload", err)
+				return err
+			}
+
+			var recovery RecoveryCollection
+			err = json.Unmarshal(body, &recovery)
+			if err != nil {
+				LogError(err)
+				return err
+			}
+
+			recoveryRecords = append(recoveryRecords, recovery.RecoveryRecords...)
+			nextToken := recovery.NextToken
+
+			if nextToken == "" {
+				continueLoop = false
+			} else {
+				nextLoopUrl = urlWithFilters + "nextToken=" + nextToken
+			}
+
+			return err
+
+		}, bo, func(err error, duration time.Duration) {
+
+			slog.Info("Too many requests. Error getting recovery records", "Retrying in: ", duration.String())
+		})
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	recovery.RecoveryRecords = recoveryRecords
+
+	return &recovery, nil
+
+}
+
+func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, authToken string, filters string) (*WorkoutCollection, error) {
+	const (
+		url    = "https://api.prod.whoop.com/developer/v1/activity/workout?"
+		method = "GET"
+	)
+
+	var workout WorkoutCollection
+	var workoutRecords []WorkoutRecords
+	var continueLoop = true
+	var nextLoopUrl string
+
+	urlWithFilters := url
+
+	if filters != "" {
+		urlWithFilters = url + filters
+	}
+
+	bo := backoff.NewExponentialBackOff()
+	bo.InitialInterval = 500 * time.Millisecond
+	bo.Multiplier = 1.5
+	bo.RandomizationFactor = 0.5
+
+	for continueLoop {
+
+		slog.Info(("Requesting workout collection from Whoop API"))
+		slog.Debug("URL", slog.String("URL", urlWithFilters))
+
+		if nextLoopUrl == "" {
+			nextLoopUrl = urlWithFilters
+		}
+		req, err := http.NewRequestWithContext(ctx, method, nextLoopUrl, nil)
+		if err != nil {
+			LogError(err)
+			return nil, err
+		}
+		authHeader := "Bearer " + authToken
+		req.Header.Add("Authorization", authHeader)
+		// Reset nextLoopUrl
+		nextLoopUrl = ""
+
+		err = backoff.RetryNotify(func() error {
+
+			response, err := client.Do(req)
+			if err != nil {
+				LogError(err)
+				return err
+			}
+			defer response.Body.Close()
+
+			if response.StatusCode != 200 {
+				slog.Error("Error getting workout records", "Status Code", response.StatusCode)
+			}
+
+			body, err := io.ReadAll(response.Body)
+			if err != nil {
+				slog.Error("unable to read response body from workout collection payload", err)
+				return err
+			}
+
+			var workout WorkoutCollection
+			err = json.Unmarshal(body, &workout)
+			if err != nil {
+				LogError(err)
+				return err
+			}
+
+			workoutRecords = append(workoutRecords, workout.Records...)
+			nextToken := workout.NextToken
+
+			if nextToken == "" {
+				continueLoop = false
+			} else {
+				nextLoopUrl = urlWithFilters + "nextToken=" + nextToken
+			}
+
+			return err
+
+		}, bo, func(err error, duration time.Duration) {
+			slog.Info("Too many requests. Error getting workout records", "Retrying in: ", duration.String())
+		})
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	workout.Records = workoutRecords
+	return &workout, nil
 }

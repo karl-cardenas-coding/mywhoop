@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"context"
-	"log/slog"
+	"encoding/json"
 
+	"github.com/karl-cardenas-coding/mywhoop/export"
 	"github.com/karl-cardenas-coding/mywhoop/internal"
 	"github.com/spf13/cobra"
 )
@@ -29,7 +30,7 @@ func dump(ctx context.Context) error {
 
 	InitLogger()
 
-	data, err := user.GetData(ctx, GlobalHTTPClient, AuthToken)
+	data, err := user.GetUserProfileData(ctx, GlobalHTTPClient, AuthToken)
 	if err != nil {
 		return err
 	}
@@ -50,11 +51,47 @@ func dump(ctx context.Context) error {
 
 	user.SleepCollection = *sleep
 
-	err = user.ExportDataToFile("")
+	recovery, err := user.GetRecoveryCollection(ctx, GlobalHTTPClient, AuthToken, "")
 	if err != nil {
-		slog.Error("unable to export data", err)
 		return err
 	}
+
+	user.RecoveryCollection = *recovery
+
+	workout, err := user.GetWorkoutCollection(ctx, GlobalHTTPClient, AuthToken, "")
+	if err != nil {
+		internal.LogError(err)
+		return err
+	}
+
+	user.WorkoutCollection = *workout
+
+	finalDataRaw, err := json.MarshalIndent(user, "", "  ")
+	if err != nil {
+		internal.LogError(err)
+		return err
+	}
+
+	fileExp := export.FileExport{
+		FilePath: Configuration.Export.FileExport.FilePath,
+		FileType: Configuration.Export.FileExport.FileType,
+		FileName: Configuration.Export.FileExport.FileName,
+	}
+
+	switch Configuration.Export.Method {
+	case "file":
+		err = fileExp.Export(finalDataRaw)
+		if err != nil {
+			return err
+		}
+	default:
+		err = fileExp.Export(finalDataRaw)
+		if err != nil {
+			return err
+		}
+
+	}
+
 	return nil
 
 }

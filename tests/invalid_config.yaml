@@ -1,0 +1,4 @@
+import:
+  method: azure
+  fileExport:
+    private: true

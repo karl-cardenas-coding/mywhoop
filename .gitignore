@@ -31,3 +31,5 @@ token.json
 data/
 
 internal/data/
+
+tests/data/

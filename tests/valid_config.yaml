@@ -1,0 +1,7 @@
+export:
+  method: file
+  fileExport:
+    fileName: "user.json"
+    filePath: "data/"
+    fileType: "json"
+debug: true
