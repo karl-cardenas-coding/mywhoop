@@ -99,6 +99,7 @@ func InitLogger() {
 		}
 		Configuration = config
 	}
+
 }
 
 // Logger returns a new logger

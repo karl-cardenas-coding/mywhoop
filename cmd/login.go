@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -28,7 +25,7 @@ func init() {
 func login() error {
 	InitLogger()
 
-	_, err := internal.GetToken()
+	_, err := internal.GetToken("token.json")
 	if err != nil {
 		slog.Info("Error getting access token: %v", err)
 		return err

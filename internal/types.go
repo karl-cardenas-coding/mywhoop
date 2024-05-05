@@ -161,5 +161,10 @@ type ConfigurationData struct {
 		Method     string            `yaml:"method" validate:"oneof=file s3"`
 		FileExport export.FileExport `yaml:"fileExport" validate:"required_if=Method file"`
 	} `yaml:"export" validate:"required"`
-	Debug bool `yaml:"debug"`
+	Server Server `yaml:"server"`
+	Debug  bool   `yaml:"debug"`
+}
+
+type Server struct {
+	Enabled bool `yaml:"enabled"`
 }

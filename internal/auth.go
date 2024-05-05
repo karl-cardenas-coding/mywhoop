@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -22,7 +24,67 @@ func getEndpoint() oauth2.Endpoint {
 	}
 }
 
-func GetToken() (string, error) {
+// RefreshToken refreshes the access token
+func RefreshToken(ctx context.Context, accessToken, refreshToken string, client *http.Client) (oauth2.Token, error) {
+
+	const (
+		url    string = "https://api.prod.whoop.com/oauth/oauth2/token"
+		method string = "POST"
+	)
+
+	clientID := os.Getenv("WHOOP_CLIENT_ID")
+	clientSecret := os.Getenv("WHOOP_CLIENT_SECRET")
+
+	if clientID == "" || clientSecret == "" {
+		return oauth2.Token{}, fmt.Errorf("ClientID and ClientSecret environment variables not set")
+
+	}
+
+	var payloadString strings.Builder
+	fmt.Fprintf(&payloadString, "grant_type=refresh_token&refresh_token=%s&client_id=%s&client_secret=%s", refreshToken, clientID, clientSecret)
+	payloadString.WriteString("&scope=offline read:profile read:recovery read:cycles read:workout read:sleep read:body_measurement")
+
+	payload := strings.NewReader(payloadString.String())
+
+	req, err := http.NewRequest(method, url, payload)
+	if err != nil {
+		return oauth2.Token{}, err
+	}
+
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("Authorization", "Bearer "+accessToken)
+
+	res, err := client.Do(req)
+	if err != nil {
+		return oauth2.Token{}, err
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return oauth2.Token{}, err
+	}
+
+	var auth AuthCredentials
+	err = json.Unmarshal(body, &auth)
+	if err != nil {
+		LogError(err)
+		return oauth2.Token{}, err
+	}
+
+	token := oauth2.Token{
+		AccessToken:  auth.AccessToken,
+		TokenType:    auth.TokenType,
+		RefreshToken: auth.RefreshToken,
+		Expiry:       time.Now().Local().Add(time.Second * time.Duration(auth.ExpiresIn)),
+	}
+
+	return token, nil
+
+}
+
+// GetToken gets the access token from
+func GetToken(tokenFilePath string) (string, error) {
 
 	// Set accessToken variable
 	accessToken := ""
@@ -32,6 +94,11 @@ func GetToken() (string, error) {
 	if clientID == "" || clientSecret == "" {
 		return "", fmt.Errorf("ClientID and ClientSecret environment variables not set")
 
+	}
+
+	// Set token file path default
+	if tokenFilePath == "" {
+		tokenFilePath = "token.json"
 	}
 
 	config := &oauth2.Config{
@@ -53,7 +120,11 @@ func GetToken() (string, error) {
 	// Check if token.json file exists
 	if _, err := os.Stat("token.json"); err == nil {
 
-		localToken := readLocalToken()
+		localToken, err := ReadLocalToken(tokenFilePath)
+		if err != nil {
+			slog.Info("Error reading local token: %v", err)
+			return "", err
+		}
 
 		if !localToken.Valid() {
 
@@ -81,7 +152,7 @@ func GetToken() (string, error) {
 			}
 
 			// Decode JSON
-			var tokenResponse TokenLocalFile
+			var tokenResponse AuthCredentials
 			err = json.NewDecoder(resp.Body).Decode(&tokenResponse)
 			if err != nil {
 				log.Fatal(err)
@@ -145,18 +216,24 @@ func GetToken() (string, error) {
 
 }
 
-func readLocalToken() oauth2.Token {
+// Is Token Valid checks if the token is valid
+func IsTokenValid(token *oauth2.Token) bool {
+	return token.Valid()
 
-	f, err := os.Open("token.json")
+}
+
+func ReadLocalToken(filePath string) (oauth2.Token, error) {
+
+	f, err := os.Open(filePath)
 	if err != nil {
-		log.Fatal(err)
+		return oauth2.Token{}, err
 	}
 	defer f.Close()
 
 	var token oauth2.Token
 	json.NewDecoder(f).Decode(&token)
 
-	return token
+	return token, nil
 }
 
 func writeLocalToken(token *oauth2.Token) {
@@ -175,7 +252,7 @@ func writeLocalToken(token *oauth2.Token) {
 
 }
 
-type TokenLocalFile struct {
+type AuthCredentials struct {
 	AccessToken  string `json:"access_token"`
 	ExpiresIn    int    `json:"expires_in"`
 	RefreshToken string `json:"refresh_token"`
