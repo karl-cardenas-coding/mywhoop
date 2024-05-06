@@ -34,7 +34,7 @@ func TestReadConfigFileYaml(t *testing.T) {
 
 	expectedMethod := "file"
 	expectedFilePath := "data/"
-	expectedName := "user.json"
+	expectedName := "user"
 	expectedFileType := "json"
 	expectedDebug := true
 

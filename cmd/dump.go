@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
+	"os"
 
 	"github.com/karl-cardenas-coding/mywhoop/export"
 	"github.com/karl-cardenas-coding/mywhoop/internal"
@@ -30,43 +32,45 @@ func dump(ctx context.Context) error {
 
 	InitLogger()
 
-	// authToken, err := internal.RefreshToken(ctx, AuthToken, RefreshToken, GlobalHTTPClient)
-	// if err != nil {
-	// 	internal.LogError(err)
-	// 	return err
-	// }
-	// slog.Debug(authToken)
-	// slog.Info("Token refreshed")
+	ok, token, err := verfyToken("token.json")
+	if err != nil {
+		slog.Error("unable to verify token", "error", err)
+		return err
+	}
 
-	data, err := user.GetUserProfileData(ctx, GlobalHTTPClient, AuthToken)
+	if !ok {
+		os.Exit(1)
+	}
+
+	data, err := user.GetUserProfileData(ctx, GlobalHTTPClient, token.AccessToken)
 	if err != nil {
 		return err
 	}
 
 	user.UserData = *data
 
-	measurements, err := user.GetUserMeasurements(ctx, GlobalHTTPClient, AuthToken)
+	measurements, err := user.GetUserMeasurements(ctx, GlobalHTTPClient, token.AccessToken)
 	if err != nil {
 		return err
 	}
 
 	user.UserMesaurements = *measurements
 
-	sleep, err := user.GetSleepCollection(ctx, GlobalHTTPClient, AuthToken, "")
+	sleep, err := user.GetSleepCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
 	if err != nil {
 		return err
 	}
 
 	user.SleepCollection = *sleep
 
-	recovery, err := user.GetRecoveryCollection(ctx, GlobalHTTPClient, AuthToken, "")
+	recovery, err := user.GetRecoveryCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
 	if err != nil {
 		return err
 	}
 
 	user.RecoveryCollection = *recovery
 
-	workout, err := user.GetWorkoutCollection(ctx, GlobalHTTPClient, AuthToken, "")
+	workout, err := user.GetWorkoutCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
 	if err != nil {
 		internal.LogError(err)
 		return err
@@ -81,9 +85,10 @@ func dump(ctx context.Context) error {
 	}
 
 	fileExp := export.FileExport{
-		FilePath: Configuration.Export.FileExport.FilePath,
-		FileType: Configuration.Export.FileExport.FileType,
-		FileName: Configuration.Export.FileExport.FileName,
+		FilePath:       Configuration.Export.FileExport.FilePath,
+		FileType:       Configuration.Export.FileExport.FileType,
+		FileName:       Configuration.Export.FileExport.FileName,
+		FileNamePrefix: Configuration.Export.FileExport.FileNamePrefix,
 	}
 
 	switch Configuration.Export.Method {

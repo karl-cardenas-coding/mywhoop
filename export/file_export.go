@@ -14,8 +14,7 @@ func (f *FileExport) Setup() error {
 
 // ExportDataToFile exports the user data to a file
 // The file path is optional, if not provided, the file will be created in the data folder in the current directory
-// The file will be named user.json
-// Example usage: user.ExportDataToFile("data/user.json")
+// The file will be named user.json by default
 func (f *FileExport) Export(data []byte) error {
 
 	currentDir, err := os.Getwd()
@@ -33,13 +32,13 @@ func (f *FileExport) Export(data []byte) error {
 	}
 
 	if f.FileName == "" {
-		f.FileName = "user.json"
+		f.FileName = "user"
 	}
 
 	// write the data to a file in the data folder in the current directory
-	err = WriteToFile(f.FilePath, data)
+	err = WriteToFile(*f, data)
 	if err != nil {
-		slog.Error("unable to write to file", err)
+		slog.Error("unable to write to file", "error", err)
 		return err
 	}
 
@@ -47,31 +46,48 @@ func (f *FileExport) Export(data []byte) error {
 
 }
 
+// generateName generates the name of the file to be created
+func generateName(cfg FileExport) string {
+
+	var fileName string
+
+	if cfg.FileNamePrefix != "" {
+		fileName = cfg.FileNamePrefix + "_" + cfg.FileName + "." + cfg.FileType
+	} else {
+		fileName = cfg.FileName + "." + cfg.FileType
+	}
+
+	return fileName
+
+}
+
 // WriteToFile writes data to a file
-func WriteToFile(filePath string, data []byte) error {
+func WriteToFile(cfg FileExport, data []byte) error {
 
 	// check if the path folder exists
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+	if _, err := os.Stat(cfg.FilePath); os.IsNotExist(err) {
 		// create the data folder
-		err := os.MkdirAll(filePath, 0755)
+		err := os.MkdirAll(cfg.FilePath, 0755)
 		if err != nil {
-			slog.Error("unable to create data folder", err)
+			slog.Error("unable to create data folder", "error", err)
 			return err
 		}
 	}
+
+	fileName := generateName(cfg)
 
 	// Remove the file if it exists
-	if _, err := os.Stat(path.Join(filePath, "user.json")); err == nil {
-		err := os.Remove(path.Join(filePath, "user.json"))
+	if _, err := os.Stat(path.Join(cfg.FilePath, fileName)); err == nil {
+		err := os.RemoveAll(cfg.FilePath)
 		if err != nil {
-			slog.Error("unable to remove file", err)
+			slog.Error("unable to remove file", "error", err)
 			return err
 		}
 	}
 
-	f, err := os.Create(path.Join(filePath, "user.json"))
+	f, err := os.Create(path.Join(cfg.FilePath, fileName))
 	if err != nil {
-		slog.Error("unable to create file", err)
+		slog.Error("unable to create file", "error", err)
 		return err
 	}
 
@@ -81,9 +97,11 @@ func WriteToFile(filePath string, data []byte) error {
 
 	_, err = f.WriteString(dataPretty)
 	if err != nil {
-		slog.Error("unable to write to file", err)
+		slog.Error("unable to write to file", "error", err)
 		return err
 	}
+
+	slog.Info("data written to file", "file", path.Join(cfg.FilePath, fileName))
 
 	return nil
 }

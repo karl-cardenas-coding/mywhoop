@@ -20,3 +20,9 @@ func GenerateLast24HoursString() (string, string) {
 	return startTimeString, endTimeString
 
 }
+
+// getCurrentDate returns the current date in the format "YYYY-MM-DD"
+func GetCurrentDate() string {
+	currentDate := time.Now().Format("2006_01_02")
+	return currentDate
+}

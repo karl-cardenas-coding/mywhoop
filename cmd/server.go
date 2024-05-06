@@ -204,6 +204,7 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 	go func() {
 
 		ticker := time.NewTicker(24 * time.Hour)
+		// ticker := time.NewTicker(1 * time.Minute) // DEBUG PURPOSES
 		defer ticker.Stop()
 
 		for range ticker.C {
@@ -218,113 +219,17 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 
 			var user internal.User
 
-			if config.Server.FirstRunDownload {
-
-				data, err := user.GetUserProfileData(ctx, client, token.AccessToken)
-				if err != nil {
-					internal.LogError(err)
-				}
-
-				user.UserData = *data
-
-				measurements, err := user.GetUserMeasurements(ctx, client, token.AccessToken)
-				if err != nil {
-					internal.LogError(err)
-				}
-
-				user.UserMesaurements = *measurements
-
-				sleep, err := user.GetSleepCollection(ctx, client, token.AccessToken, "")
-				if err != nil {
-					internal.LogError(err)
-				}
-
-				user.SleepCollection = *sleep
-
-				recovery, err := user.GetRecoveryCollection(ctx, client, token.AccessToken, "")
-				if err != nil {
-					internal.LogError(err)
-				}
-
-				user.RecoveryCollection = *recovery
-
-				workout, err := user.GetWorkoutCollection(ctx, client, token.AccessToken, "")
-				if err != nil {
-					internal.LogError(err)
-				}
-
-				user.WorkoutCollection = *workout
-
-				// Set to false so that the entire data is not downloaded again
-				config.Server.FirstRunDownload = false
-
-			}
-
-			if !config.Server.FirstRunDownload {
-				// Download the last 24 hours of data
-
-				startTime, endTime := internal.GenerateLast24HoursString()
-				filterString := fmt.Sprintf("start=%s&end=%s", startTime, endTime)
-
-				slog.Debug("Filter string", "filter", filterString)
-
-				sleep, err := user.GetSleepCollection(ctx, client, token.AccessToken, filterString)
-				if err != nil {
-					internal.LogError(err)
-				}
-
-				user.SleepCollection = *sleep
-
-				recovery, err := user.GetRecoveryCollection(ctx, client, token.AccessToken, filterString)
-				if err != nil {
-					internal.LogError(err)
-				}
-
-				user.RecoveryCollection = *recovery
-
-				workout, err := user.GetWorkoutCollection(ctx, client, token.AccessToken, filterString)
-				if err != nil {
-					internal.LogError(err)
-				}
-
-				user.WorkoutCollection = *workout
-			}
-
-			finalDataRaw, err := json.MarshalIndent(user, "", "  ")
+			finalDataRaw, err := getData(ctx, user, client, token, &config.Server.FirstRunDownload)
 			if err != nil {
-				internal.LogError(err)
+				slog.Error("unable to get data", "error", err)
+				os.Exit(1)
 			}
 
 			// Setup the exporters
-
-			fileExp := export.FileExport{
-				FilePath: config.Export.FileExport.FilePath,
-				FileType: config.Export.FileExport.FileType,
-				FileName: config.Export.FileExport.FileName,
-			}
-
-			awsS3Exp := export.AWS_S3{
-				Region: config.Export.AWSS3.Region,
-				Bucket: config.Export.AWSS3.Bucket,
-			}
-
-			switch config.Export.Method {
-			case "file":
-				err = fileExp.Export(finalDataRaw)
-				if err != nil {
-					slog.Error("unable to export data with the file exporter", "error", err)
-					internal.LogError(err)
-				}
-
-			case "s3":
-				err = awsS3Exp.Export(finalDataRaw)
-				if err != nil {
-					slog.Error("unable to export data with the s3 exporter", "error", err)
-					internal.LogError(err)
-				}
-			default:
-				slog.Error("unknown exporter", "exporter", config.Export.Method)
-
+			err = manageExporters(&config, finalDataRaw)
+			if err != nil {
+				slog.Error("unable to manage exporters", "error", err)
+				os.Exit(1)
 			}
 
 			slog.Info("Data collection complete")
@@ -333,6 +238,138 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 	}()
 
 	return nil
+}
+
+// manageExporters manages the exporters based on the configuration received
+func manageExporters(cfg *internal.ConfigurationData, data []byte) error {
+
+	if cfg.Export.FileExport.FileNamePrefix == "" {
+		cfg.Export.FileExport.FileNamePrefix = "user"
+	}
+	// Configure the filename to ensure uniqueness
+	fileName := fmt.Sprintf("%s_%s", cfg.Export.FileExport.FileNamePrefix, internal.GetCurrentDate())
+
+	fileExp := export.FileExport{
+		FilePath: cfg.Export.FileExport.FilePath,
+		FileType: cfg.Export.FileExport.FileType,
+		FileName: fileName,
+	}
+
+	awsS3Exp := export.AWS_S3{
+		Region: cfg.Export.AWSS3.Region,
+		Bucket: cfg.Export.AWSS3.Bucket,
+	}
+
+	switch cfg.Export.Method {
+	case "file":
+		err := fileExp.Export(data)
+		if err != nil {
+			slog.Error("unable to export data with the file exporter", "error", err)
+			internal.LogError(err)
+			return err
+
+		}
+
+	case "s3":
+		err := awsS3Exp.Export(data)
+		if err != nil {
+			slog.Error("unable to export data with the s3 exporter", "error", err)
+			internal.LogError(err)
+			return err
+		}
+	default:
+		slog.Error("unknown exporter", "exporter", cfg.Export.Method)
+
+	}
+
+	return nil
+
+}
+
+// getData queries the Whoop API and gets the user data
+func getData(ctx context.Context, user internal.User, client *http.Client, token oauth2.Token, firstDownload *bool) ([]byte, error) {
+
+	if firstDownload == nil {
+		slog.Debug("firstDownload is nil. Unable to determine if this is the first download")
+		firstDownload = new(bool)
+		*firstDownload = false
+	}
+
+	if !*firstDownload {
+		startTime, endTime := internal.GenerateLast24HoursString()
+		filterString := fmt.Sprintf("start=%s&end=%s", startTime, endTime)
+
+		slog.Debug("Filter string", "filter", filterString)
+
+		sleep, err := user.GetSleepCollection(ctx, client, token.AccessToken, filterString)
+		if err != nil {
+			internal.LogError(err)
+		}
+
+		user.SleepCollection = *sleep
+
+		recovery, err := user.GetRecoveryCollection(ctx, client, token.AccessToken, filterString)
+		if err != nil {
+			internal.LogError(err)
+		}
+
+		user.RecoveryCollection = *recovery
+
+		workout, err := user.GetWorkoutCollection(ctx, client, token.AccessToken, filterString)
+		if err != nil {
+			internal.LogError(err)
+		}
+
+		user.WorkoutCollection = *workout
+	}
+
+	if *firstDownload {
+
+		data, err := user.GetUserProfileData(ctx, client, token.AccessToken)
+		if err != nil {
+			internal.LogError(err)
+		}
+
+		user.UserData = *data
+
+		measurements, err := user.GetUserMeasurements(ctx, client, token.AccessToken)
+		if err != nil {
+			internal.LogError(err)
+		}
+
+		user.UserMesaurements = *measurements
+
+		sleep, err := user.GetSleepCollection(ctx, client, token.AccessToken, "")
+		if err != nil {
+			internal.LogError(err)
+		}
+
+		user.SleepCollection = *sleep
+
+		recovery, err := user.GetRecoveryCollection(ctx, client, token.AccessToken, "")
+		if err != nil {
+			internal.LogError(err)
+		}
+
+		user.RecoveryCollection = *recovery
+
+		workout, err := user.GetWorkoutCollection(ctx, client, token.AccessToken, "")
+		if err != nil {
+			internal.LogError(err)
+		}
+
+		user.WorkoutCollection = *workout
+		// Set to false so that the entire data is not downloaded again
+		*firstDownload = false
+	}
+
+	finalDataRaw, err := json.MarshalIndent(user, "", "  ")
+	if err != nil {
+		internal.LogError(err)
+	}
+
+	return finalDataRaw, nil
+
 }
 
 func verfyToken(filePath string) (bool, oauth2.Token, error) {
