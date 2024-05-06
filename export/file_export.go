@@ -6,6 +6,12 @@ import (
 	"path"
 )
 
+// Setup sets up the file export and any resources required
+func (f *FileExport) Setup() error {
+	// no setup required
+	return nil
+}
+
 // ExportDataToFile exports the user data to a file
 // The file path is optional, if not provided, the file will be created in the data folder in the current directory
 // The file will be named user.json
@@ -79,5 +85,11 @@ func WriteToFile(filePath string, data []byte) error {
 		return err
 	}
 
+	return nil
+}
+
+// CleanUp cleans up the file export and any resources required
+func (f *FileExport) CleanUp() error {
+	// no cleanup required
 	return nil
 }

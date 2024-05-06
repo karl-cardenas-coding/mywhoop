@@ -19,6 +19,8 @@ var (
 	VersionString string = "0.0.0"
 	// cfgFile is the myWhoop configuration file
 	cfgFile string
+	// Exporter is the exporter to use for storing data
+	Exporter string
 	// ConfigurationData is the configuration data
 	Configuration internal.ConfigurationData
 	// GlobalHTTPClient is the HTTP client used for all requests
@@ -73,6 +75,7 @@ func init() {
 	// Global Flag - Config File
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "myWhoop config file - default is $HOME/.mywhoop.yaml")
 	rootCmd.PersistentFlags().StringVarP(&VerbosityLevel, "debug", "d", "", "Enable debug output. Use the values DEBUG, INFO, WARN, ERROR, Default is INFO.")
+	rootCmd.PersistentFlags().StringVarP(&Exporter, "exporter", "e", "", "Specify an exporter to use. Supporter exporters are file, and s3. Default is file.")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

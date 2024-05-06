@@ -177,6 +177,8 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authT
 		}
 	}
 
+	slog.Debug("Sleep Records", slog.Any("Sleep Records", sleepRecords))
+
 	sleep.SleepCollectionRecords = sleepRecords
 
 	return &sleep, nil
@@ -270,6 +272,8 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, au
 		}
 	}
 
+	slog.Debug("Recovery Records", slog.Any("Recovery Records", recoveryRecords))
+
 	recovery.RecoveryRecords = recoveryRecords
 
 	return &recovery, nil
@@ -361,6 +365,8 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, aut
 			return nil, err
 		}
 	}
+
+	slog.Debug("Workout Records", slog.Any("Workout Records", workoutRecords))
 
 	workout.Records = workoutRecords
 	return &workout, nil

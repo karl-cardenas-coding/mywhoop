@@ -1,7 +1,9 @@
 package export
 
 type Export interface {
+	Setup() error
 	Export(data []byte) error
+	CleanUp() error
 }
 
 type FileExport struct {

@@ -33,7 +33,7 @@ type UserMesaurements struct {
 
 type SleepCollection struct {
 	SleepCollectionRecords []SleepCollectionRecords `json:"records"`
-	NextToken              string                   `json:"next_token,omitempty"`
+	NextToken              string                   `json:"next_token"`
 }
 type StageSummary struct {
 	TotalInBedTimeMilli         int `json:"total_in_bed_time_milli"`
@@ -157,14 +157,19 @@ type WorkoutRecords struct {
  */
 
 type ConfigurationData struct {
-	Export struct {
-		Method     string            `yaml:"method" validate:"oneof=file s3"`
-		FileExport export.FileExport `yaml:"fileExport" validate:"required_if=Method file"`
-	} `yaml:"export" validate:"required"`
-	Server Server `yaml:"server"`
-	Debug  bool   `yaml:"debug"`
+	Export ConfigExport `yaml:"export" validate:"required"`
+	Server Server       `yaml:"server"`
+	Debug  bool         `yaml:"debug"`
+}
+
+type ConfigExport struct {
+	Method     string            `yaml:"method" validate:"oneof=file s3"`
+	FileExport export.FileExport `yaml:"fileExport" validate:"required_if=Method file"`
+	AWSS3      export.AWS_S3     `yaml:"awsS3" validate:"required_if=Method s3"`
+	// Add more supported export methods here
 }
 
 type Server struct {
-	Enabled bool `yaml:"enabled"`
+	Enabled          bool `yaml:"enabled"`
+	FirstRunDownload bool `yaml:"firstRunDownload"`
 }

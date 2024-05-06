@@ -27,6 +27,32 @@ type UserData struct {
 	LastName  string `json:"last_name"`
 }
 
+func TestSetup(t *testing.T) {
+
+	exp := &FileExport{
+		FilePath: "tests/data/",
+	}
+
+	err := exp.Setup()
+	if err != nil {
+		t.Errorf("Expected nil error, got: %v", err)
+	}
+
+}
+
+func TestCleanUp(t *testing.T) {
+
+	exp := &FileExport{
+		FilePath: "tests/data/",
+	}
+
+	err := exp.CleanUp()
+	if err != nil {
+		t.Errorf("Expected nil error, got: %v", err)
+	}
+
+}
+
 func TestExportData(t *testing.T) {
 
 	defer cleanUp()
