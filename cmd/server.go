@@ -184,7 +184,7 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 	go func() {
 
 		for auth := range authTokenChannel {
-			slog.Info(auth.AccessToken)
+			slog.Debug("New token generated:", auth.AccessToken[0:4], "....")
 
 			data, err := json.MarshalIndent(auth, "", " ")
 			if err != nil {

@@ -33,3 +33,6 @@ data/
 internal/data/
 
 tests/data/
+
+# Binary
+mywhoop
