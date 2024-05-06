@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -61,12 +62,16 @@ func evaluateConfigOptions(firstRun bool, exporter string, cfg *internal.Configu
 func server(ctx context.Context) error {
 	slog.Info("Server mode enabled")
 	InitLogger()
+	err := checkRequiredEnvVars()
+	if err != nil {
+		return err
+	}
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	// Evaluate the configuration options
-	err := evaluateConfigOptions(FirstRunDownload, Configuration.Export.Method, &Configuration)
+	err = evaluateConfigOptions(FirstRunDownload, Configuration.Export.Method, &Configuration)
 	if err != nil {
 		slog.Error("unable to evaluate configuration options", "error", err)
 		return err
@@ -411,4 +416,18 @@ func readTokenFromFile(filePath string) (oauth2.Token, error) {
 	json.NewDecoder(f).Decode(&token)
 
 	return token, nil
+}
+
+// checkRequiredEnvVars checks if the required environment variables are set
+func checkRequiredEnvVars() error {
+
+	if os.Getenv("WHOOP_CLIENT_ID") == "" {
+		return errors.New("WHOOP_CLIENT_ID is not set")
+	}
+
+	if os.Getenv("WHOOP_CLIENT_SECRET") == "" {
+		return errors.New("WHOOP_CLIENT_SECRET is not set")
+	}
+
+	return nil
 }
