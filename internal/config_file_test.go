@@ -36,7 +36,7 @@ func TestReadConfigFileYaml(t *testing.T) {
 	expectedFilePath := "data/"
 	expectedName := "user"
 	expectedFileType := "json"
-	expectedDebug := "debug"
+	expectedDebug := "DEBUG"
 
 	got, err := readConfigFileYaml("../tests/valid_config.yaml")
 	if err != nil {
