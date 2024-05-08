@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"log/slog"
@@ -13,10 +14,10 @@ import (
 )
 
 var (
-	// AuthToken is the Whoop API token
-	AuthToken string
 	// VersionString is the version of the CLI
 	VersionString string = "0.0.0"
+	// Credentials file containing a Whoop authentication token. Can also be set through ENV variable or configuration file.
+	CredentialsFile string
 	// cfgFile is the myWhoop configuration file
 	cfgFile string
 	// Exporter is the exporter to use for storing data
@@ -25,8 +26,6 @@ var (
 	Configuration internal.ConfigurationData
 	// GlobalHTTPClient is the HTTP client used for all requests
 	GlobalHTTPClient *http.Client
-	// RefreshToken is the Whoop API refresh token
-	RefreshToken string
 	// UserAgent is the value to use for the User-Agent header
 	UserAgent string
 	// Debug is a flag to enable debug output
@@ -51,16 +50,7 @@ var rootCmd = &cobra.Command{
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
-func Execute() error {
-
-	authToken := os.Getenv("WHOOP_TOKEN")
-	// if authToken == "" {
-	// 	return fmt.Errorf("WHOOP_TOKEN environment variable not set")
-	// }
-	AuthToken = authToken
-
-	refreshToken := os.Getenv("WHOOP_REFRESH_TOKEN")
-	RefreshToken = refreshToken
+func Execute(ctx context.Context, args []string, stdout, stderr *os.File) error {
 
 	GlobalHTTPClient = createHTTPClient()
 	err := rootCmd.Execute()
@@ -76,19 +66,24 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "myWhoop config file - default is $HOME/.mywhoop.yaml")
 	rootCmd.PersistentFlags().StringVarP(&VerbosityLevel, "debug", "d", "", "Enable debug output. Use the values DEBUG, INFO, WARN, ERROR, Default is INFO.")
 	rootCmd.PersistentFlags().StringVarP(&Exporter, "exporter", "e", "", "Specify an exporter to use. Supporter exporters are file, and s3. Default is file.")
+	rootCmd.PersistentFlags().StringVar(&CredentialsFile, "credentials", "", "File path to the Whoop credentials file that contains a valid authentication token.")
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	UserAgent = fmt.Sprintf("mywhoop/%s", VersionString)
 
 }
 
 // InitLogger initializes the logger
-func InitLogger() {
-	slog.SetDefault(logger(VerbosityLevel))
+func InitLogger() error {
+	outputLvl := strings.ToUpper(VerbosityLevel)
+	slog.SetDefault(logger(outputLvl))
+
+	envConfigVars, err := internal.ExtractEnvVariables()
+	if err != nil {
+		return err
+	}
+
 	slog.Debug("Environment Configuration",
-		slog.Group("Verbosity", slog.String("Level", VerbosityLevel)),
+		slog.Group("Verbosity", slog.String("Level", outputLvl)),
 		slog.Group("Config", slog.String("File", cfgFile)),
 	)
 
@@ -103,16 +98,37 @@ func InitLogger() {
 		Configuration = config
 	}
 
+	// Merge the configuration data from the environment variables
+	Configuration.Credentials = envConfigVars.Credentials
+
+	// Prioritize CLI flags
+
+	if Exporter != "" {
+		Configuration.Export.Method = Exporter
+	}
+
+	if CredentialsFile != "" {
+		Configuration.Credentials.CredentialsFile = CredentialsFile
+	}
+
+	if outputLvl != "" {
+		Configuration.Debug = outputLvl
+	}
+
+	if Configuration.Credentials.CredentialsFile == "" {
+		Configuration.Credentials.CredentialsFile = internal.DEFAULT_CREDENTIALS_FILE
+	}
+
+	return nil
+
 }
 
 // Logger returns a new logger
 func logger(verbosity string) *slog.Logger {
 
-	value := strings.ToUpper(verbosity)
-
 	var opts *slog.HandlerOptions
 
-	switch value {
+	switch verbosity {
 	case "DEBUG":
 		opts = &slog.HandlerOptions{
 			Level: slog.LevelDebug,

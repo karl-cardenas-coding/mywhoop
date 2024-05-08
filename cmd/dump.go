@@ -15,7 +15,7 @@ import (
 var meCmd = &cobra.Command{
 	Use:   "dump",
 	Short: "Dump all your Whoop data to a file.",
-	Long:  "Dump all your Whoo[ data to a file.",
+	Long:  "Dump all your Whoop data to a file.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		return dump(rootCmd.Context())
@@ -30,7 +30,10 @@ func dump(ctx context.Context) error {
 
 	var user internal.User
 
-	InitLogger()
+	err := InitLogger()
+	if err != nil {
+		return err
+	}
 
 	ok, token, err := verfyToken("token.json")
 	if err != nil {

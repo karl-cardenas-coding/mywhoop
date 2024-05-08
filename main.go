@@ -15,7 +15,7 @@ func run(
 	stdout,
 	stderr *os.File,
 ) error {
-	return cmd.Execute()
+	return cmd.Execute(ctx, args, stdout, stderr)
 }
 
 func main() {
@@ -24,5 +24,6 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
+	os.Exit(0)
 
 }

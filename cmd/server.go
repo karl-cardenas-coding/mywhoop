@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -40,13 +39,11 @@ func init() {
 
 // EvaluateConfigOptions evaluates the configuration options for the server command
 // Command line options take precedence over configuration file options.
-func evaluateConfigOptions(firstRun bool, exporter string, cfg *internal.ConfigurationData) error {
+func evaluateConfigOptions(firstRun bool, cfg *internal.ConfigurationData) error {
 
-	if exporter == "" {
-		if cfg.Export.Method == "" {
-			slog.Info("No exporter specified. Defaulting to file.")
-			cfg.Export.Method = "file"
-		}
+	if cfg.Export.Method == "" {
+		slog.Info("No exporter specified. Defaulting to file.")
+		cfg.Export.Method = "file"
 	}
 
 	if firstRun {
@@ -61,8 +58,7 @@ func evaluateConfigOptions(firstRun bool, exporter string, cfg *internal.Configu
 // login authenticates with Whoop API and gets an access token
 func server(ctx context.Context) error {
 	slog.Info("Server mode enabled")
-	InitLogger()
-	err := checkRequiredEnvVars()
+	err := InitLogger()
 	if err != nil {
 		return err
 	}
@@ -70,8 +66,10 @@ func server(ctx context.Context) error {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
+	cfg := Configuration
+
 	// Evaluate the configuration options
-	err = evaluateConfigOptions(FirstRunDownload, Configuration.Export.Method, &Configuration)
+	err = evaluateConfigOptions(FirstRunDownload, &cfg)
 	if err != nil {
 		slog.Error("unable to evaluate configuration options", "error", err)
 		return err
@@ -105,25 +103,25 @@ func server(ctx context.Context) error {
 		}
 
 	default:
-		slog.Error("unknown exporter", "exporter", Configuration.Export.Method)
+		slog.Error("unknown exporter", "exporter", cfg.Export.Method)
 	}
 
 	// Start the server entry point
-	go func() {
+	go func(c internal.ConfigurationData) {
 
-		err := StartServer(ctx, Configuration, GlobalHTTPClient)
+		err := StartServer(ctx, c, GlobalHTTPClient)
 		if err != nil {
 			slog.Error("unable to start server", "error", err)
 			os.Exit(1)
 		}
 
-	}()
+	}(cfg)
 
 	sig := <-sigs
 	if sig == syscall.SIGINT || sig == syscall.SIGTERM {
 		slog.Info("Server shutdown signal received")
 		slog.Info("Cleaning up server resources")
-		switch Configuration.Export.Method {
+		switch cfg.Export.Method {
 		case "file":
 			err := fileExp.CleanUp()
 			if err != nil {
@@ -136,7 +134,7 @@ func server(ctx context.Context) error {
 			}
 
 		default:
-			slog.Error("unknown exporter", "exporter", Configuration.Export.Method)
+			slog.Error("unknown exporter", "exporter", cfg.Export.Method)
 
 		}
 
@@ -150,7 +148,7 @@ func server(ctx context.Context) error {
 // StartServer starts the long running server.
 func StartServer(ctx context.Context, config internal.ConfigurationData, client *http.Client) error {
 
-	ok, _, err := verfyToken("token.json")
+	ok, _, err := verfyToken(config.Credentials.CredentialsFile)
 	if err != nil {
 		slog.Error("unable to verify token", "error", err)
 		return err
@@ -169,7 +167,7 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 
 		for range ticker.C {
 			slog.Info("Refreshing auth token token")
-			currentToken, err := readTokenFromFile("token.json")
+			currentToken, err := readTokenFromFile(config.Credentials.CredentialsFile)
 			if err != nil {
 				slog.Error("unable to read token file", "error", err)
 				os.Exit(1)
@@ -197,7 +195,7 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 				os.Exit(1)
 			}
 
-			err = os.WriteFile("token.json", data, 0755)
+			err = os.WriteFile(config.Credentials.CredentialsFile, data, 0755)
 			if err != nil {
 				slog.Error("unable to write token file", "error", err)
 				os.Exit(1)
@@ -216,7 +214,7 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 
 			slog.Info("Starting data collection")
 
-			token, err := readTokenFromFile("token.json")
+			token, err := readTokenFromFile(config.Credentials.CredentialsFile)
 			if err != nil {
 				slog.Error("unable to read token file", "error", err)
 				os.Exit(1)
@@ -416,18 +414,4 @@ func readTokenFromFile(filePath string) (oauth2.Token, error) {
 	json.NewDecoder(f).Decode(&token)
 
 	return token, nil
-}
-
-// checkRequiredEnvVars checks if the required environment variables are set
-func checkRequiredEnvVars() error {
-
-	if os.Getenv("WHOOP_CLIENT_ID") == "" {
-		return errors.New("WHOOP_CLIENT_ID is not set")
-	}
-
-	if os.Getenv("WHOOP_CLIENT_SECRET") == "" {
-		return errors.New("WHOOP_CLIENT_SECRET is not set")
-	}
-
-	return nil
 }

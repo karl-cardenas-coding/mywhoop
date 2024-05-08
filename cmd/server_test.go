@@ -25,7 +25,7 @@ func TestEvaluateConfigOptions(t *testing.T) {
 	expectedFirstRunDownload := true
 	expectedExporter := "file"
 
-	err := evaluateConfigOptions(true, "file", dt)
+	err := evaluateConfigOptions(true, dt)
 	if err != nil {
 		t.Errorf("Expected nil error, got: %v", err)
 	}
@@ -43,7 +43,7 @@ func TestEvaluateConfigOptions(t *testing.T) {
 	dt.Server.FirstRunDownload = false
 	expectedFirstRunDownload = false
 
-	err = evaluateConfigOptions(false, "", dt)
+	err = evaluateConfigOptions(false, dt)
 	if err != nil {
 		t.Errorf("Expected nil error, got: %v", err)
 	}
@@ -60,7 +60,7 @@ func TestEvaluateConfigOptions(t *testing.T) {
 
 	dt = &internal.ConfigurationData{}
 	expectedFirstRunDownload = true
-	err = evaluateConfigOptions(true, "", dt)
+	err = evaluateConfigOptions(true, dt)
 	if err != nil {
 		t.Errorf("Expected nil error, got: %v", err)
 	}
@@ -80,7 +80,7 @@ func TestEvaluateConfigOptions(t *testing.T) {
 		},
 	}
 	expectedFirstRunDownload = true
-	err = evaluateConfigOptions(false, "", dt)
+	err = evaluateConfigOptions(false, dt)
 	if err != nil {
 		t.Errorf("Expected nil error, got: %v", err)
 	}

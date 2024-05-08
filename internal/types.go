@@ -157,9 +157,14 @@ type WorkoutRecords struct {
  */
 
 type ConfigurationData struct {
+	// Export is the configuration block for setting up data exporters
 	Export ConfigExport `yaml:"export" validate:"required"`
-	Server Server       `yaml:"server"`
-	Debug  bool         `yaml:"debug"`
+	// Server is the configuration settings for server mode
+	Server Server `yaml:"server"`
+	// CredentialsFileName is the file name of the credentials file. Default is "token.json"
+	Credentials Credentials `yaml:"credentials"`
+	// Debug flag. Allowed values are DEBUG, WARN, INFO, TRACE
+	Debug string `yaml:"debug"`
 }
 
 type ConfigExport struct {
@@ -170,6 +175,13 @@ type ConfigExport struct {
 }
 
 type Server struct {
-	Enabled          bool `yaml:"enabled"`
+	// Set to true to enable server mode. Default is false.
+	Enabled bool `yaml:"enabled"`
+	// Download all available Whoop data on initial server start. Default is false.
 	FirstRunDownload bool `yaml:"firstRunDownload"`
+}
+
+type Credentials struct {
+	// The file path to the credentials file. By default, a local file by the name of "token.json" is looked for.
+	CredentialsFile string `yaml:"credentialsFile"`
 }

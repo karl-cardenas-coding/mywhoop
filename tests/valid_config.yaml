@@ -5,4 +5,4 @@ export:
     filePath: "data/"
     fileType: "json"
     fileNamePrefix: ""
-debug: true
+debug: debug

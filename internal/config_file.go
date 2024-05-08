@@ -84,6 +84,9 @@ func readConfigFileYaml(file string) (ConfigurationData, error) {
 		return ConfigurationData{}, errors.New("unable to unmarshall the YAML file")
 	}
 
+	// Set debug values to all upper case.
+	config.Debug = strings.ToUpper(config.Debug)
+
 	return config, err
 
 }

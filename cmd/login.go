@@ -23,9 +23,12 @@ func init() {
 
 // login authenticates with Whoop API and gets an access token
 func login() error {
-	InitLogger()
+	err := InitLogger()
+	if err != nil {
+		return err
+	}
 
-	_, err := internal.GetToken("token.json")
+	_, err = internal.GetToken("token.json")
 	if err != nil {
 		slog.Info("Error getting access token: %v", err)
 		return err
