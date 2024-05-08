@@ -1,3 +1,6 @@
+// Copyright (c) karl-cardenas-coding
+// SPDX-License-Identifier: Apache-2.0
+
 package export
 
 // Setup sets up the AWS S3 export and any resources required
