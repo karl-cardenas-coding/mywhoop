@@ -33,12 +33,14 @@ func dump(ctx context.Context) error {
 
 	var user internal.User
 
-	err := InitLogger()
+	err := InitLogger(&Configuration)
 	if err != nil {
 		return err
 	}
 
-	ok, token, err := verfyToken("token.json")
+	cfg := Configuration
+
+	ok, token, err := verfyToken(cfg.Credentials.CredentialsFile)
 	if err != nil {
 		slog.Error("unable to verify token", "error", err)
 		return err

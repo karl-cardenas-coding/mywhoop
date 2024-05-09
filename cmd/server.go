@@ -6,6 +6,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -18,6 +19,7 @@ import (
 	"github.com/karl-cardenas-coding/mywhoop/internal"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
+	"golang.org/x/sync/errgroup"
 )
 
 // loginCmd represents the login command
@@ -61,15 +63,15 @@ func evaluateConfigOptions(firstRun bool, cfg *internal.ConfigurationData) error
 // login authenticates with Whoop API and gets an access token
 func server(ctx context.Context) error {
 	slog.Info("Server mode enabled")
-	err := InitLogger()
+
+	err := InitLogger(&Configuration)
 	if err != nil {
 		return err
 	}
 
+	cfg := Configuration
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
-	cfg := Configuration
 
 	// Evaluate the configuration options
 	err = evaluateConfigOptions(FirstRunDownload, &cfg)
@@ -90,9 +92,8 @@ func server(ctx context.Context) error {
 		Bucket: Configuration.Export.AWSS3.Bucket,
 	}
 
-	switch Configuration.Export.Method {
+	switch cfg.Export.Method {
 	case "file":
-
 		err := fileExp.Setup()
 		if err != nil {
 			slog.Error("unable to setup file export", "error", err)
@@ -109,6 +110,58 @@ func server(ctx context.Context) error {
 		slog.Error("unknown exporter", "exporter", cfg.Export.Method)
 	}
 
+	g, ctx := errgroup.WithContext(ctx)
+
+	// Download the latest data for the past 24 hrs and if FirstRunDownload is enabled, all of the data.
+	g.Go(func() error {
+
+		ok, _, err := verfyToken(cfg.Credentials.CredentialsFile)
+		if err != nil {
+			slog.Error("unable to verify token", "error", err)
+			return err
+		}
+
+		if !ok {
+			return errors.New("auth token is invalid or expired")
+		}
+
+		slog.Info("Starting data collection")
+
+		token, err := readTokenFromFile(cfg.Credentials.CredentialsFile)
+		if err != nil {
+			slog.Error("unable to read token file", "error", err)
+			return err
+		}
+
+		var user internal.User
+
+		finalDataRaw, err := getData(ctx, user, GlobalHTTPClient, token, &cfg.Server.FirstRunDownload)
+		if err != nil {
+			slog.Error("unable to get data", "error", err)
+			return err
+		}
+
+		// Setup the exporters
+		err = manageExporters(&cfg, finalDataRaw)
+		if err != nil {
+			slog.Error("unable to manage exporters", "error", err)
+			return err
+		}
+
+		slog.Info("Data collection complete")
+
+		return nil
+
+	})
+	// Handle a sigterm if the cron logic has not started yet
+	// firstSigOp := <-sigs
+	// if firstSigOp == syscall.SIGINT || firstSigOp == syscall.SIGTERM {
+	// 	slog.Info("program interrupt received")
+	// 	os.Exit(0)
+	// }
+	if err := g.Wait(); err != nil {
+		return err
+	}
 	// Start the server entry point
 	go func(c internal.ConfigurationData) {
 
@@ -310,6 +363,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 		sleep, err := user.GetSleepCollection(ctx, client, token.AccessToken, filterString)
 		if err != nil {
 			internal.LogError(err)
+			return []byte{}, err
 		}
 
 		user.SleepCollection = *sleep
@@ -317,6 +371,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 		recovery, err := user.GetRecoveryCollection(ctx, client, token.AccessToken, filterString)
 		if err != nil {
 			internal.LogError(err)
+			return []byte{}, err
 		}
 
 		user.RecoveryCollection = *recovery
@@ -324,6 +379,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 		workout, err := user.GetWorkoutCollection(ctx, client, token.AccessToken, filterString)
 		if err != nil {
 			internal.LogError(err)
+			return []byte{}, err
 		}
 
 		user.WorkoutCollection = *workout
@@ -334,6 +390,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 		data, err := user.GetUserProfileData(ctx, client, token.AccessToken)
 		if err != nil {
 			internal.LogError(err)
+			return []byte{}, err
 		}
 
 		user.UserData = *data
@@ -341,6 +398,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 		measurements, err := user.GetUserMeasurements(ctx, client, token.AccessToken)
 		if err != nil {
 			internal.LogError(err)
+			return []byte{}, err
 		}
 
 		user.UserMesaurements = *measurements
@@ -348,6 +406,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 		sleep, err := user.GetSleepCollection(ctx, client, token.AccessToken, "")
 		if err != nil {
 			internal.LogError(err)
+			return []byte{}, err
 		}
 
 		user.SleepCollection = *sleep
@@ -355,6 +414,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 		recovery, err := user.GetRecoveryCollection(ctx, client, token.AccessToken, "")
 		if err != nil {
 			internal.LogError(err)
+			return []byte{}, err
 		}
 
 		user.RecoveryCollection = *recovery
@@ -362,6 +422,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 		workout, err := user.GetWorkoutCollection(ctx, client, token.AccessToken, "")
 		if err != nil {
 			internal.LogError(err)
+			return []byte{}, err
 		}
 
 		user.WorkoutCollection = *workout
@@ -372,6 +433,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 	finalDataRaw, err := json.MarshalIndent(user, "", "  ")
 	if err != nil {
 		internal.LogError(err)
+		return finalDataRaw, err
 	}
 
 	return finalDataRaw, nil
@@ -394,11 +456,9 @@ func verfyToken(filePath string) (bool, oauth2.Token, error) {
 	}
 
 	if !token.Valid() {
-		slog.Error("Auth token is not valid")
+		internal.LogError(errors.New("invalid or expired auth token"))
 		return false, oauth2.Token{}, nil
 	}
-
-	slog.Info("Auth token is valid")
 
 	return true, token, nil
 }

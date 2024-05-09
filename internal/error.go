@@ -17,8 +17,8 @@ func LogError(err error) {
 			slog.Group("Line", slog.Int("line", line)),
 			slog.Group("Function", slog.String("function", runtime.FuncForPC(pc).Name())),
 		)
-		slog.Error("Error", err)
+		slog.Debug("Error", "msg", err)
 	} else {
-		slog.Error("Error", err)
+		slog.Debug("Error", "msg", err)
 	}
 }

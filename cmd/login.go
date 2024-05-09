@@ -26,7 +26,7 @@ func init() {
 
 // login authenticates with Whoop API and gets an access token
 func login() error {
-	err := InitLogger()
+	err := InitLogger(&Configuration)
 	if err != nil {
 		return err
 	}

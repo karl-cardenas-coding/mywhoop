@@ -6,12 +6,13 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"time"
 
-	"github.com/cenkalti/backoff"
+	"github.com/cenkalti/backoff/v4"
 )
 
 // getUserProfile returns the user profile from the Whoop API
@@ -116,6 +117,7 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authT
 	bo.InitialInterval = 500 * time.Millisecond
 	bo.Multiplier = 1.5
 	bo.RandomizationFactor = 0.5
+	bo.MaxElapsedTime = (2 * time.Minute)
 
 	for continueLoop {
 
@@ -135,17 +137,21 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authT
 		// Reset nextLoopUrl
 		nextLoopUrl = ""
 
-		err = backoff.RetryNotify(func() error {
+		op := func() error {
 
 			response, err := client.Do(req)
 			if err != nil {
+				err = backoff.Permanent(err)
 				LogError(err)
 				return err
 			}
 			defer response.Body.Close()
 
-			if response.StatusCode != 200 {
-				slog.Error("Error getting sleep records", "Status Code", response.StatusCode)
+			if response.StatusCode > 400 && response.StatusCode <= 404 || response.StatusCode >= 500 {
+				continueLoop = false
+				err = fmt.Errorf("request errors related to authentication or server error. Status code is: %d", response.StatusCode)
+				err = backoff.Permanent(err)
+				return err
 			}
 
 			body, err := io.ReadAll(response.Body)
@@ -157,6 +163,7 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authT
 			var sleep SleepCollection
 			err = json.Unmarshal(body, &sleep)
 			if err != nil {
+				err = backoff.Permanent(err)
 				LogError(err)
 				return err
 			}
@@ -169,12 +176,11 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authT
 				nextLoopUrl = urlWithFilters + "nextToken=" + nextToken
 			}
 
-			return err
+			return nil
 
-		}, bo, func(err error, duration time.Duration) {
-			slog.Info("Too many requests. Error getting sleep records", "Retrying in: ", duration.String())
-		})
+		}
 
+		err = backoff.RetryNotify(op, bo, notification)
 		if err != nil {
 			return nil, err
 		}
@@ -209,6 +215,7 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, au
 	bo.InitialInterval = 500 * time.Millisecond
 	bo.Multiplier = 1.5
 	bo.RandomizationFactor = 0.5
+	bo.MaxElapsedTime = (2 * time.Minute)
 
 	for continueLoop {
 
@@ -228,17 +235,21 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, au
 		// Reset nextLoopUrl
 		nextLoopUrl = ""
 
-		err = backoff.RetryNotify(func() error {
+		op := func() error {
 
 			response, err := client.Do(req)
 			if err != nil {
 				LogError(err)
+				err = backoff.Permanent(err)
 				return err
 			}
 			defer response.Body.Close()
 
-			if response.StatusCode != 200 {
-				slog.Error("Error getting recovery records", "Status Code", response.StatusCode)
+			if response.StatusCode > 400 && response.StatusCode <= 404 || response.StatusCode >= 500 {
+				continueLoop = false
+				err = fmt.Errorf("request errors related to authentication or server error. Status code is: %d", response.StatusCode)
+				err = backoff.Permanent(err)
+				return err
 			}
 
 			body, err := io.ReadAll(response.Body)
@@ -251,6 +262,7 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, au
 			err = json.Unmarshal(body, &recovery)
 			if err != nil {
 				LogError(err)
+				err = backoff.Permanent(err)
 				return err
 			}
 
@@ -263,13 +275,10 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, au
 				nextLoopUrl = urlWithFilters + "nextToken=" + nextToken
 			}
 
-			return err
+			return nil
 
-		}, bo, func(err error, duration time.Duration) {
-
-			slog.Info("Too many requests. Error getting recovery records", "Retrying in: ", duration.String())
-		})
-
+		}
+		err = backoff.RetryNotify(op, bo, notification)
 		if err != nil {
 			return nil, err
 		}
@@ -304,6 +313,7 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, aut
 	bo.InitialInterval = 500 * time.Millisecond
 	bo.Multiplier = 1.5
 	bo.RandomizationFactor = 0.5
+	bo.MaxElapsedTime = (2 * time.Minute)
 
 	for continueLoop {
 
@@ -323,22 +333,26 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, aut
 		// Reset nextLoopUrl
 		nextLoopUrl = ""
 
-		err = backoff.RetryNotify(func() error {
-
+		op := func() error {
 			response, err := client.Do(req)
 			if err != nil {
 				LogError(err)
+				err = backoff.Permanent(err)
 				return err
 			}
 			defer response.Body.Close()
 
-			if response.StatusCode != 200 {
-				slog.Error("Error getting workout records", "Status Code", response.StatusCode)
+			if response.StatusCode > 400 && response.StatusCode <= 404 || response.StatusCode >= 500 {
+				continueLoop = false
+				err = fmt.Errorf("request errors related to authentication or server error. Status code is: %d", response.StatusCode)
+				err = backoff.Permanent(err)
+				return err
 			}
 
 			body, err := io.ReadAll(response.Body)
 			if err != nil {
 				slog.Error("unable to read response body from workout collection payload", err)
+				err = backoff.Permanent(err)
 				return err
 			}
 
@@ -346,6 +360,7 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, aut
 			err = json.Unmarshal(body, &workout)
 			if err != nil {
 				LogError(err)
+				err = backoff.Permanent(err)
 				return err
 			}
 
@@ -358,12 +373,10 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, aut
 				nextLoopUrl = urlWithFilters + "nextToken=" + nextToken
 			}
 
-			return err
+			return nil
+		}
 
-		}, bo, func(err error, duration time.Duration) {
-			slog.Info("Too many requests. Error getting workout records", "Retrying in: ", duration.String())
-		})
-
+		err = backoff.RetryNotify(op, bo, notification)
 		if err != nil {
 			return nil, err
 		}
@@ -373,4 +386,15 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, aut
 
 	workout.Records = workoutRecords
 	return &workout, nil
+}
+
+// notification is the default notification logic for the backoff retryer
+func notification(err error, duration time.Duration) {
+
+	if err != nil {
+		slog.Error("error", "msg", err)
+	}
+
+	slog.Info("Error getting sleep records", "Retrying in: ", duration.String())
+
 }

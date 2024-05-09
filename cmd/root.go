@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/karl-cardenas-coding/mywhoop/internal"
 	"github.com/spf13/cobra"
@@ -76,7 +77,7 @@ func init() {
 }
 
 // InitLogger initializes the logger
-func InitLogger() error {
+func InitLogger(cfg *internal.ConfigurationData) error {
 	outputLvl := strings.ToUpper(VerbosityLevel)
 	slog.SetDefault(logger(outputLvl))
 
@@ -102,27 +103,37 @@ func InitLogger() error {
 	}
 
 	// Merge the configuration data from the environment variables
-	Configuration.Credentials = envConfigVars.Credentials
+	cfg.Credentials = envConfigVars.Credentials
 
 	// Prioritize CLI flags
 
 	if Exporter != "" {
-		Configuration.Export.Method = Exporter
+		cfg.Export.Method = Exporter
 	}
 
 	if CredentialsFile != "" {
-		Configuration.Credentials.CredentialsFile = CredentialsFile
+		cfg.Credentials.CredentialsFile = CredentialsFile
 	}
 
 	if outputLvl != "" {
-		Configuration.Debug = outputLvl
+		cfg.Debug = outputLvl
 	}
 
-	if Configuration.Credentials.CredentialsFile == "" {
-		Configuration.Credentials.CredentialsFile = internal.DEFAULT_CREDENTIALS_FILE
+	if cfg.Credentials.CredentialsFile == "" {
+		cfg.Credentials.CredentialsFile = internal.DEFAULT_CREDENTIALS_FILE
 	}
 
 	return nil
+
+}
+
+// changeTimeFormat changes the timestamp of the logger.
+func changeTimeFormat(groups []string, a slog.Attr) slog.Attr {
+
+	if a.Key == slog.TimeKey {
+		a.Value = slog.StringValue(time.Now().Format("2006/01/02 15:04:05"))
+	}
+	return a
 
 }
 
@@ -134,23 +145,28 @@ func logger(verbosity string) *slog.Logger {
 	switch verbosity {
 	case "DEBUG":
 		opts = &slog.HandlerOptions{
-			Level: slog.LevelDebug,
+			Level:       slog.LevelDebug,
+			ReplaceAttr: changeTimeFormat,
 		}
 	case "INFO":
 		opts = &slog.HandlerOptions{
-			Level: slog.LevelInfo,
+			Level:       slog.LevelInfo,
+			ReplaceAttr: changeTimeFormat,
 		}
 	case "WARN":
 		opts = &slog.HandlerOptions{
-			Level: slog.LevelWarn,
+			Level:       slog.LevelWarn,
+			ReplaceAttr: changeTimeFormat,
 		}
 	case "ERROR":
 		opts = &slog.HandlerOptions{
-			Level: slog.LevelError,
+			Level:       slog.LevelError,
+			ReplaceAttr: changeTimeFormat,
 		}
 	default:
 		opts = &slog.HandlerOptions{
-			Level: slog.LevelInfo,
+			Level:       slog.LevelInfo,
+			ReplaceAttr: changeTimeFormat,
 		}
 	}
 
