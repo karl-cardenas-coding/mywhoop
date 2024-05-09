@@ -30,6 +30,51 @@ type UserData struct {
 	LastName  string `json:"last_name"`
 }
 
+func TestGenerateName(t *testing.T) {
+
+	type test struct {
+		testCase int
+		file     FileExport
+		want     string
+	}
+
+	tests := []test{
+		{
+			file: FileExport{
+				FileNamePrefix: "test",
+				FileName:       "user",
+				FileType:       "json",
+			},
+			want: "test_user.json",
+		},
+		{
+			file: FileExport{
+				FileNamePrefix: "",
+				FileName:       "user",
+				FileType:       "json",
+			},
+			want: "user.json",
+		},
+		{
+			file: FileExport{
+				FileNamePrefix: "",
+				FileName:       "",
+				FileType:       "",
+			},
+			want: ".",
+		},
+	}
+
+	for index, tc := range tests {
+		tc.testCase = index
+		got := generateName(tc.file)
+		if got != tc.want {
+			t.Errorf("Test Case #%d - Expected %s error, got: %v", tc.testCase, tc.want, got)
+		}
+	}
+
+}
+
 func TestSetup(t *testing.T) {
 
 	exp := &FileExport{

@@ -39,7 +39,7 @@ func (f *FileExport) Export(data []byte) error {
 	}
 
 	// write the data to a file in the data folder in the current directory
-	err = WriteToFile(*f, data)
+	err = writeToFile(*f, data)
 	if err != nil {
 		slog.Error("unable to write to file", "error", err)
 		return err
@@ -65,7 +65,7 @@ func generateName(cfg FileExport) string {
 }
 
 // WriteToFile writes data to a file
-func WriteToFile(cfg FileExport, data []byte) error {
+func writeToFile(cfg FileExport, data []byte) error {
 
 	// check if the path folder exists
 	if _, err := os.Stat(cfg.FilePath); os.IsNotExist(err) {
