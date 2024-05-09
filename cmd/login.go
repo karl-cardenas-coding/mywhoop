@@ -31,7 +31,7 @@ func login() error {
 		return err
 	}
 
-	_, err = internal.GetToken("token.json")
+	_, err = internal.GetToken(Configuration.Credentials.CredentialsFile, GlobalHTTPClient)
 	if err != nil {
 		slog.Info("Error getting access token: %v", err)
 		return err

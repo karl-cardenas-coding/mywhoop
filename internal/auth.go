@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -87,8 +86,9 @@ func RefreshToken(ctx context.Context, accessToken, refreshToken string, client 
 
 }
 
-// GetToken gets the access token from
-func GetToken(tokenFilePath string) (string, error) {
+// GetToken is a function that triggers an Oauth flow that endusers can use to aquire a Whoop autentication token using their Whoop client and secret ID.
+// The function logic is mostly copied from [INSERT REPO] with some minor modifications.
+func GetToken(tokenFilePath string, client *http.Client) (string, error) {
 
 	// Set accessToken variable
 	accessToken := ""
@@ -102,7 +102,7 @@ func GetToken(tokenFilePath string) (string, error) {
 
 	// Set token file path default
 	if tokenFilePath == "" {
-		tokenFilePath = "token.json"
+		tokenFilePath = DEFAULT_CREDENTIALS_FILE
 	}
 
 	config := &oauth2.Config{
@@ -122,9 +122,9 @@ func GetToken(tokenFilePath string) (string, error) {
 	}
 
 	// Check if token.json file exists
-	if _, err := os.Stat("token.json"); err == nil {
+	if _, err := os.Stat(tokenFilePath); err == nil {
 
-		localToken, err := ReadLocalToken(tokenFilePath)
+		_, localToken, err := VerfyToken(tokenFilePath)
 		if err != nil {
 			slog.Info("Error reading local token: %v", err)
 			return "", err
@@ -148,8 +148,6 @@ func GetToken(tokenFilePath string) (string, error) {
 			}
 
 			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-			client := &http.Client{}
 			resp, err := client.Do(req)
 			if err != nil {
 				return "", err
@@ -159,7 +157,7 @@ func GetToken(tokenFilePath string) (string, error) {
 			var tokenResponse AuthCredentials
 			err = json.NewDecoder(resp.Body).Decode(&tokenResponse)
 			if err != nil {
-				log.Fatal(err)
+				return "", err
 			}
 
 			// Marshal JSON
@@ -171,14 +169,17 @@ func GetToken(tokenFilePath string) (string, error) {
 			}
 
 			// Write token to file
-			writeLocalToken(newToken)
+			err = writeLocalToken(tokenFilePath, newToken)
+			if err != nil {
+				return "", err
+			}
 
 			accessToken = tokenResponse.AccessToken
 
 		} else {
 
 			// Token is valid, use it without refresh
-			fmt.Println("Local token valid till " + localToken.Expiry.String() + ", reused without refresh")
+			slog.Info("Local token valid till " + localToken.Expiry.String() + ", reused without refresh")
 			accessToken = localToken.AccessToken
 
 		}
@@ -186,12 +187,12 @@ func GetToken(tokenFilePath string) (string, error) {
 	} else {
 
 		// If token.json not present, start browser authentication flow
-		fmt.Println("No token.json found, starting OAuth2 flow")
+		slog.Info("No token.json found, starting OAuth2 flow")
 
 		// Redirect user to consent page to ask for permission
 		authUrl := config.AuthCodeURL("stateidentifier", oauth2.AccessTypeOffline)
-		fmt.Println("Visit the URL for the auth dialog: \n\n" + authUrl + "\n")
-		fmt.Println("Enter the response URL: ")
+		slog.Info("Visit the following URL for the auth dialog: \n\n" + authUrl + "\n")
+		slog.Info("Enter the response URL: ")
 
 		// Wait for user to paste in the response URL
 		var respUrl string
@@ -210,60 +211,40 @@ func GetToken(tokenFilePath string) (string, error) {
 		}
 
 		// Write token to file
-		writeLocalToken(accessToken)
+		err = writeLocalToken(tokenFilePath, accessToken)
+		if err != nil {
+			return "", err
+		}
 
 	}
 
-	// Return access token and newline
-	fmt.Println("")
 	return accessToken, nil
 
 }
 
-// Is Token Valid checks if the token is valid
-func IsTokenValid(token *oauth2.Token) bool {
-	return token.Valid()
+// writeLocalToken creates file containing the Whoop authentication token
+func writeLocalToken(filePath string, token *oauth2.Token) error {
 
-}
-
-func ReadLocalToken(filePath string) (oauth2.Token, error) {
-
-	f, err := os.Open(filePath)
+	f, err := os.Create(filePath)
 	if err != nil {
-		return oauth2.Token{}, err
-	}
-	defer f.Close()
-
-	var token oauth2.Token
-	json.NewDecoder(f).Decode(&token)
-
-	return token, nil
-}
-
-func writeLocalToken(token *oauth2.Token) {
-
-	f, err := os.Create("token.json")
-	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer f.Close()
 
 	json, err := json.Marshal(token)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	f.WriteString(string(json))
+	_, err = f.WriteString(string(json))
+	if err != nil {
+		return err
+	}
+
+	return nil
 
 }
 
-type AuthCredentials struct {
-	AccessToken  string `json:"access_token"`
-	ExpiresIn    int    `json:"expires_in"`
-	RefreshToken string `json:"refresh_token"`
-	Scope        string `json:"scope"`
-	TokenType    string `json:"token_type"`
-}
-
+// VerifyToken validates that the file containing the Whoop autentication token is valid.
 func VerfyToken(filePath string) (bool, oauth2.Token, error) {
 
 	// verify the file exists
