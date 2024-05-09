@@ -115,7 +115,7 @@ func server(ctx context.Context) error {
 	// Download the latest data for the past 24 hrs and if FirstRunDownload is enabled, all of the data.
 	g.Go(func() error {
 
-		ok, _, err := verfyToken(cfg.Credentials.CredentialsFile)
+		ok, _, err := internal.VerfyToken(cfg.Credentials.CredentialsFile)
 		if err != nil {
 			slog.Error("unable to verify token", "error", err)
 			return err
@@ -127,7 +127,7 @@ func server(ctx context.Context) error {
 
 		slog.Info("Starting data collection")
 
-		token, err := readTokenFromFile(cfg.Credentials.CredentialsFile)
+		token, err := internal.ReadTokenFromFile(cfg.Credentials.CredentialsFile)
 		if err != nil {
 			slog.Error("unable to read token file", "error", err)
 			return err
@@ -204,7 +204,7 @@ func server(ctx context.Context) error {
 // StartServer starts the long running server.
 func StartServer(ctx context.Context, config internal.ConfigurationData, client *http.Client) error {
 
-	ok, _, err := verfyToken(config.Credentials.CredentialsFile)
+	ok, _, err := internal.VerfyToken(config.Credentials.CredentialsFile)
 	if err != nil {
 		slog.Error("unable to verify token", "error", err)
 		return err
@@ -223,7 +223,7 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 
 		for range ticker.C {
 			slog.Info("Refreshing auth token token")
-			currentToken, err := readTokenFromFile(config.Credentials.CredentialsFile)
+			currentToken, err := internal.ReadTokenFromFile(config.Credentials.CredentialsFile)
 			if err != nil {
 				slog.Error("unable to read token file", "error", err)
 				os.Exit(1)
@@ -270,7 +270,7 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 
 			slog.Info("Starting data collection")
 
-			token, err := readTokenFromFile(config.Credentials.CredentialsFile)
+			token, err := internal.ReadTokenFromFile(config.Credentials.CredentialsFile)
 			if err != nil {
 				slog.Error("unable to read token file", "error", err)
 				os.Exit(1)
@@ -438,43 +438,4 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 	return finalDataRaw, nil
 
-}
-
-func verfyToken(filePath string) (bool, oauth2.Token, error) {
-
-	// verify the file exists
-	_, err := os.Stat(filePath)
-	if err != nil {
-		slog.Error("Token file does not exist", "error", err)
-		return false, oauth2.Token{}, err
-	}
-
-	token, err := readTokenFromFile(filePath)
-	if err != nil {
-		slog.Error("unable to read token file", "error", err)
-		return false, oauth2.Token{}, err
-	}
-
-	if !token.Valid() {
-		internal.LogError(errors.New("invalid or expired auth token"))
-		return false, oauth2.Token{}, nil
-	}
-
-	return true, token, nil
-}
-
-// readTokenFromFile reads a token from a file and returns it as an oauth2.Token
-func readTokenFromFile(filePath string) (oauth2.Token, error) {
-
-	f, err := os.Open(filePath)
-	if err != nil {
-		slog.Error("unable to open token file", "error", err)
-		return oauth2.Token{}, err
-	}
-	defer f.Close()
-
-	var token oauth2.Token
-	json.NewDecoder(f).Decode(&token)
-
-	return token, nil
 }

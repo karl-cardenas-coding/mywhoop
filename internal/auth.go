@@ -6,6 +6,7 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -261,4 +262,43 @@ type AuthCredentials struct {
 	RefreshToken string `json:"refresh_token"`
 	Scope        string `json:"scope"`
 	TokenType    string `json:"token_type"`
+}
+
+func VerfyToken(filePath string) (bool, oauth2.Token, error) {
+
+	// verify the file exists
+	_, err := os.Stat(filePath)
+	if err != nil {
+		slog.Error("Token file does not exist", "error", err)
+		return false, oauth2.Token{}, err
+	}
+
+	token, err := ReadTokenFromFile(filePath)
+	if err != nil {
+		slog.Error("unable to read token file", "error", err)
+		return false, oauth2.Token{}, err
+	}
+
+	if !token.Valid() {
+		LogError(errors.New("invalid or expired auth token"))
+		return false, oauth2.Token{}, nil
+	}
+
+	return true, token, nil
+}
+
+// readTokenFromFile reads a token from a file and returns it as an oauth2.Token
+func ReadTokenFromFile(filePath string) (oauth2.Token, error) {
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		slog.Error("unable to open token file", "error", err)
+		return oauth2.Token{}, err
+	}
+	defer f.Close()
+
+	var token oauth2.Token
+	json.NewDecoder(f).Decode(&token)
+
+	return token, nil
 }

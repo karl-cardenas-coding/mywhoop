@@ -40,7 +40,7 @@ func dump(ctx context.Context) error {
 
 	cfg := Configuration
 
-	ok, token, err := verfyToken(cfg.Credentials.CredentialsFile)
+	ok, token, err := internal.VerfyToken(cfg.Credentials.CredentialsFile)
 	if err != nil {
 		slog.Error("unable to verify token", "error", err)
 		return err
