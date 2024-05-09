@@ -33,7 +33,7 @@ func login() error {
 
 	_, err = internal.GetToken(Configuration.Credentials.CredentialsFile, GlobalHTTPClient)
 	if err != nil {
-		slog.Info("Error getting access token: %v", err)
+		slog.Error("Error getting access token", "msg", err)
 		return err
 	}
 	return nil

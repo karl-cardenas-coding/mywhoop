@@ -44,6 +44,7 @@ func RefreshToken(ctx context.Context, accessToken, refreshToken string, client 
 	}
 
 	var payloadString strings.Builder
+	var token oauth2.Token
 	fmt.Fprintf(&payloadString, "grant_type=refresh_token&refresh_token=%s&client_id=%s&client_secret=%s", refreshToken, clientID, clientSecret)
 	payloadString.WriteString("&scope=offline read:profile read:recovery read:cycles read:workout read:sleep read:body_measurement")
 
@@ -61,6 +62,11 @@ func RefreshToken(ctx context.Context, accessToken, refreshToken string, client 
 	if err != nil {
 		return oauth2.Token{}, err
 	}
+
+	if res == nil {
+		return oauth2.Token{}, errors.New("empty response body from HTTP requests")
+	}
+
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
@@ -75,7 +81,7 @@ func RefreshToken(ctx context.Context, accessToken, refreshToken string, client 
 		return oauth2.Token{}, err
 	}
 
-	token := oauth2.Token{
+	token = oauth2.Token{
 		AccessToken:  auth.AccessToken,
 		TokenType:    auth.TokenType,
 		RefreshToken: auth.RefreshToken,
@@ -126,7 +132,7 @@ func GetToken(tokenFilePath string, client *http.Client) (string, error) {
 
 		_, localToken, err := VerfyToken(tokenFilePath)
 		if err != nil {
-			slog.Info("Error reading local token: %v", err)
+			slog.Error("Error reading local token", "msg", err)
 			return "", err
 		}
 
@@ -152,6 +158,12 @@ func GetToken(tokenFilePath string, client *http.Client) (string, error) {
 			if err != nil {
 				return "", err
 			}
+
+			if resp == nil {
+				return "", errors.New("empty response body from HTTP requests")
+			}
+
+			defer resp.Body.Close()
 
 			// Decode JSON
 			var tokenResponse AuthCredentials
@@ -201,8 +213,17 @@ func GetToken(tokenFilePath string, client *http.Client) (string, error) {
 		}
 
 		// Get response code from response URL string
-		parseUrl, _ := url.Parse(respUrl)
-		code := parseUrl.Query().Get("code")
+		parseUrl, err := url.Parse(respUrl)
+		if err != nil {
+			return "", errors.New("unable to parse URL value provided")
+		}
+
+		urlQuery := parseUrl.Query()
+		if urlQuery == nil {
+			return "", errors.New("unable to determine query parameters")
+		}
+
+		code := urlQuery.Get("code")
 
 		// Exchange response code for token
 		accessToken, err := config.Exchange(context.Background(), code)
@@ -279,7 +300,10 @@ func ReadTokenFromFile(filePath string) (oauth2.Token, error) {
 	defer f.Close()
 
 	var token oauth2.Token
-	json.NewDecoder(f).Decode(&token)
+	err = json.NewDecoder(f).Decode(&token)
+	if err != nil {
+		return oauth2.Token{}, err
+	}
 
 	return token, nil
 }

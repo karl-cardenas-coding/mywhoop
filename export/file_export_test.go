@@ -184,15 +184,19 @@ func TestExportDataError(t *testing.T) {
 func cleanUp() {
 	currentDir, err := os.Getwd()
 	if err != nil {
-		slog.Error("Failed to remove directory", err)
+		slog.Error("Failed to remove directory", "msg", err)
 		os.Exit(1)
 	}
 
 	folderPath := path.Join(currentDir, "tests")
 	err = os.RemoveAll(folderPath)
 	if err != nil {
-		slog.Error("Failed to remove directory", err)
-		exec.Command("rm -rf export/tests/").Run()
+		slog.Error("Failed to remove directory", "msg", err)
+		err := exec.Command("rm -rf export/tests/").Run()
+		if err != nil {
+			slog.Error("Failed to to issue remove command", "msg", err)
+			os.Exit(1)
+		}
 		os.Exit(1)
 	}
 }

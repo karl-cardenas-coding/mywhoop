@@ -33,7 +33,7 @@ var VersionCmd = &cobra.Command{
 		slog.Info(version)
 		_, message, err := checkForNewRelease(GlobalHTTPClient, VersionString, UserAgent, url)
 		if err != nil {
-			slog.Error("Error checking for new release", err)
+			slog.Error("Error checking for new release", "msg", err)
 			return err
 		}
 		slog.Info(message)
@@ -51,7 +51,7 @@ func checkForNewRelease(client *http.Client, currentVersion, useragent, url stri
 	slog.Info("Checking for new releases")
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		slog.Error("Error creating new HTTP request", err)
+		slog.Error("Error creating new HTTP request", "msg", err)
 		return output, message, err
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
@@ -72,19 +72,19 @@ func checkForNewRelease(client *http.Client, currentVersion, useragent, url stri
 		}
 		// Unmarshal the JSON to the Github Release strcut
 		if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-			slog.Error("Error decoding JSON", err)
+			slog.Error("Error decoding JSON", "msg", err)
 			return output, message, err
 		}
 
 		cVersion, err := version.NewVersion(currentVersion)
 		if err != nil {
-			slog.Error("Error creating current version", err)
+			slog.Error("Error creating current version", "msg", err)
 			return output, message, err
 		}
 
 		latestVersion, err := version.NewVersion(release.TagName[1:])
 		if err != nil {
-			slog.Error("Error creating new version", err)
+			slog.Error("Error creating new version", "msg", err)
 			return output, message, err
 		}
 

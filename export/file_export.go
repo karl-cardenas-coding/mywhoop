@@ -22,7 +22,7 @@ func (f *FileExport) Export(data []byte) error {
 
 	currentDir, err := os.Getwd()
 	if err != nil {
-		slog.Error("unable to get current directory", err)
+		slog.Error("unable to get current directory", "error", err)
 		return err
 	}
 

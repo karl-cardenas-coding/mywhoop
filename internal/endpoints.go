@@ -6,6 +6,7 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -36,6 +37,11 @@ func (u User) GetUserProfileData(ctx context.Context, client *http.Client, authT
 		LogError(err)
 		return nil, err
 	}
+
+	if response == nil {
+		return nil, errors.New("the HTTP request for user profile data returned an empty response struct")
+	}
+
 	defer response.Body.Close()
 
 	body, err := io.ReadAll(response.Body)
@@ -74,18 +80,22 @@ func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, auth
 		LogError(err)
 		return nil, err
 	}
+	if response == nil {
+		return nil, errors.New("the HTTP request for user profile data returned an empty response struct")
+	}
+
 	defer response.Body.Close()
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		slog.Error("unable to read response body from user mesurements payload", err)
+		slog.Error("unable to read response body from user mesurements payload", "msg", err)
 		return nil, err
 	}
 
 	var user UserMesaurements
 	err = json.Unmarshal(body, &user)
 	if err != nil {
-		slog.Error("unable to unmarshal data from Whoop API user mesaurement payload", err)
+		slog.Error("unable to unmarshal data from Whoop API user mesaurement payload", "msg", err)
 		return nil, err
 	}
 
@@ -145,6 +155,10 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authT
 				LogError(err)
 				return err
 			}
+			if response == nil {
+				return errors.New("the HTTP request for user profile data returned an empty response struct")
+			}
+
 			defer response.Body.Close()
 
 			if response.StatusCode > 400 && response.StatusCode <= 404 || response.StatusCode >= 500 {
@@ -156,7 +170,7 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authT
 
 			body, err := io.ReadAll(response.Body)
 			if err != nil {
-				slog.Error("unable to read response body from sleep collection payload", err)
+				slog.Error("unable to read response body from sleep collection payload", "msg", err)
 				return err
 			}
 
@@ -243,6 +257,10 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, au
 				err = backoff.Permanent(err)
 				return err
 			}
+			if response == nil {
+				return errors.New("the HTTP request for user profile data returned an empty response struct")
+			}
+
 			defer response.Body.Close()
 
 			if response.StatusCode > 400 && response.StatusCode <= 404 || response.StatusCode >= 500 {
@@ -254,7 +272,7 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, au
 
 			body, err := io.ReadAll(response.Body)
 			if err != nil {
-				slog.Error("unable to read response body from sleep collection payload", err)
+				slog.Error("unable to read response body from sleep collection payload", "msg", err)
 				return err
 			}
 
@@ -340,6 +358,11 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, aut
 				err = backoff.Permanent(err)
 				return err
 			}
+
+			if response == nil {
+				return errors.New("the HTTP request for user profile data returned an empty response struct")
+			}
+
 			defer response.Body.Close()
 
 			if response.StatusCode > 400 && response.StatusCode <= 404 || response.StatusCode >= 500 {
@@ -351,7 +374,7 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, aut
 
 			body, err := io.ReadAll(response.Body)
 			if err != nil {
-				slog.Error("unable to read response body from workout collection payload", err)
+				slog.Error("unable to read response body from workout collection payload", "msg", err)
 				err = backoff.Permanent(err)
 				return err
 			}
