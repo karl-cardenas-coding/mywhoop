@@ -22,6 +22,16 @@ The following environment variables are available for use with MyWhoop.
 | `WHOOP_CLIENT_SECRET` | The client secret for your Whoop application. | Yes |
 | `WHOOP_CREDENTIALS_FILE` | The file path to the Whoop credentials file that contains a valid Whoop authentication token. Default value is `token.json`. | No | 
 
+
+### Notification  Variables
+
+Depending on the notification service you use, you may need to provide additional environment variables.
+
+| Variable | Description | Required |
+|---|----|---|
+| `NOTIFICATION_NTFY_AUTH_TOKEN`| The token for the [Ntfy](https://docs.ntfy.sh/) service. Required if the ntfy subscription requires a token. | No |
+| `NOTIFICATION_NTFY_PASSWORD` | The password for the ntfy subscription if username/password authentication is used. Required if the ntfy subscription requires a username and password. | No |
+
 ### Order Of Precendence
 
 The order of precendence is as follows.
