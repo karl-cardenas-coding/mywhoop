@@ -7,10 +7,14 @@ A tool for gathering and retaining your own Whoop data.
 
 
 
+## Overview
+
+MyWhoop was created to help faciliate ownership of your data and allow you to interfact with your own data in different ways than what Whoop may offer. 
+
 
 ## Environment Variables
 
-The following environment variables are available.
+The following environment variables are available for use with MyWhoop.
 
 | Variable | Description | Required |
 |---|----|---|
