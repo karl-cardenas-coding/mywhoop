@@ -12,9 +12,7 @@ license:
 
 opensource:
 	@echo "Checking for open source licenses"
-	~/go/bin/go-licenses report github.com/karl-cardenas-coding/mywhoop--template=documentation/open-source.tpl > documentation/open-source.md 
-
-
+	~/go/bin/go-licenses report github.com/karl-cardenas-coding/mywhoop --template=documentation/open-source.tpl > documentation/open-source.md 
 
 tests: ## Run tests
 	@echo "Running tests"
