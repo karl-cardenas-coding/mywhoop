@@ -27,6 +27,7 @@ type User struct {
 	SleepCollection    SleepCollection    `json:"sleep_collection"`
 	RecoveryCollection RecoveryCollection `json:"recovery_collection"`
 	WorkoutCollection  WorkoutCollection  `json:"workout_collection"`
+	CycleCollection    CycleCollection    `json:"cycle_collection"`
 }
 
 type UserData struct {
@@ -83,9 +84,9 @@ type SleepCollectionRecords struct {
 	Score          Score     `json:"score"`
 }
 
-type Cycle struct {
-	CycleRecords []CycleRecords `json:"records"`
-	NextToken    string         `json:"next_token"`
+type CycleCollection struct {
+	Records   []CycleRecords `json:"records"`
+	NextToken string         `json:"next_token"`
 }
 type CycleScore struct {
 	Strain           float64 `json:"strain"`

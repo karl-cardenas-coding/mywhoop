@@ -22,8 +22,8 @@ import (
 // getEndpoint returns the OAuth2 endpoint for the Whoop API
 func getEndpoint() oauth2.Endpoint {
 	return oauth2.Endpoint{
-		AuthURL:  "https://api.prod.whoop.com/oauth/oauth2/auth",
-		TokenURL: "https://api.prod.whoop.com/oauth/oauth2/token",
+		AuthURL:  DEFAULT_ACCESS_TOKEN_URL,
+		TokenURL: DEFAULT_AUTHENTICATION_URL,
 	}
 }
 
@@ -31,7 +31,6 @@ func getEndpoint() oauth2.Endpoint {
 func RefreshToken(ctx context.Context, accessToken, refreshToken string, client *http.Client) (oauth2.Token, error) {
 
 	const (
-		url    string = "https://api.prod.whoop.com/oauth/oauth2/token"
 		method string = "POST"
 	)
 
@@ -50,7 +49,7 @@ func RefreshToken(ctx context.Context, accessToken, refreshToken string, client 
 
 	payload := strings.NewReader(payloadString.String())
 
-	req, err := http.NewRequest(method, url, payload)
+	req, err := http.NewRequest(method, DEFAULT_ACCESS_TOKEN_URL, payload)
 	if err != nil {
 		return oauth2.Token{}, err
 	}
@@ -93,7 +92,7 @@ func RefreshToken(ctx context.Context, accessToken, refreshToken string, client 
 }
 
 // GetToken is a function that triggers an Oauth flow that endusers can use to aquire a Whoop autentication token using their Whoop client and secret ID.
-// The function logic is mostly copied from [INSERT REPO] with some minor modifications.
+// The function logic is mostly copied from https://github.com/marekq/go-whoop with some minor modifications.
 func GetToken(tokenFilePath string, client *http.Client) (string, error) {
 
 	// Set accessToken variable
@@ -114,7 +113,7 @@ func GetToken(tokenFilePath string, client *http.Client) (string, error) {
 	config := &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
-		RedirectURL:  "http://localhost:8080/oauth/redirect",
+		RedirectURL:  DEFAULT_REDIRECT_URL,
 		Scopes: []string{
 			"offline",
 			"read:recovery",
@@ -148,7 +147,7 @@ func GetToken(tokenFilePath string, client *http.Client) (string, error) {
 			form.Add("scope", "offline")
 
 			body := strings.NewReader(form.Encode())
-			req, err := http.NewRequest("POST", AuthURL, body)
+			req, err := http.NewRequest("POST", DEFAULT_ACCESS_TOKEN_URL, body)
 			if err != nil {
 				return "", err
 			}

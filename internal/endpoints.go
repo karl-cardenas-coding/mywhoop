@@ -61,6 +61,7 @@ func (u User) GetUserProfileData(ctx context.Context, client *http.Client, authT
 
 }
 
+// GetUserMeasurements returns the user measurements provided by the user from the Whoop API
 func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, authToken string) (*UserMesaurements, error) {
 	const (
 		url    = "https://api.prod.whoop.com/developer/v1/user/measurement/body"
@@ -123,11 +124,7 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authT
 		urlWithFilters = url + filters
 	}
 
-	bo := backoff.NewExponentialBackOff()
-	bo.InitialInterval = 500 * time.Millisecond
-	bo.Multiplier = 1.5
-	bo.RandomizationFactor = 0.5
-	bo.MaxElapsedTime = (2 * time.Minute)
+	bo := generateBackoff()
 
 	for continueLoop {
 
@@ -225,11 +222,7 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, au
 		urlWithFilters = url + filters
 	}
 
-	bo := backoff.NewExponentialBackOff()
-	bo.InitialInterval = 500 * time.Millisecond
-	bo.Multiplier = 1.5
-	bo.RandomizationFactor = 0.5
-	bo.MaxElapsedTime = (2 * time.Minute)
+	bo := generateBackoff()
 
 	for continueLoop {
 
@@ -258,7 +251,7 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, au
 				return err
 			}
 			if response == nil {
-				return errors.New("the HTTP request for user profile data returned an empty response struct")
+				return errors.New("the HTTP request for recovery data returned an empty response struct")
 			}
 
 			defer response.Body.Close()
@@ -272,7 +265,7 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, au
 
 			body, err := io.ReadAll(response.Body)
 			if err != nil {
-				slog.Error("unable to read response body from sleep collection payload", "msg", err)
+				slog.Error("unable to read response body from recovery collection payload", "msg", err)
 				return err
 			}
 
@@ -327,11 +320,7 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, aut
 		urlWithFilters = url + filters
 	}
 
-	bo := backoff.NewExponentialBackOff()
-	bo.InitialInterval = 500 * time.Millisecond
-	bo.Multiplier = 1.5
-	bo.RandomizationFactor = 0.5
-	bo.MaxElapsedTime = (2 * time.Minute)
+	bo := generateBackoff()
 
 	for continueLoop {
 
@@ -411,6 +400,102 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, aut
 	return &workout, nil
 }
 
+func (u User) GetCycleCollection(ctx context.Context, client *http.Client, authToken string, filters string) (*CycleCollection, error) {
+	const (
+		url    = "https://api.prod.whoop.com/developer/v1/cycle?"
+		method = "GET"
+	)
+
+	var cycle CycleCollection
+	var cycleRecords []CycleRecords
+	var continueLoop = true
+	var nextLoopUrl string
+
+	urlWithFilters := url
+
+	if filters != "" {
+		urlWithFilters = url + filters
+	}
+
+	bo := generateBackoff()
+
+	for continueLoop {
+
+		slog.Info(("Requesting cycle collection from Whoop API"))
+		slog.Debug("URL", slog.String("URL", urlWithFilters))
+
+		if nextLoopUrl == "" {
+			nextLoopUrl = urlWithFilters
+		}
+		req, err := http.NewRequestWithContext(ctx, method, nextLoopUrl, nil)
+		if err != nil {
+			LogError(err)
+			return nil, err
+		}
+		authHeader := "Bearer " + authToken
+		req.Header.Add("Authorization", authHeader)
+		// Reset nextLoopUrl
+		nextLoopUrl = ""
+
+		op := func() error {
+			response, err := client.Do(req)
+			if err != nil {
+				LogError(err)
+				err = backoff.Permanent(err)
+				return err
+			}
+
+			if response == nil {
+				return errors.New("the HTTP request for cycle data returned an empty response struct")
+			}
+
+			defer response.Body.Close()
+
+			if response.StatusCode > 400 && response.StatusCode <= 404 || response.StatusCode >= 500 {
+				continueLoop = false
+				err = backoff.Permanent(err)
+				return err
+			}
+
+			body, err := io.ReadAll(response.Body)
+			if err != nil {
+				slog.Error("unable to read response body from cycle collection payload", "msg", err)
+				err = backoff.Permanent(err)
+				return err
+			}
+
+			var currentCycle CycleCollection
+			err = json.Unmarshal(body, &currentCycle)
+			if err != nil {
+				LogError(err)
+				err = backoff.Permanent(err)
+				return err
+			}
+
+			cycleRecords = append(cycleRecords, currentCycle.Records...)
+			nextToken := currentCycle.NextToken
+
+			if nextToken == "" {
+				continueLoop = false
+			} else {
+				nextLoopUrl = urlWithFilters + "nextToken=" + nextToken
+			}
+
+			return nil
+		}
+
+		err = backoff.RetryNotify(op, bo, notification)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	slog.Debug("Cycle Records", slog.Any("Cycle Records", cycleRecords))
+
+	cycle.Records = cycleRecords
+	return &cycle, nil
+}
+
 // notification is the default notification logic for the backoff retryer
 func notification(err error, duration time.Duration) {
 
@@ -420,4 +505,16 @@ func notification(err error, duration time.Duration) {
 
 	slog.Info("Error getting sleep records", "Retrying in: ", duration.String())
 
+}
+
+// generateBackoff returns a backoff exponential backoff struct
+func generateBackoff() *backoff.ExponentialBackOff {
+
+	bo := backoff.NewExponentialBackOff()
+	bo.InitialInterval = DEFAULT_RETRY_INITIAL_INTERVAL
+	bo.Multiplier = DEFAULT_RETRY_MULTIPLIER
+	bo.RandomizationFactor = DEFAULT_RETRY_RANDOMIZATION
+	bo.MaxElapsedTime = DEFAULT_RETRY_MAX_ELAPSED_TIME
+
+	return bo
 }

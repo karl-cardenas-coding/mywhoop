@@ -18,8 +18,6 @@ import (
 )
 
 var (
-	// VersionString is the version of the CLI
-	VersionString string = "0.0.0"
 	// Credentials file containing a Whoop authentication token. Can also be set through ENV variable or configuration file.
 	CredentialsFile string
 	// cfgFile is the myWhoop configuration file
@@ -34,6 +32,8 @@ var (
 	UserAgent string
 	// Debug is a flag to enable debug output
 	VerbosityLevel string
+	// VersionString is the version of the CLI
+	VersionString string = "0.0.0"
 )
 
 // rootCmd represents the base command when called without any subcommands

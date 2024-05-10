@@ -86,6 +86,14 @@ func dump(ctx context.Context) error {
 
 	user.WorkoutCollection = *workout
 
+	cycle, err := user.GetCycleCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
+	if err != nil {
+		internal.LogError(err)
+		return err
+	}
+
+	user.CycleCollection = *cycle
+
 	finalDataRaw, err := json.MarshalIndent(user, "", "  ")
 	if err != nil {
 		internal.LogError(err)

@@ -383,6 +383,14 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 		}
 
 		user.WorkoutCollection = *workout
+
+		cycle, err := user.GetCycleCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
+		if err != nil {
+			internal.LogError(err)
+			return []byte{}, err
+		}
+
+		user.CycleCollection = *cycle
 	}
 
 	if *firstDownload {
@@ -426,6 +434,15 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 		}
 
 		user.WorkoutCollection = *workout
+
+		cycle, err := user.GetCycleCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
+		if err != nil {
+			internal.LogError(err)
+			return []byte{}, err
+		}
+
+		user.CycleCollection = *cycle
+
 		// Set to false so that the entire data is not downloaded again
 		*firstDownload = false
 	}
