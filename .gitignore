@@ -10,6 +10,7 @@
 
 # Test binary, built with `go test -c`
 *.test
+*.out
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
@@ -19,3 +20,21 @@
 
 # Go workspace file
 go.work
+
+# Environment variables file
+.env
+
+# Credentials
+
+token.json
+
+# Whoop date folder
+data/
+
+internal/data/
+
+tests/data/
+
+# Binary
+mywhoop
+mywhoop*
