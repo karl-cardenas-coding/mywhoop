@@ -24,6 +24,9 @@ go.work
 # Environment variables file
 .env
 
+# VS Code 
+.DS_Store
+
 # Credentials
 
 token.json

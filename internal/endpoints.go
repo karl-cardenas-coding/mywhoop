@@ -24,7 +24,7 @@ func (u User) GetUserProfileData(ctx context.Context, client *http.Client, authT
 		method = "GET"
 	)
 
-	req, err := http.NewRequestWithContext(ctx, method, url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), method, url, nil)
 	if err != nil {
 		LogError(err)
 		return nil, err
@@ -68,7 +68,7 @@ func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, auth
 		method = "GET"
 	)
 
-	req, err := http.NewRequestWithContext(ctx, method, url, nil)
+	req, err := http.NewRequestWithContext(context.Background(), method, url, nil)
 	if err != nil {
 		LogError(err)
 		return nil, err
@@ -134,7 +134,7 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authT
 		if nextLoopUrl == "" {
 			nextLoopUrl = urlWithFilters
 		}
-		req, err := http.NewRequestWithContext(ctx, method, nextLoopUrl, nil)
+		req, err := http.NewRequestWithContext(context.Background(), method, nextLoopUrl, nil)
 		if err != nil {
 			LogError(err)
 			return nil, err
@@ -232,7 +232,7 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, au
 		if nextLoopUrl == "" {
 			nextLoopUrl = urlWithFilters
 		}
-		req, err := http.NewRequestWithContext(ctx, method, nextLoopUrl, nil)
+		req, err := http.NewRequestWithContext(context.Background(), method, nextLoopUrl, nil)
 		if err != nil {
 			LogError(err)
 			return nil, err
@@ -330,7 +330,7 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, aut
 		if nextLoopUrl == "" {
 			nextLoopUrl = urlWithFilters
 		}
-		req, err := http.NewRequestWithContext(ctx, method, nextLoopUrl, nil)
+		req, err := http.NewRequestWithContext(context.Background(), method, nextLoopUrl, nil)
 		if err != nil {
 			LogError(err)
 			return nil, err
@@ -427,7 +427,7 @@ func (u User) GetCycleCollection(ctx context.Context, client *http.Client, authT
 		if nextLoopUrl == "" {
 			nextLoopUrl = urlWithFilters
 		}
-		req, err := http.NewRequestWithContext(ctx, method, nextLoopUrl, nil)
+		req, err := http.NewRequestWithContext(context.Background(), method, nextLoopUrl, nil)
 		if err != nil {
 			LogError(err)
 			return nil, err
