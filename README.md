@@ -5,7 +5,18 @@
 
 A tool for gathering and retaining your own Whoop data. 
 
+<p align="center">
+  <img src="/static/images/logo.webp" alt="drawing" width="400"/>
+</p>
 
+
+
+## Get Started
+
+
+```shell
+nohup ./mywhoop_linux_amd64 server --first-run-download -d DEBUG > output.log 2>&1 &
+```
 
 ## Overview
 

@@ -8,6 +8,7 @@ func (n *Ntfy) SetUp() error {
 
 // Send sends a notification using the Ntfy service with the provided data.
 func (n *Ntfy) Send(data []byte) error {
+
 	// Send the notification
 	return nil
 }
