@@ -1,7 +1,13 @@
 package notifications
 
 import (
+	"bytes"
+	"context"
+	"encoding/base64"
 	"errors"
+	"io"
+	"log/slog"
+	"net/http"
 	"os"
 )
 
@@ -26,7 +32,47 @@ func (n *Ntfy) SetUp() error {
 // Send sends a notification using the Ntfy service with the provided data.
 func (n *Ntfy) Send(data []byte) error {
 
-	// Send the notification
+	// convert data to io.Reader
+	payload := bytes.NewReader(data)
+
+	req, err := http.NewRequestWithContext(context.Background(), "POST", n.ServerEndpoint+"/"+n.SubscriptionID, payload)
+	if err != nil {
+		return err
+	}
+
+	if n.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+n.AccessToken)
+	}
+
+	if n.UserName != "" && n.Password != "" {
+		encoded := base64.StdEncoding.EncodeToString([]byte(n.UserName + ":" + n.Password))
+		req.Header.Set("Authorization", "Basic "+encoded)
+	}
+
+	response, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if response != nil {
+
+		defer response.Body.Close()
+
+		body, err := io.ReadAll(response.Body)
+		if err != nil {
+			slog.Info("unable to read response body", "error", err)
+			return err
+		}
+
+		if response.StatusCode != http.StatusOK {
+			slog.Info("error sending notification", "status", response.Status, "body", string(body))
+			return errors.New("error sending notification")
+		}
+
+		slog.Info("notification sent", "status", response.Status)
+
+	}
+
 	return nil
 }
 

@@ -166,7 +166,7 @@ func externalNotificaton(notificationMethod notifications.Notification, msg []by
 		return
 	}
 
-	err := notificationMethod.Send([]byte("unable to fetch data"))
+	err := notificationMethod.Send(msg)
 	if err != nil {
 		internal.LogError(err)
 		slog.Info("unable to send external notification", "error", err)
