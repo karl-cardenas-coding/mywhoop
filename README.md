@@ -1,7 +1,7 @@
 
 [![Go version](https://img.shields.io/github/go-mod/go-version/karl-cardenas-coding/go-lambda-cleanup)](https://golang.org/dl/)
 
-# MyWhooop 
+# MyWhoop 
 
 A tool for gathering and retaining your own Whoop data. 
 

@@ -10,6 +10,10 @@ import (
 
 func TestExtractEnvVariablesError(t *testing.T) {
 
+	os.Unsetenv("WHOOP_CLIENT_ID")
+	os.Unsetenv("WHOOP_CLIENT_SECRET")
+	os.Unsetenv("WHOOP_CREDENTIALS_FILE")
+
 	expectedMsg := "the required env variables WHOOP_CLIENT_ID and WHOOP_CLIENT_ID are not set"
 	_, err := ExtractEnvVariables()
 	if err == nil {

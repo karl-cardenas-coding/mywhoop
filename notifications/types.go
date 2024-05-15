@@ -2,7 +2,7 @@ package notifications
 
 type Notification interface {
 	SetUp() error
-	Send(data []byte) error
+	Send(data []byte, emoji string) error
 }
 
 // Ntfy is a struct that contains the configuration for the Ntfy notification service.

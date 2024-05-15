@@ -73,7 +73,7 @@ func dump(ctx context.Context) error {
 	data, err := user.GetUserProfileData(ctx, GlobalHTTPClient, token.AccessToken)
 	if err != nil {
 		internal.LogError(err)
-		externalNotificaton(notificationMethod, []byte(err.Error()))
+		notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
 		return err
 	}
 
@@ -82,7 +82,7 @@ func dump(ctx context.Context) error {
 	measurements, err := user.GetUserMeasurements(ctx, GlobalHTTPClient, token.AccessToken)
 	if err != nil {
 		internal.LogError(err)
-		externalNotificaton(notificationMethod, []byte(err.Error()))
+		notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
 		return err
 	}
 
@@ -91,7 +91,7 @@ func dump(ctx context.Context) error {
 	sleep, err := user.GetSleepCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
 	if err != nil {
 		internal.LogError(err)
-		externalNotificaton(notificationMethod, []byte(err.Error()))
+		notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
 		return err
 	}
 
@@ -100,7 +100,7 @@ func dump(ctx context.Context) error {
 	recovery, err := user.GetRecoveryCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
 	if err != nil {
 		internal.LogError(err)
-		externalNotificaton(notificationMethod, []byte(err.Error()))
+		notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
 		return err
 	}
 
@@ -109,7 +109,7 @@ func dump(ctx context.Context) error {
 	workout, err := user.GetWorkoutCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
 	if err != nil {
 		internal.LogError(err)
-		externalNotificaton(notificationMethod, []byte(err.Error()))
+		notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
 		return err
 	}
 
@@ -118,7 +118,7 @@ func dump(ctx context.Context) error {
 	cycle, err := user.GetCycleCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
 	if err != nil {
 		internal.LogError(err)
-		externalNotificaton(notificationMethod, []byte(err.Error()))
+		notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
 		return err
 	}
 
@@ -127,7 +127,7 @@ func dump(ctx context.Context) error {
 	finalDataRaw, err := json.MarshalIndent(user, "", "  ")
 	if err != nil {
 		internal.LogError(err)
-		externalNotificaton(notificationMethod, []byte(err.Error()))
+		notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
 		return err
 	}
 
@@ -142,33 +142,21 @@ func dump(ctx context.Context) error {
 	case "file":
 		err = fileExp.Export(finalDataRaw)
 		if err != nil {
-			externalNotificaton(notificationMethod, []byte(err.Error()))
+			notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
 			return err
 		}
+		slog.Info("Data exported successfully", "file", fileExp.FileName)
 	default:
 		err = fileExp.Export(finalDataRaw)
 		if err != nil {
-			externalNotificaton(notificationMethod, []byte(err.Error()))
+			notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
 			return err
 		}
 
 	}
+	slog.Info("All Whoop data downloaded successfully")
+	notifications.EternalNotificaton(notificationMethod, []byte("All Whoop data downloaded successfully"), "tada")
 
 	return nil
 
-}
-
-// externalNotificaton sends a notification to the user using the specified notification method.
-func externalNotificaton(notificationMethod notifications.Notification, msg []byte) {
-
-	if notificationMethod == nil {
-		// no notification method specified, do nothing
-		return
-	}
-
-	err := notificationMethod.Send(msg)
-	if err != nil {
-		internal.LogError(err)
-		slog.Info("unable to send external notification", "error", err)
-	}
 }

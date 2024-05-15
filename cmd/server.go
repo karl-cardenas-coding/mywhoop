@@ -17,6 +17,7 @@ import (
 
 	"github.com/karl-cardenas-coding/mywhoop/export"
 	"github.com/karl-cardenas-coding/mywhoop/internal"
+	"github.com/karl-cardenas-coding/mywhoop/notifications"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"golang.org/x/sync/errgroup"
@@ -110,6 +111,25 @@ func server(ctx context.Context) error {
 		slog.Error("unknown exporter", "exporter", cfg.Export.Method)
 	}
 
+	ntfy := &notifications.Ntfy{
+		ServerEndpoint: cfg.Notification.Ntfy.ServerEndpoint,
+		SubscriptionID: cfg.Notification.Ntfy.SubscriptionID,
+		UserName:       cfg.Notification.Ntfy.UserName,
+	}
+	var notificationMethod notifications.Notification
+
+	switch Configuration.Notification.Method {
+	case "ntfy":
+		err = ntfy.SetUp()
+		if err != nil {
+			return err
+		}
+		slog.Info("ntfy notification method enabled")
+		notificationMethod = ntfy
+	default:
+		slog.Info("no notification method specified. Defaulting to stdout.")
+	}
+
 	g, ctx := errgroup.WithContext(ctx)
 
 	// Download the latest data for the past 24 hrs and if FirstRunDownload is enabled, all of the data.
@@ -117,11 +137,13 @@ func server(ctx context.Context) error {
 
 		ok, _, err := internal.VerfyToken(cfg.Credentials.CredentialsFile)
 		if err != nil {
-			slog.Error("unable to verify token", "error", err)
+			slog.Error("unable to verify authentication token", "error", err)
+			notifications.EternalNotificaton(notificationMethod, []byte(fmt.Sprintf("unable to verify authentication token: %s", err)), "rotating_light")
 			return err
 		}
 
 		if !ok {
+			notifications.EternalNotificaton(notificationMethod, []byte("auth token is invalid or expired"), "rotating_light")
 			return errors.New("auth token is invalid or expired")
 		}
 
@@ -130,6 +152,7 @@ func server(ctx context.Context) error {
 		token, err := internal.ReadTokenFromFile(cfg.Credentials.CredentialsFile)
 		if err != nil {
 			slog.Error("unable to read token file", "error", err)
+			notifications.EternalNotificaton(notificationMethod, []byte(fmt.Sprintf("unable to read the authentication token from file. Additional error message: \n: %s", err)), "rotating_light")
 			return err
 		}
 
@@ -138,17 +161,20 @@ func server(ctx context.Context) error {
 		finalDataRaw, err := getData(ctx, user, GlobalHTTPClient, token, &cfg.Server.FirstRunDownload)
 		if err != nil {
 			slog.Error("unable to get data", "error", err)
+			notifications.EternalNotificaton(notificationMethod, []byte(fmt.Sprintf("unable to get data from Whoop API. Additional error message: \n: %s", err)), "rotating_light")
 			return err
 		}
 
 		// Setup the exporters
 		err = manageExporters(&cfg, finalDataRaw)
 		if err != nil {
-			slog.Error("unable to manage exporters", "error", err)
+			slog.Error("An error occured with the data exporter.", "error", err)
+			notifications.EternalNotificaton(notificationMethod, []byte(fmt.Sprintf("An error occured with the data exporter. Additional context below: \n %s", err)), "rotating_light")
 			return err
 		}
 
 		slog.Info("Data collection complete")
+		notifications.EternalNotificaton(notificationMethod, []byte("Initial data collection complete."), "tada")
 
 		return nil
 
@@ -160,14 +186,16 @@ func server(ctx context.Context) error {
 	// 	os.Exit(0)
 	// }
 	if err := g.Wait(); err != nil {
+		notifications.EternalNotificaton(notificationMethod, []byte(fmt.Sprintf("An error occured during the initial data collection. Additional error message: \n %s", err)), "rotating_light")
 		return err
 	}
 	// Start the server entry point
 	go func(c internal.ConfigurationData) {
 
-		err := StartServer(ctx, c, GlobalHTTPClient)
+		err := StartServer(ctx, c, GlobalHTTPClient, notificationMethod)
 		if err != nil {
 			slog.Error("unable to start server", "error", err)
+			notifications.EternalNotificaton(notificationMethod, []byte(fmt.Sprintf("unable to start server. Additional error message: \n: %s", err)), "rotating_light")
 			os.Exit(1)
 		}
 
@@ -182,15 +210,19 @@ func server(ctx context.Context) error {
 			err := fileExp.CleanUp()
 			if err != nil {
 				slog.Error("unable to clean up file export", "error", err)
+				notifications.EternalNotificaton(notificationMethod, []byte(fmt.Sprintf("unable to clean up file export. Additional error message: \n: %s", err)), "rotating_light")
 			}
 		case "s3":
 			err := awsS3Exp.CleanUp()
 			if err != nil {
 				slog.Error("unable to clean up s3 export", "error", err)
+				notifications.EternalNotificaton(notificationMethod, []byte(fmt.Sprintf("unable to clean up s3 export. Additional error message: \n: %s", err)), "rotating_light")
+
 			}
 
 		default:
 			slog.Error("unknown exporter", "exporter", cfg.Export.Method)
+			notifications.EternalNotificaton(notificationMethod, []byte("An error occured when attemoting to export the data. An unknown exporter was provided."), "rotating_light")
 
 		}
 
@@ -202,15 +234,18 @@ func server(ctx context.Context) error {
 }
 
 // StartServer starts the long running server.
-func StartServer(ctx context.Context, config internal.ConfigurationData, client *http.Client) error {
+func StartServer(ctx context.Context, config internal.ConfigurationData, client *http.Client, notify notifications.Notification) error {
 
 	ok, _, err := internal.VerfyToken(config.Credentials.CredentialsFile)
 	if err != nil {
 		slog.Error("unable to verify token", "error", err)
+		notifications.EternalNotificaton(notify, []byte("Unable to verify the existing token during the token refresh process."), "rotating_light")
 		return err
 	}
 
 	if !ok {
+		slog.Error("auth token is invalid or expired")
+		notifications.EternalNotificaton(notify, []byte("The authentication token is invalid or expired."), "rotating_light")
 		os.Exit(1)
 	}
 
@@ -226,12 +261,15 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 			currentToken, err := internal.ReadTokenFromFile(config.Credentials.CredentialsFile)
 			if err != nil {
 				slog.Error("unable to read token file", "error", err)
+				notifications.EternalNotificaton(notify, []byte(fmt.Sprintf("Unable to read the authentication token from file. Additional context below: \n: %s", err)), "rotating_light")
 				os.Exit(1)
 			}
 
 			token, err := internal.RefreshToken(ctx, currentToken.AccessToken, currentToken.RefreshToken, client)
 			if err != nil {
 				slog.Error("unable to refresh token", "error", err)
+				notifications.EternalNotificaton(notify, []byte(fmt.Sprintf("Unable to refresh the authentication token. Additional context below: \n: %s", err)), "rotating_light")
+
 				os.Exit(1)
 			}
 			authTokenChannel <- token
@@ -248,12 +286,14 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 			data, err := json.MarshalIndent(auth, "", " ")
 			if err != nil {
 				slog.Error("unable to marshal token", "error", err)
+				notifications.EternalNotificaton(notify, []byte(fmt.Sprintf("Failed to marshal the authentication token value recieved from the Whoop API. Additional context below: \n %s", err)), "rotating_light")
 				os.Exit(1)
 			}
 
 			err = os.WriteFile(config.Credentials.CredentialsFile, data, 0755)
 			if err != nil {
 				slog.Error("unable to write token file", "error", err)
+				notifications.EternalNotificaton(notify, []byte(fmt.Sprintf("Failed to write the authentication token value to the file. Additional context below: \n %s", err)), "rotating_light")
 				os.Exit(1)
 			}
 		}
@@ -273,6 +313,7 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 			token, err := internal.ReadTokenFromFile(config.Credentials.CredentialsFile)
 			if err != nil {
 				slog.Error("unable to read token file", "error", err)
+				notifications.EternalNotificaton(notify, []byte(fmt.Sprintf("Failed to read the authentication token from file during the regular daily retreive cycle. Additional context below: \n %s", err)), "rotating_light")
 				os.Exit(1)
 			}
 
@@ -281,13 +322,15 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 			finalDataRaw, err := getData(ctx, user, client, token, &config.Server.FirstRunDownload)
 			if err != nil {
 				slog.Error("unable to get data", "error", err)
+				notifications.EternalNotificaton(notify, []byte(fmt.Sprintf("Failed to get data from the Whoop API. Additional context below: \n %s", err)), "rotating_light")
 				os.Exit(1)
 			}
 
 			// Setup the exporters
 			err = manageExporters(&config, finalDataRaw)
 			if err != nil {
-				slog.Error("unable to manage exporters", "error", err)
+				slog.Error("An error occured with the data exporter.", "error", err)
+				notifications.EternalNotificaton(notify, []byte(fmt.Sprintf("An error occured with the data exporter. Additional context below: \n %s", err)), "rotating_light")
 				os.Exit(1)
 			}
 
@@ -323,8 +366,7 @@ func manageExporters(cfg *internal.ConfigurationData, data []byte) error {
 	case "file":
 		err := fileExp.Export(data)
 		if err != nil {
-			slog.Error("unable to export data with the file exporter", "error", err)
-			internal.LogError(err)
+			errors.Join(err, errors.New("unable to export data with the file exporter"))
 			return err
 
 		}
@@ -332,12 +374,12 @@ func manageExporters(cfg *internal.ConfigurationData, data []byte) error {
 	case "s3":
 		err := awsS3Exp.Export(data)
 		if err != nil {
-			slog.Error("unable to export data with the s3 exporter", "error", err)
-			internal.LogError(err)
+			errors.Join(err, errors.New("unable to export data with the s3 exporter"))
 			return err
 		}
 	default:
 		slog.Error("unknown exporter", "exporter", cfg.Export.Method)
+		return errors.New("unknown exporter")
 
 	}
 

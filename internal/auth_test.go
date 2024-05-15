@@ -12,8 +12,8 @@ import (
 func TestGetEndpoint(t *testing.T) {
 
 	expected := oauth2.Endpoint{
-		AuthURL:  "https://api.prod.whoop.com/oauth/oauth2/auth",
-		TokenURL: "https://api.prod.whoop.com/oauth/oauth2/token",
+		AuthURL:  DEFAULT_AUTHENTICATION_URL,
+		TokenURL: DEFAULT_ACCESS_TOKEN_URL,
 	}
 
 	got := getEndpoint()

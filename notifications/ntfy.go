@@ -30,7 +30,7 @@ func (n *Ntfy) SetUp() error {
 }
 
 // Send sends a notification using the Ntfy service with the provided data.
-func (n *Ntfy) Send(data []byte) error {
+func (n *Ntfy) Send(data []byte, emoji string) error {
 
 	// convert data to io.Reader
 	payload := bytes.NewReader(data)
@@ -48,6 +48,8 @@ func (n *Ntfy) Send(data []byte) error {
 		encoded := base64.StdEncoding.EncodeToString([]byte(n.UserName + ":" + n.Password))
 		req.Header.Set("Authorization", "Basic "+encoded)
 	}
+
+	req.Header.Set("Tags", emoji)
 
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {

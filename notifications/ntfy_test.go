@@ -12,7 +12,7 @@ func TestSetup(t *testing.T) {
 
 func TestSend(t *testing.T) {
 	ntfy := Ntfy{}
-	err := ntfy.Send([]byte("test"))
+	err := ntfy.Send([]byte("test"), ":tada")
 	if err != nil {
 		t.Errorf("Error sending Ntfy notification: %v", err)
 	}
