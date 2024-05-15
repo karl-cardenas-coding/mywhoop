@@ -8,4 +8,10 @@ export:
     filePath: "data/"
     fileType: "json"
     fileNamePrefix: ""
+notification:
+  method: "ntfy"
+  ntfy:
+    serverEndpoint: "http://ntfy.hole:2586"
+    subscriptionID: "1234567890"
+
 debug: debug

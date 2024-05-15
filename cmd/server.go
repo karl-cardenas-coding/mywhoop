@@ -435,7 +435,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.WorkoutCollection = *workout
 
-		cycle, err := user.GetCycleCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
+		cycle, err := user.GetCycleCollection(ctx, client, token.AccessToken, "")
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err

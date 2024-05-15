@@ -41,3 +41,8 @@ tests/data/
 # Binary
 mywhoop
 mywhoop*
+
+
+# Config
+
+private_config.yaml

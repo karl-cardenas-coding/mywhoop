@@ -11,6 +11,7 @@ import (
 
 	"github.com/karl-cardenas-coding/mywhoop/export"
 	"github.com/karl-cardenas-coding/mywhoop/internal"
+	"github.com/karl-cardenas-coding/mywhoop/notifications"
 	"github.com/spf13/cobra"
 )
 
@@ -22,6 +23,7 @@ var meCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		return dump(rootCmd.Context())
+
 	},
 }
 
@@ -50,8 +52,28 @@ func dump(ctx context.Context) error {
 		os.Exit(1)
 	}
 
+	ntfy := &notifications.Ntfy{
+		ServerEndpoint: cfg.Notification.Ntfy.ServerEndpoint,
+		SubscriptionID: cfg.Notification.Ntfy.SubscriptionID,
+		UserName:       cfg.Notification.Ntfy.UserName,
+	}
+	var notificationMethod notifications.Notification
+
+	switch Configuration.Notification.Method {
+	case "ntfy":
+		err = ntfy.SetUp()
+		if err != nil {
+			return err
+		}
+		notificationMethod = ntfy
+	default:
+		slog.Info("no notification method specified. Defaulting to stdout.")
+	}
+
 	data, err := user.GetUserProfileData(ctx, GlobalHTTPClient, token.AccessToken)
 	if err != nil {
+		internal.LogError(err)
+		externalNotificaton(notificationMethod, []byte(err.Error()))
 		return err
 	}
 
@@ -59,6 +81,8 @@ func dump(ctx context.Context) error {
 
 	measurements, err := user.GetUserMeasurements(ctx, GlobalHTTPClient, token.AccessToken)
 	if err != nil {
+		internal.LogError(err)
+		externalNotificaton(notificationMethod, []byte(err.Error()))
 		return err
 	}
 
@@ -66,6 +90,8 @@ func dump(ctx context.Context) error {
 
 	sleep, err := user.GetSleepCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
 	if err != nil {
+		internal.LogError(err)
+		externalNotificaton(notificationMethod, []byte(err.Error()))
 		return err
 	}
 
@@ -73,6 +99,8 @@ func dump(ctx context.Context) error {
 
 	recovery, err := user.GetRecoveryCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
 	if err != nil {
+		internal.LogError(err)
+		externalNotificaton(notificationMethod, []byte(err.Error()))
 		return err
 	}
 
@@ -81,6 +109,7 @@ func dump(ctx context.Context) error {
 	workout, err := user.GetWorkoutCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
 	if err != nil {
 		internal.LogError(err)
+		externalNotificaton(notificationMethod, []byte(err.Error()))
 		return err
 	}
 
@@ -89,6 +118,7 @@ func dump(ctx context.Context) error {
 	cycle, err := user.GetCycleCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
 	if err != nil {
 		internal.LogError(err)
+		externalNotificaton(notificationMethod, []byte(err.Error()))
 		return err
 	}
 
@@ -97,6 +127,7 @@ func dump(ctx context.Context) error {
 	finalDataRaw, err := json.MarshalIndent(user, "", "  ")
 	if err != nil {
 		internal.LogError(err)
+		externalNotificaton(notificationMethod, []byte(err.Error()))
 		return err
 	}
 
@@ -111,11 +142,13 @@ func dump(ctx context.Context) error {
 	case "file":
 		err = fileExp.Export(finalDataRaw)
 		if err != nil {
+			externalNotificaton(notificationMethod, []byte(err.Error()))
 			return err
 		}
 	default:
 		err = fileExp.Export(finalDataRaw)
 		if err != nil {
+			externalNotificaton(notificationMethod, []byte(err.Error()))
 			return err
 		}
 
@@ -123,4 +156,19 @@ func dump(ctx context.Context) error {
 
 	return nil
 
+}
+
+// externalNotificaton sends a notification to the user using the specified notification method.
+func externalNotificaton(notificationMethod notifications.Notification, msg []byte) {
+
+	if notificationMethod == nil {
+		// no notification method specified, do nothing
+		return
+	}
+
+	err := notificationMethod.Send([]byte("unable to fetch data"))
+	if err != nil {
+		internal.LogError(err)
+		slog.Info("unable to send external notification", "error", err)
+	}
 }

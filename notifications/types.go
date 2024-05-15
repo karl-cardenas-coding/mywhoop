@@ -16,4 +16,6 @@ type Ntfy struct {
 	SubscriptionID string `yaml:"subscriptionID"`
 	// UserName is the username for the Ntfy service. Required if the Ntfy service requires authentication using username and password. Provide the password in the environment variable NOTIFICATION_NTFY_PASSWORD.
 	UserName string `yaml:"userName"`
+	// Password is the password for the Ntfy service. Required if the Ntfy service requires authentication using username and password. Provide the password in the environment variable NOTIFICATION_NTFY_PASSWORD.
+	Password string `yaml:"-"`
 }
