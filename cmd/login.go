@@ -30,8 +30,9 @@ func login() error {
 	if err != nil {
 		return err
 	}
+	client := internal.CreateHTTPClient()
 
-	_, err = internal.GetToken(Configuration.Credentials.CredentialsFile, GlobalHTTPClient)
+	_, err = internal.GetToken(Configuration.Credentials.CredentialsFile, client)
 	if err != nil {
 		slog.Error("Error getting access token", "msg", err)
 		return err

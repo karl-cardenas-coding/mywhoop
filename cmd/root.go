@@ -5,10 +5,8 @@ package cmd
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -26,8 +24,6 @@ var (
 	Exporter string
 	// ConfigurationData is the configuration data
 	Configuration internal.ConfigurationData
-	// GlobalHTTPClient is the HTTP client used for all requests
-	GlobalHTTPClient *http.Client
 	// UserAgent is the value to use for the User-Agent header
 	UserAgent string
 	// Debug is a flag to enable debug output
@@ -56,7 +52,6 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute(ctx context.Context, args []string, stdout, stderr *os.File) error {
 
-	GlobalHTTPClient = createHTTPClient()
 	err := rootCmd.Execute()
 	if err != nil {
 		return err
@@ -171,23 +166,4 @@ func logger(verbosity string) *slog.Logger {
 	}
 
 	return slog.New(slog.NewTextHandler(os.Stdout, opts))
-}
-
-// createHTTPClient creates an HTTP client with TLS
-func createHTTPClient() *http.Client {
-
-	// Setup client header to use TLS 1.2
-	tr := &http.Transport{
-		// Reads PROXY configuration from environment variables
-		Proxy: http.ProxyFromEnvironment,
-		TLSClientConfig: &tls.Config{
-			MinVersion: tls.VersionTLS12,
-		},
-	}
-
-	// Needed due to custom client being leveraged, otherwise HTTP2 will not be used.
-	tr.ForceAttemptHTTP2 = true
-
-	// Create the client
-	return &http.Client{Transport: tr}
 }

@@ -6,6 +6,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -18,8 +19,8 @@ import (
 // meCmd represents the me command
 var meCmd = &cobra.Command{
 	Use:   "dump",
-	Short: "Dump all your Whoop data to a file.",
-	Long:  "Dump all your Whoop data to a file.",
+	Short: "Dump all your Whoop data to a file or another form of export.",
+	Long:  "Dump all your Whoop data to a file or another form of export.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		return dump(rootCmd.Context())
@@ -34,6 +35,9 @@ func init() {
 func dump(ctx context.Context) error {
 
 	var user internal.User
+	var ua string = UserAgent
+
+	client := internal.CreateHTTPClient()
 
 	err := InitLogger(&Configuration)
 	if err != nil {
@@ -52,73 +56,75 @@ func dump(ctx context.Context) error {
 		os.Exit(1)
 	}
 
-	ntfy := &notifications.Ntfy{
-		ServerEndpoint: cfg.Notification.Ntfy.ServerEndpoint,
-		SubscriptionID: cfg.Notification.Ntfy.SubscriptionID,
-		UserName:       cfg.Notification.Ntfy.UserName,
-	}
 	var notificationMethod notifications.Notification
 
-	switch Configuration.Notification.Method {
+	switch cfg.Notification.Method {
 	case "ntfy":
+		ntfy := notifications.NewNtfy()
+		ntfy.ServerEndpoint = cfg.Notification.Ntfy.ServerEndpoint
+		ntfy.SubscriptionID = cfg.Notification.Ntfy.SubscriptionID
+		ntfy.UserName = cfg.Notification.Ntfy.UserName
+		ntfy.Events = cfg.Notification.Ntfy.Events
 		err = ntfy.SetUp()
 		if err != nil {
 			return err
 		}
 		notificationMethod = ntfy
+		slog.Info("Ntfy notification method configured")
+		fmt.Println("Events", ntfy.Events)
 	default:
 		slog.Info("no notification method specified. Defaulting to stdout.")
 	}
 
-	data, err := user.GetUserProfileData(ctx, GlobalHTTPClient, token.AccessToken)
+	data, err := user.GetUserProfileData(ctx, client, token.AccessToken, ua)
 	if err != nil {
 		internal.LogError(err)
-		notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
+		notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
 		return err
 	}
 
 	user.UserData = *data
 
-	measurements, err := user.GetUserMeasurements(ctx, GlobalHTTPClient, token.AccessToken)
+	measurements, err := user.GetUserMeasurements(ctx, client, token.AccessToken, ua)
 	if err != nil {
 		internal.LogError(err)
-		notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
+		notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
 		return err
 	}
 
 	user.UserMesaurements = *measurements
 
-	sleep, err := user.GetSleepCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
+	sleep, err := user.GetSleepCollection(ctx, client, token.AccessToken, "", ua)
 	if err != nil {
 		internal.LogError(err)
-		notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
+		notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
 		return err
 	}
 
 	user.SleepCollection = *sleep
 
-	recovery, err := user.GetRecoveryCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
+	recovery, err := user.GetRecoveryCollection(ctx, client, token.AccessToken, "", ua)
 	if err != nil {
 		internal.LogError(err)
-		notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
+		notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
 		return err
 	}
 
 	user.RecoveryCollection = *recovery
 
-	workout, err := user.GetWorkoutCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
+	workout, err := user.GetWorkoutCollection(ctx, client, token.AccessToken, "", ua)
 	if err != nil {
 		internal.LogError(err)
-		notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
+		notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
 		return err
 	}
 
 	user.WorkoutCollection = *workout
 
-	cycle, err := user.GetCycleCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
+	cycle, err := user.GetCycleCollection(ctx, client, token.AccessToken, "", ua)
 	if err != nil {
 		internal.LogError(err)
-		notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
+		notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
 		return err
 	}
 
@@ -127,7 +133,7 @@ func dump(ctx context.Context) error {
 	finalDataRaw, err := json.MarshalIndent(user, "", "  ")
 	if err != nil {
 		internal.LogError(err)
-		notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
+		notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
 		return err
 	}
 
@@ -142,20 +148,20 @@ func dump(ctx context.Context) error {
 	case "file":
 		err = fileExp.Export(finalDataRaw)
 		if err != nil {
-			notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
+			notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
 			return err
 		}
 		slog.Info("Data exported successfully", "file", fileExp.FileName)
 	default:
 		err = fileExp.Export(finalDataRaw)
 		if err != nil {
-			notifications.EternalNotificaton(notificationMethod, []byte(err.Error()), "rotating_light")
+			notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
 			return err
 		}
 
 	}
 	slog.Info("All Whoop data downloaded successfully")
-	notifications.EternalNotificaton(notificationMethod, []byte("All Whoop data downloaded successfully"), "tada")
+	notifications.Publish(client, notificationMethod, []byte("All Whoop data downloaded successfully"), internal.EventSuccess.String())
 
 	return nil
 

@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/karl-cardenas-coding/mywhoop/internal"
 )
 
 const (
@@ -19,7 +21,7 @@ func TestCheckForNewRelease(t *testing.T) {
 
 	t.Skip("Skipping while in private repo")
 
-	client := createHTTPClient()
+	client := internal.CreateHTTPClient()
 	version := "0.0.0"
 	useragent := fmt.Sprintf("go-lambda-cleanup/%s", version)
 
@@ -55,7 +57,7 @@ func TestErrorPath(t *testing.T) {
 	// Override the base URL to use the mock server URL
 	baseURL := mockServer.URL
 
-	client := createHTTPClient()
+	client := internal.CreateHTTPClient()
 	version := "------"
 	useragent := fmt.Sprintf("go-lambda-cleanup/%s", version)
 
@@ -81,7 +83,7 @@ func TestErrorPathJSON(t *testing.T) {
 	// Override the base URL to use the mock server URL
 	baseURL := mockServer.URL
 
-	client := createHTTPClient()
+	client := internal.CreateHTTPClient()
 	version := "------"
 	useragent := fmt.Sprintf("go-lambda-cleanup/%s", version)
 
@@ -95,7 +97,7 @@ func TestErrorURL(t *testing.T) {
 
 	t.Skip("Skipping while in private repo")
 
-	client := createHTTPClient()
+	client := internal.CreateHTTPClient()
 	version := "------"
 	useragent := fmt.Sprintf("go-lambda-cleanup/%s", version)
 
@@ -337,7 +339,7 @@ func TestCheckForNewReleaseNoNewRelease(t *testing.T) {
 	// Override the base URL to use the mock server URL
 	baseURL := mockServer.URL
 
-	client := createHTTPClient()
+	client := internal.CreateHTTPClient()
 	version := "2.0.10"
 	useragent := fmt.Sprintf("go-lambda-cleanup/%s", version)
 

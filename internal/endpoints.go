@@ -17,7 +17,7 @@ import (
 )
 
 // getUserProfile returns the user profile from the Whoop API
-func (u User) GetUserProfileData(ctx context.Context, client *http.Client, authToken string) (*UserData, error) {
+func (u User) GetUserProfileData(ctx context.Context, client *http.Client, authToken string, ua string) (*UserData, error) {
 
 	const (
 		url    = "https://api.prod.whoop.com/developer/v1/user/profile/basic"
@@ -31,6 +31,7 @@ func (u User) GetUserProfileData(ctx context.Context, client *http.Client, authT
 	}
 	authHeader := "Bearer " + authToken
 	req.Header.Add("Authorization", authHeader)
+	req.Header.Add("User-Agent", ua)
 
 	response, err := client.Do(req)
 	if err != nil {
@@ -62,7 +63,7 @@ func (u User) GetUserProfileData(ctx context.Context, client *http.Client, authT
 }
 
 // GetUserMeasurements returns the user measurements provided by the user from the Whoop API
-func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, authToken string) (*UserMesaurements, error) {
+func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, authToken string, ua string) (*UserMesaurements, error) {
 	const (
 		url    = "https://api.prod.whoop.com/developer/v1/user/measurement/body"
 		method = "GET"
@@ -75,6 +76,7 @@ func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, auth
 	}
 	authHeader := "Bearer " + authToken
 	req.Header.Add("Authorization", authHeader)
+	req.Header.Add("User-Agent", ua)
 
 	response, err := client.Do(req)
 	if err != nil {
@@ -107,7 +109,7 @@ func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, auth
 // GetSleepCollection returns the sleep collection from the Whoop API
 // filters is a string of filters to apply to the request
 // Pagination is enabled by default so as a result all available sleep collection records will be returned
-func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authToken string, filters string) (*SleepCollection, error) {
+func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authToken string, filters string, ua string) (*SleepCollection, error) {
 	const (
 		url    = "https://api.prod.whoop.com/developer/v1/activity/sleep?"
 		method = "GET"
@@ -141,6 +143,7 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authT
 		}
 		authHeader := "Bearer " + authToken
 		req.Header.Add("Authorization", authHeader)
+		req.Header.Add("User-Agent", ua)
 		// Reset nextLoopUrl
 		nextLoopUrl = ""
 
@@ -205,7 +208,7 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authT
 
 }
 
-func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, authToken string, filters string) (*RecoveryCollection, error) {
+func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, authToken string, filters string, ua string) (*RecoveryCollection, error) {
 	const (
 		url    = "https://api.prod.whoop.com/developer/v1/recovery?"
 		method = "GET"
@@ -239,6 +242,7 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, au
 		}
 		authHeader := "Bearer " + authToken
 		req.Header.Add("Authorization", authHeader)
+		req.Header.Add("User-Agent", ua)
 		// Reset nextLoopUrl
 		nextLoopUrl = ""
 
@@ -303,7 +307,7 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, au
 
 }
 
-func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, authToken string, filters string) (*WorkoutCollection, error) {
+func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, authToken string, filters string, ua string) (*WorkoutCollection, error) {
 	const (
 		url    = "https://api.prod.whoop.com/developer/v1/activity/workout?"
 		method = "GET"
@@ -337,6 +341,7 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, aut
 		}
 		authHeader := "Bearer " + authToken
 		req.Header.Add("Authorization", authHeader)
+		req.Header.Add("User-Agent", ua)
 		// Reset nextLoopUrl
 		nextLoopUrl = ""
 
@@ -400,7 +405,7 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, aut
 	return &workout, nil
 }
 
-func (u User) GetCycleCollection(ctx context.Context, client *http.Client, authToken string, filters string) (*CycleCollection, error) {
+func (u User) GetCycleCollection(ctx context.Context, client *http.Client, authToken string, filters string, ua string) (*CycleCollection, error) {
 	const (
 		url    = "https://api.prod.whoop.com/developer/v1/cycle?"
 		method = "GET"
@@ -434,6 +439,7 @@ func (u User) GetCycleCollection(ctx context.Context, client *http.Client, authT
 		}
 		authHeader := "Bearer " + authToken
 		req.Header.Add("Authorization", authHeader)
+		req.Header.Add("User-Agent", ua)
 		// Reset nextLoopUrl
 		nextLoopUrl = ""
 

@@ -4,6 +4,7 @@
 package internal
 
 import (
+	"strings"
 	"time"
 
 	"github.com/karl-cardenas-coding/mywhoop/export"
@@ -206,4 +207,38 @@ type Server struct {
 type Credentials struct {
 	// The file path to the credentials file. By default, a local file by the name of "token.json" is looked for.
 	CredentialsFile string `yaml:"credentialsFile"`
+}
+
+/* Event
+
+Event is a struct that contains the event data for the event.
+
+*/
+
+type Event string
+
+const (
+	EventErrors  Event = "errors"
+	EventSuccess Event = "success"
+	EventAll     Event = "all"
+)
+
+// eventFromString converts a string to an Event type.
+func EventFromString(s string) Event {
+
+	switch strings.ToLower(s) {
+	case "errors":
+		return EventErrors
+	case "success":
+		return EventSuccess
+	case "all":
+		return EventAll
+	default:
+		return EventErrors
+	}
+}
+
+// String returns the string representation of an Event type.
+func (e Event) String() string {
+	return string(e)
 }
