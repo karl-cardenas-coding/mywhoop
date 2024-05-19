@@ -23,12 +23,16 @@ func CheckConfigFile(filePath string) bool {
 			slog.Error("unable to get user home directory", "error", err)
 			return false
 		}
-		filePath = path.Join(home + ".mywhoop.yaml")
+		filePath = path.Join(home + DEFAULT_CONFIG_FILE)
 
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		// Check if specified config file exists in $HOME directory
+		_, err = os.Stat(filePath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				slog.Info("config file not found in ~/.mywhoop.yaml", "config", err)
+			}
 			return false
 		}
-
 	}
 
 	// Check if specified config file exists

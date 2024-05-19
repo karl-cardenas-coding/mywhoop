@@ -2,7 +2,6 @@ package notifications
 
 import (
 	"errors"
-	"log/slog"
 	"net/http"
 )
 
@@ -15,7 +14,6 @@ func Publish(client *http.Client, notificationMethod Notification, msg []byte, e
 	}
 
 	if client == nil {
-		slog.Info("no http client specified for external notification")
 		return errors.New("no http client specified for external notification")
 	}
 

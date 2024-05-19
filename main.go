@@ -22,9 +22,11 @@ func run(
 
 func main() {
 	ctx := context.Background()
-	if err := run(ctx, os.Args, os.Stdin, os.Stderr); err != nil {
+	err := run(ctx, os.Args, os.Stdin, os.Stderr)
+	if err != nil {
 		os.Exit(1)
 	}
+
 	os.Exit(0)
 
 }

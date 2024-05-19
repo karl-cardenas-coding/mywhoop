@@ -7,22 +7,49 @@ import (
 	"testing"
 )
 
-func TestPublish(t *testing.T) {
+func TestPublishSuccess(t *testing.T) {
+
+	client := &http.Client{}
+	ntfy := NewNtfy()
+	msg := []byte("test message")
+	event := "test event"
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Notifcation sent successfully.")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, "Notification success.")
 	}))
 	defer ts.Close()
 
-	client := &http.Client{}
+	err := Publish(client, ntfy, msg, event)
+	if err != nil {
+		t.Errorf("Publish() returned an error: %v", err)
+	}
+
+}
+
+func TestPublishErrorMissingClient(t *testing.T) {
 
 	ntfy := NewNtfy()
-	ntfy.ServerEndpoint = ts.URL
-	ntfy.SubscriptionID = "1234"
+	msg := []byte("test message for error")
+	event := "test event 2"
 
-	err := Publish(client, ntfy, []byte("test"), "errors")
-	if err != nil {
-		t.Errorf("Error sending Ntfy notification: %v", err)
+	err := Publish(nil, ntfy, msg, event)
+	if err == nil {
+		t.Errorf("Publish() did not return an error for missing client")
+
+	}
+
+}
+
+func TestPublishErrorMissingNotificationMethod(t *testing.T) {
+
+	client := &http.Client{}
+	msg := []byte("test message for error")
+	event := "test event 3"
+
+	err := Publish(client, nil, msg, event)
+	if err == nil {
+		t.Errorf("Publish() did not return an error for missing notification method")
 	}
 
 }

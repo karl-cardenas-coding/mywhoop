@@ -4,6 +4,9 @@ import (
 	"net/http"
 )
 
+// Notification is an interface that defines the methods for a notification service.
+// It requires two method functions SetUp and Send.
+// Consumers can use the Publish method to send notifications using the notification service.
 type Notification interface {
 	// SetUp sets up the notification service and returns an error if the setup fails.
 	SetUp() error

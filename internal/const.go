@@ -14,6 +14,8 @@ const (
 	DEFAULT_REDIRECT_URL string = "http://localhost:8080/oauth/redirect"
 	// DEFAULT_CREDENTIALS_FILE is the default file to store the credentials
 	DEFAULT_CREDENTIALS_FILE string = "token.json"
+	// DEFAULT_CONFIG_FILE is the default file to store the configuration
+	DEFAULT_CONFIG_FILE string = ".mywhoop.yaml"
 	// Retry/Backoff constants
 	DEFAULT_RETRY_MAX_ELAPSED_TIME time.Duration = 5 * time.Minute
 	DEFAULT_RETRY_MULTIPLIER       float64       = 1.5
