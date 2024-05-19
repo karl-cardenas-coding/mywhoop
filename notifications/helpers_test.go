@@ -17,7 +17,12 @@ func TestPublish(t *testing.T) {
 	client := &http.Client{}
 
 	ntfy := NewNtfy()
+	ntfy.ServerEndpoint = ts.URL
+	ntfy.SubscriptionID = "1234"
 
-	Publish(client, ntfy, []byte("test"), "errors")
+	err := Publish(client, ntfy, []byte("test"), "errors")
+	if err != nil {
+		t.Errorf("Error sending Ntfy notification: %v", err)
+	}
 
 }

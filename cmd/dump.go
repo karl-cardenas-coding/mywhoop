@@ -79,7 +79,10 @@ func dump(ctx context.Context) error {
 	data, err := user.GetUserProfileData(ctx, client, token.AccessToken, ua)
 	if err != nil {
 		internal.LogError(err)
-		notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+		if notifyErr != nil {
+			slog.Error("unable to send notification", "error", notifyErr)
+		}
 		return err
 	}
 
@@ -88,7 +91,10 @@ func dump(ctx context.Context) error {
 	measurements, err := user.GetUserMeasurements(ctx, client, token.AccessToken, ua)
 	if err != nil {
 		internal.LogError(err)
-		notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+		if notifyErr != nil {
+			slog.Error("unable to send notification", "error", notifyErr)
+		}
 		return err
 	}
 
@@ -97,7 +103,10 @@ func dump(ctx context.Context) error {
 	sleep, err := user.GetSleepCollection(ctx, client, token.AccessToken, "", ua)
 	if err != nil {
 		internal.LogError(err)
-		notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+		if notifyErr != nil {
+			slog.Error("unable to send notification", "error", notifyErr)
+		}
 		return err
 	}
 
@@ -106,7 +115,10 @@ func dump(ctx context.Context) error {
 	recovery, err := user.GetRecoveryCollection(ctx, client, token.AccessToken, "", ua)
 	if err != nil {
 		internal.LogError(err)
-		notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+		if notifyErr != nil {
+			slog.Error("unable to send notification", "error", notifyErr)
+		}
 		return err
 	}
 
@@ -115,7 +127,10 @@ func dump(ctx context.Context) error {
 	workout, err := user.GetWorkoutCollection(ctx, client, token.AccessToken, "", ua)
 	if err != nil {
 		internal.LogError(err)
-		notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+		if notifyErr != nil {
+			slog.Error("unable to send notification", "error", notifyErr)
+		}
 		return err
 	}
 
@@ -124,7 +139,10 @@ func dump(ctx context.Context) error {
 	cycle, err := user.GetCycleCollection(ctx, client, token.AccessToken, "", ua)
 	if err != nil {
 		internal.LogError(err)
-		notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+		if notifyErr != nil {
+			slog.Error("unable to send notification", "error", notifyErr)
+		}
 		return err
 	}
 
@@ -148,20 +166,29 @@ func dump(ctx context.Context) error {
 	case "file":
 		err = fileExp.Export(finalDataRaw)
 		if err != nil {
-			notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+			notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
 			return err
 		}
 		slog.Info("Data exported successfully", "file", fileExp.FileName)
 	default:
 		err = fileExp.Export(finalDataRaw)
 		if err != nil {
-			notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+			notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
 			return err
 		}
 
 	}
 	slog.Info("All Whoop data downloaded successfully")
-	notifications.Publish(client, notificationMethod, []byte("All Whoop data downloaded successfully"), internal.EventSuccess.String())
+	notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventSuccess.String())
+	if notifyErr != nil {
+		slog.Error("unable to send notification", "error", notifyErr)
+	}
 
 	return nil
 

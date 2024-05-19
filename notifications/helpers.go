@@ -1,25 +1,28 @@
 package notifications
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 )
 
 // Publish sends a notification to the user using the specified notification method.
-func Publish(client *http.Client, notificationMethod Notification, msg []byte, event string) {
+func Publish(client *http.Client, notificationMethod Notification, msg []byte, event string) error {
 
 	if notificationMethod == nil {
 		// no notification method specified, do nothing
-		return
+		return errors.New("no notification method specified")
 	}
 
 	if client == nil {
 		slog.Info("no http client specified for external notification")
-		return
+		return errors.New("no http client specified for external notification")
 	}
 
 	err := notificationMethod.Send(client, msg, event)
 	if err != nil {
-		slog.Info("unable to send external notification", "error", err)
+		return err
 	}
+
+	return nil
 }
