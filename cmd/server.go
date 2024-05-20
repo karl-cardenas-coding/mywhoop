@@ -461,7 +461,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		slog.Debug("Filter string", "filter", filterString)
 
-		sleep, err := user.GetSleepCollection(ctx, client, token.AccessToken, filterString, ua)
+		sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, filterString, ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -469,7 +469,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.SleepCollection = *sleep
 
-		recovery, err := user.GetRecoveryCollection(ctx, client, token.AccessToken, filterString, ua)
+		recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, filterString, ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -477,7 +477,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.RecoveryCollection = *recovery
 
-		workout, err := user.GetWorkoutCollection(ctx, client, token.AccessToken, filterString, ua)
+		workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, filterString, ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -485,7 +485,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.WorkoutCollection = *workout
 
-		cycle, err := user.GetCycleCollection(ctx, client, token.AccessToken, filterString, ua)
+		cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, filterString, ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -496,7 +496,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 	if *firstDownload {
 
-		data, err := user.GetUserProfileData(ctx, client, token.AccessToken, ua)
+		data, err := user.GetUserProfileData(ctx, client, internal.DEFAULT_WHOOP_API_USER_DATA_URL, token.AccessToken, ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -504,7 +504,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.UserData = *data
 
-		measurements, err := user.GetUserMeasurements(ctx, client, token.AccessToken, ua)
+		measurements, err := user.GetUserMeasurements(ctx, client, internal.DEFAULT_WHOOP_API_USER_MEASUREMENT_DATA_URL, token.AccessToken, ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -512,7 +512,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.UserMesaurements = *measurements
 
-		sleep, err := user.GetSleepCollection(ctx, client, token.AccessToken, "", ua)
+		sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, "", ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -520,7 +520,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.SleepCollection = *sleep
 
-		recovery, err := user.GetRecoveryCollection(ctx, client, token.AccessToken, "", ua)
+		recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, "", ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -528,7 +528,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.RecoveryCollection = *recovery
 
-		workout, err := user.GetWorkoutCollection(ctx, client, token.AccessToken, "", ua)
+		workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, "", ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -536,7 +536,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.WorkoutCollection = *workout
 
-		cycle, err := user.GetCycleCollection(ctx, client, token.AccessToken, "", ua)
+		cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, "", ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err

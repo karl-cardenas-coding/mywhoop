@@ -76,7 +76,7 @@ func dump(ctx context.Context) error {
 		slog.Info("no notification method specified. Defaulting to stdout.")
 	}
 
-	data, err := user.GetUserProfileData(ctx, client, token.AccessToken, ua)
+	data, err := user.GetUserProfileData(ctx, client, internal.DEFAULT_WHOOP_API_USER_DATA_URL, token.AccessToken, ua)
 	if err != nil {
 		internal.LogError(err)
 		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
@@ -88,7 +88,7 @@ func dump(ctx context.Context) error {
 
 	user.UserData = *data
 
-	measurements, err := user.GetUserMeasurements(ctx, client, token.AccessToken, ua)
+	measurements, err := user.GetUserMeasurements(ctx, client, internal.DEFAULT_WHOOP_API_USER_MEASUREMENT_DATA_URL, token.AccessToken, ua)
 	if err != nil {
 		internal.LogError(err)
 		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
@@ -100,7 +100,7 @@ func dump(ctx context.Context) error {
 
 	user.UserMesaurements = *measurements
 
-	sleep, err := user.GetSleepCollection(ctx, client, token.AccessToken, "", ua)
+	sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, "", ua)
 	if err != nil {
 		internal.LogError(err)
 		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
@@ -112,7 +112,7 @@ func dump(ctx context.Context) error {
 
 	user.SleepCollection = *sleep
 
-	recovery, err := user.GetRecoveryCollection(ctx, client, token.AccessToken, "", ua)
+	recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, "", ua)
 	if err != nil {
 		internal.LogError(err)
 		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
@@ -124,7 +124,7 @@ func dump(ctx context.Context) error {
 
 	user.RecoveryCollection = *recovery
 
-	workout, err := user.GetWorkoutCollection(ctx, client, token.AccessToken, "", ua)
+	workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, "", ua)
 	if err != nil {
 		internal.LogError(err)
 		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
@@ -136,7 +136,7 @@ func dump(ctx context.Context) error {
 
 	user.WorkoutCollection = *workout
 
-	cycle, err := user.GetCycleCollection(ctx, client, token.AccessToken, "", ua)
+	cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, "", ua)
 	if err != nil {
 		internal.LogError(err)
 		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())

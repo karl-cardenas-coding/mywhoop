@@ -17,12 +17,9 @@ import (
 )
 
 // getUserProfile returns the user profile from the Whoop API
-func (u User) GetUserProfileData(ctx context.Context, client *http.Client, authToken string, ua string) (*UserData, error) {
+func (u User) GetUserProfileData(ctx context.Context, client *http.Client, url, authToken, ua string) (*UserData, error) {
 
-	const (
-		url    = "https://api.prod.whoop.com/developer/v1/user/profile/basic"
-		method = "GET"
-	)
+	const method = "GET"
 
 	req, err := http.NewRequestWithContext(context.Background(), method, url, nil)
 	if err != nil {
@@ -39,8 +36,8 @@ func (u User) GetUserProfileData(ctx context.Context, client *http.Client, authT
 		return nil, err
 	}
 
-	if response == nil {
-		return nil, errors.New("the HTTP request for user profile data returned an empty response struct")
+	if response == nil || response.StatusCode != http.StatusOK {
+		return nil, errors.New("the HTTP request for user profile data returned an empty response struct or a non-200 status code")
 	}
 
 	defer response.Body.Close()
@@ -55,7 +52,7 @@ func (u User) GetUserProfileData(ctx context.Context, client *http.Client, authT
 	err = json.Unmarshal(body, &user)
 	if err != nil {
 		LogError(err)
-		return nil, err
+		return nil, fmt.Errorf("unable to unmarshal data from Whoop API user profile payload."+"Received the follow errors: %w", err)
 	}
 
 	return &user, nil
@@ -63,11 +60,8 @@ func (u User) GetUserProfileData(ctx context.Context, client *http.Client, authT
 }
 
 // GetUserMeasurements returns the user measurements provided by the user from the Whoop API
-func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, authToken string, ua string) (*UserMesaurements, error) {
-	const (
-		url    = "https://api.prod.whoop.com/developer/v1/user/measurement/body"
-		method = "GET"
-	)
+func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, url, authToken, ua string) (*UserMesaurements, error) {
+	const method = "GET"
 
 	req, err := http.NewRequestWithContext(context.Background(), method, url, nil)
 	if err != nil {
@@ -83,8 +77,8 @@ func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, auth
 		LogError(err)
 		return nil, err
 	}
-	if response == nil {
-		return nil, errors.New("the HTTP request for user profile data returned an empty response struct")
+	if response == nil || response.StatusCode != http.StatusOK {
+		return nil, errors.New("the HTTP request for user measurements data returned an empty response struct or a non-200 status code")
 	}
 
 	defer response.Body.Close()
@@ -109,12 +103,8 @@ func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, auth
 // GetSleepCollection returns the sleep collection from the Whoop API
 // filters is a string of filters to apply to the request
 // Pagination is enabled by default so as a result all available sleep collection records will be returned
-func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authToken string, filters string, ua string) (*SleepCollection, error) {
-	const (
-		url    = "https://api.prod.whoop.com/developer/v1/activity/sleep?"
-		method = "GET"
-	)
-
+func (u User) GetSleepCollection(ctx context.Context, client *http.Client, url, authToken, filters, ua string) (*SleepCollection, error) {
+	const method = "GET"
 	var sleep SleepCollection
 	var sleepRecords []SleepCollectionRecords
 	var continueLoop = true
@@ -208,11 +198,9 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, authT
 
 }
 
-func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, authToken string, filters string, ua string) (*RecoveryCollection, error) {
-	const (
-		url    = "https://api.prod.whoop.com/developer/v1/recovery?"
-		method = "GET"
-	)
+func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, url, authToken, filters, ua string) (*RecoveryCollection, error) {
+
+	const method = "GET"
 
 	var recovery RecoveryCollection
 	var recoveryRecords []RecoveryRecords
@@ -307,11 +295,9 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, au
 
 }
 
-func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, authToken string, filters string, ua string) (*WorkoutCollection, error) {
-	const (
-		url    = "https://api.prod.whoop.com/developer/v1/activity/workout?"
-		method = "GET"
-	)
+func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, url, authToken, filters, ua string) (*WorkoutCollection, error) {
+
+	const method = "GET"
 
 	var workout WorkoutCollection
 	var workoutRecords []WorkoutRecords
@@ -405,11 +391,8 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, aut
 	return &workout, nil
 }
 
-func (u User) GetCycleCollection(ctx context.Context, client *http.Client, authToken string, filters string, ua string) (*CycleCollection, error) {
-	const (
-		url    = "https://api.prod.whoop.com/developer/v1/cycle?"
-		method = "GET"
-	)
+func (u User) GetCycleCollection(ctx context.Context, client *http.Client, url, authToken, filters, ua string) (*CycleCollection, error) {
+	const method = "GET"
 
 	var cycle CycleCollection
 	var cycleRecords []CycleRecords
