@@ -21,7 +21,7 @@ func ExtractEnvVariables() (ConfigurationData, error) {
 
 	switch {
 	case id == "" && secret == "":
-		return output, errors.New("the required env variables WHOOP_CLIENT_ID and WHOOP_CLIENT_ID are not set")
+		return output, errors.New("the required env variables WHOOP_CLIENT_ID and WHOOP_CLIENT_SECRET are not set")
 
 	case id == "":
 		return output, errors.New("the required env variable WHOOP_CLIENT_ID is not set")

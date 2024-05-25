@@ -16,7 +16,7 @@ opensource:
 
 tests: ## Run tests
 	@echo "Running tests"
-	go test -race ./...
+	go test -race -shuffle on ./...
 
 
 tests-coverage: ## Start Go Test with code coverage

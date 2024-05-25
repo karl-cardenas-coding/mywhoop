@@ -24,6 +24,9 @@ go.work
 # Environment variables file
 .env
 
+# VS Code 
+.DS_Store
+
 # Credentials
 
 token.json
@@ -38,3 +41,12 @@ tests/data/
 # Binary
 mywhoop
 mywhoop*
+
+# Tests
+
+out.svg
+
+
+# Config
+
+private_config.yaml

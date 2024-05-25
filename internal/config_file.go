@@ -14,30 +14,36 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-func CheckConfigFile(filePath string) bool {
+func CheckConfigFile(filePath string) (bool, string) {
 
 	// Check if config file is in  $HOME/.mywhoop.yaml
 	if filePath == "" {
 		home, err := os.UserHomeDir()
 		if err != nil {
 			slog.Error("unable to get user home directory", "error", err)
-			return false
+			return false, ""
 		}
-		filePath = path.Join(home + ".mywhoop.yaml")
+		filePath = path.Join(home, DEFAULT_CONFIG_FILE)
 
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			return false
+		// Check if specified config file exists in $HOME directory
+		_, err = os.Stat(filePath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				slog.Debug("config file not found in ~/.mywhoop.yaml", "config", err)
+			}
+			return false, ""
 		}
+		return true, filePath
 
 	}
 
 	// Check if specified config file exists
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		slog.Info("config file not found", "config", err)
-		return false
+		return false, ""
 	}
 
-	return true
+	return true, filePath
 
 }
 

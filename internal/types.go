@@ -4,9 +4,11 @@
 package internal
 
 import (
+	"strings"
 	"time"
 
 	"github.com/karl-cardenas-coding/mywhoop/export"
+	"github.com/karl-cardenas-coding/mywhoop/notifications"
 )
 
 /*
@@ -95,15 +97,15 @@ type CycleScore struct {
 	MaxHeartRate     int     `json:"max_heart_rate"`
 }
 type CycleRecords struct {
-	ID             int         `json:"id"`
-	UserID         int         `json:"user_id"`
-	CreatedAt      time.Time   `json:"created_at"`
-	UpdatedAt      time.Time   `json:"updated_at"`
-	Start          time.Time   `json:"start"`
-	End            interface{} `json:"end"`
-	TimezoneOffset string      `json:"timezone_offset"`
-	ScoreState     string      `json:"score_state"`
-	Score          CycleScore  `json:"score"`
+	ID             int        `json:"id"`
+	UserID         int        `json:"user_id"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+	Start          time.Time  `json:"start"`
+	End            time.Time  `json:"end"`
+	TimezoneOffset string     `json:"timezone_offset"`
+	ScoreState     string     `json:"score_state"`
+	Score          CycleScore `json:"score"`
 }
 
 type RecoveryCollection struct {
@@ -169,14 +171,16 @@ type WorkoutRecords struct {
  */
 
 type ConfigurationData struct {
-	// Export is the configuration block for setting up data exporters
-	Export ConfigExport `yaml:"export" validate:"required"`
-	// Server is the configuration settings for server mode
-	Server Server `yaml:"server"`
-	// CredentialsFileName is the file name of the credentials file. Default is "token.json"
+	// Credentials is the configuration settings for Whoop API authentication credentials
 	Credentials Credentials `yaml:"credentials"`
 	// Debug flag. Allowed values are DEBUG, WARN, INFO, TRACE
 	Debug string `yaml:"debug"`
+	// Export is the configuration block for setting up data exporters
+	Export ConfigExport `yaml:"export" validate:"required"`
+	// Notification is the configuration block for setting up notifications
+	Notification NotificationConfig `yaml:"notification"`
+	// Server is the configuration settings for server mode
+	Server Server `yaml:"server"`
 }
 
 type ConfigExport struct {
@@ -184,6 +188,13 @@ type ConfigExport struct {
 	FileExport export.FileExport `yaml:"fileExport" validate:"required_if=Method file"`
 	AWSS3      export.AWS_S3     `yaml:"awsS3" validate:"required_if=Method s3"`
 	// Add more supported export methods here
+}
+
+type NotificationConfig struct {
+	// Method is the notification method to use. If no method is specified, then no external notification is sent.
+	Method string `yaml:"method" validate:"oneof=ntfy"`
+	// Ntfy is the configuration settings for the Ntfy notification service.
+	Ntfy notifications.Ntfy `yaml:"ntfy" validate:"required_if=Method ntfy"`
 }
 
 type Server struct {
@@ -196,4 +207,38 @@ type Server struct {
 type Credentials struct {
 	// The file path to the credentials file. By default, a local file by the name of "token.json" is looked for.
 	CredentialsFile string `yaml:"credentialsFile"`
+}
+
+/* Event
+
+Event is a struct that contains the event data for the event.
+
+*/
+
+type Event string
+
+const (
+	EventErrors  Event = "errors"
+	EventSuccess Event = "success"
+	EventAll     Event = "all"
+)
+
+// eventFromString converts a string to an Event type.
+func EventFromString(s string) Event {
+
+	switch strings.ToLower(s) {
+	case "errors":
+		return EventErrors
+	case "success":
+		return EventSuccess
+	case "all":
+		return EventAll
+	default:
+		return EventErrors
+	}
+}
+
+// String returns the string representation of an Event type.
+func (e Event) String() string {
+	return string(e)
 }

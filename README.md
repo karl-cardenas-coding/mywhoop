@@ -1,11 +1,22 @@
 
 [![Go version](https://img.shields.io/github/go-mod/go-version/karl-cardenas-coding/go-lambda-cleanup)](https://golang.org/dl/)
 
-# MyWhooop 
+# MyWhoop 
 
 A tool for gathering and retaining your own Whoop data. 
 
+<p align="center">
+  <img src="/static/images/logo.webp" alt="drawing" width="600"/>
+</p>
 
+
+
+## Get Started
+
+
+```shell
+nohup ./mywhoop_linux_amd64 server --first-run-download -d DEBUG > output.log 2>&1 &
+```
 
 ## Overview
 
@@ -21,6 +32,16 @@ The following environment variables are available for use with MyWhoop.
 | `WHOOP_CLIENT_ID` | The client ID for your Whoop application. | Yes |
 | `WHOOP_CLIENT_SECRET` | The client secret for your Whoop application. | Yes |
 | `WHOOP_CREDENTIALS_FILE` | The file path to the Whoop credentials file that contains a valid Whoop authentication token. Default value is `token.json`. | No | 
+
+
+### Notification  Variables
+
+Depending on the notification service you use, you may need to provide additional environment variables.
+
+| Variable | Description | Required |
+|---|----|---|
+| `NOTIFICATION_NTFY_AUTH_TOKEN`| The token for the [Ntfy](https://docs.ntfy.sh/) service. Required if the ntfy subscription requires a token. | No |
+| `NOTIFICATION_NTFY_PASSWORD` | The password for the ntfy subscription if username/password authentication is used. Required if the ntfy subscription requires a username and password. | No |
 
 ### Order Of Precendence
 

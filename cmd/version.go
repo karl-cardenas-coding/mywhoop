@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-version"
+	"github.com/karl-cardenas-coding/mywhoop/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +32,8 @@ var VersionCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		version := fmt.Sprintf("mywhoop %s", VersionString)
 		slog.Info(version)
-		_, message, err := checkForNewRelease(GlobalHTTPClient, VersionString, UserAgent, url)
+		client := internal.CreateHTTPClient()
+		_, message, err := checkForNewRelease(client, VersionString, UserAgent, url)
 		if err != nil {
 			slog.Error("Error checking for new release", "msg", err)
 			return err

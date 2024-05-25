@@ -22,8 +22,8 @@ import (
 // getEndpoint returns the OAuth2 endpoint for the Whoop API
 func getEndpoint() oauth2.Endpoint {
 	return oauth2.Endpoint{
-		AuthURL:  DEFAULT_ACCESS_TOKEN_URL,
-		TokenURL: DEFAULT_AUTHENTICATION_URL,
+		AuthURL:  DEFAULT_AUTHENTICATION_URL,
+		TokenURL: DEFAULT_ACCESS_TOKEN_URL,
 	}
 }
 

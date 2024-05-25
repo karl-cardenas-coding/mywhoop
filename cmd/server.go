@@ -17,6 +17,7 @@ import (
 
 	"github.com/karl-cardenas-coding/mywhoop/export"
 	"github.com/karl-cardenas-coding/mywhoop/internal"
+	"github.com/karl-cardenas-coding/mywhoop/notifications"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"golang.org/x/sync/errgroup"
@@ -26,7 +27,7 @@ import (
 var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Start server mode.",
-	Long:  "Start myWhoop in server mode and download data from Whoop API on a regular basis.",
+	Long:  "Start MyWhoop in server mode and download data from Whoop API on a regular basis.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return server(cmd.Context())
 	},
@@ -68,10 +69,11 @@ func server(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
 	cfg := Configuration
+	client := internal.CreateHTTPClient()
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	var ua string = UserAgent
 
 	// Evaluate the configuration options
 	err = evaluateConfigOptions(FirstRunDownload, &cfg)
@@ -110,6 +112,25 @@ func server(ctx context.Context) error {
 		slog.Error("unknown exporter", "exporter", cfg.Export.Method)
 	}
 
+	var notificationMethod notifications.Notification
+
+	switch Configuration.Notification.Method {
+	case "ntfy":
+		ntfy := notifications.NewNtfy()
+		ntfy.ServerEndpoint = cfg.Notification.Ntfy.ServerEndpoint
+		ntfy.SubscriptionID = cfg.Notification.Ntfy.SubscriptionID
+		ntfy.UserName = cfg.Notification.Ntfy.UserName
+		ntfy.Events = cfg.Notification.Ntfy.Events
+		err = ntfy.SetUp()
+		if err != nil {
+			return err
+		}
+		slog.Info("ntfy notification method enabled")
+		notificationMethod = ntfy
+	default:
+		slog.Info("no notification method specified. Defaulting to stdout.")
+	}
+
 	g, ctx := errgroup.WithContext(ctx)
 
 	// Download the latest data for the past 24 hrs and if FirstRunDownload is enabled, all of the data.
@@ -117,11 +138,19 @@ func server(ctx context.Context) error {
 
 		ok, _, err := internal.VerfyToken(cfg.Credentials.CredentialsFile)
 		if err != nil {
-			slog.Error("unable to verify token", "error", err)
+			slog.Error("unable to verify authentication token", "error", err)
+			notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
 			return err
 		}
 
 		if !ok {
+			notifyErr := notifications.Publish(client, notificationMethod, []byte("unable to verify authentication token"), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
 			return errors.New("auth token is invalid or expired")
 		}
 
@@ -130,25 +159,41 @@ func server(ctx context.Context) error {
 		token, err := internal.ReadTokenFromFile(cfg.Credentials.CredentialsFile)
 		if err != nil {
 			slog.Error("unable to read token file", "error", err)
+			notifyErr := notifications.Publish(client, notificationMethod, []byte(fmt.Sprintf("unable to read the authentication token from file. Additional error message: \n: %s", err)), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
 			return err
 		}
 
 		var user internal.User
 
-		finalDataRaw, err := getData(ctx, user, GlobalHTTPClient, token, &cfg.Server.FirstRunDownload)
+		finalDataRaw, err := getData(ctx, user, client, token, &cfg.Server.FirstRunDownload, ua)
 		if err != nil {
 			slog.Error("unable to get data", "error", err)
+			notifyErr := notifications.Publish(client, notificationMethod, []byte(fmt.Sprintf("unable to get data from Whoop API. Additional error message: \n: %s", err)), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
 			return err
 		}
 
 		// Setup the exporters
 		err = manageExporters(&cfg, finalDataRaw)
 		if err != nil {
-			slog.Error("unable to manage exporters", "error", err)
+			slog.Error("An error occured with the data exporter.", "error", err)
+			notifyErr := notifications.Publish(client, notificationMethod, []byte(fmt.Sprintf("An error occured with the data exporter. Additional context below: \n %s", err)), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
 			return err
 		}
 
 		slog.Info("Data collection complete")
+		err = notifications.Publish(client, notificationMethod, []byte("Initial data collection complete."), internal.EventSuccess.String())
+		if err != nil {
+			slog.Error("unable to send notification", "error", err)
+		}
 
 		return nil
 
@@ -160,14 +205,22 @@ func server(ctx context.Context) error {
 	// 	os.Exit(0)
 	// }
 	if err := g.Wait(); err != nil {
+		notifyErr := notifications.Publish(client, notificationMethod, []byte(fmt.Sprintf("An error occured during the initial data collection. Additional error message: \n %s", err)), internal.EventErrors.String())
+		if notifyErr != nil {
+			slog.Error("unable to send notification", "error", notifyErr)
+		}
 		return err
 	}
 	// Start the server entry point
 	go func(c internal.ConfigurationData) {
 
-		err := StartServer(ctx, c, GlobalHTTPClient)
+		err := StartServer(ctx, c, client, notificationMethod)
 		if err != nil {
 			slog.Error("unable to start server", "error", err)
+			notifyErr := notifications.Publish(client, notificationMethod, []byte(fmt.Sprintf("unable to start server. Additional error message: \n: %s", err)), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
 			os.Exit(1)
 		}
 
@@ -182,16 +235,27 @@ func server(ctx context.Context) error {
 			err := fileExp.CleanUp()
 			if err != nil {
 				slog.Error("unable to clean up file export", "error", err)
+				notifyErr := notifications.Publish(client, notificationMethod, []byte(fmt.Sprintf("unable to clean up file export. Additional error message: \n: %s", err)), internal.EventErrors.String())
+				if notifyErr != nil {
+					slog.Error("unable to send notification", "error", notifyErr)
+				}
 			}
 		case "s3":
 			err := awsS3Exp.CleanUp()
 			if err != nil {
 				slog.Error("unable to clean up s3 export", "error", err)
+				notifyErr := notifications.Publish(client, notificationMethod, []byte(fmt.Sprintf("unable to clean up s3 export. Additional error message: \n: %s", err)), internal.EventErrors.String())
+				if notifyErr != nil {
+					slog.Error("unable to send notification", "error", notifyErr)
+				}
 			}
 
 		default:
 			slog.Error("unknown exporter", "exporter", cfg.Export.Method)
-
+			notifyErr := notifications.Publish(client, notificationMethod, []byte("An error occured when attemoting to export the data. An unknown exporter was provided."), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
 		}
 
 		slog.Info("Server shutdown complete")
@@ -202,15 +266,24 @@ func server(ctx context.Context) error {
 }
 
 // StartServer starts the long running server.
-func StartServer(ctx context.Context, config internal.ConfigurationData, client *http.Client) error {
+func StartServer(ctx context.Context, config internal.ConfigurationData, client *http.Client, notify notifications.Notification) error {
 
 	ok, _, err := internal.VerfyToken(config.Credentials.CredentialsFile)
 	if err != nil {
 		slog.Error("unable to verify token", "error", err)
+		notifyErr := notifications.Publish(client, notify, []byte("Unable to verify the existing token during the token refresh process."), internal.EventErrors.String())
+		if notifyErr != nil {
+			slog.Error("unable to send notification", "error", notifyErr)
+		}
 		return err
 	}
 
 	if !ok {
+		slog.Error("auth token is invalid or expired")
+		notifyErr := notifications.Publish(client, notify, []byte("The authentication token is invalid or expired."), internal.EventErrors.String())
+		if notifyErr != nil {
+			slog.Error("unable to send notification", "error", notifyErr)
+		}
 		os.Exit(1)
 	}
 
@@ -226,12 +299,20 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 			currentToken, err := internal.ReadTokenFromFile(config.Credentials.CredentialsFile)
 			if err != nil {
 				slog.Error("unable to read token file", "error", err)
+				notifyErr := notifications.Publish(client, notify, []byte(fmt.Sprintf("Unable to read the authentication token from file. Additional context below: \n: %s", err)), internal.EventErrors.String())
+				if notifyErr != nil {
+					slog.Error("unable to send notification", "error", notifyErr)
+				}
 				os.Exit(1)
 			}
 
 			token, err := internal.RefreshToken(ctx, currentToken.AccessToken, currentToken.RefreshToken, client)
 			if err != nil {
 				slog.Error("unable to refresh token", "error", err)
+				notifyErr := notifications.Publish(client, notify, []byte(fmt.Sprintf("Unable to refresh the authentication token. Additional context below: \n: %s", err)), internal.EventErrors.String())
+				if notifyErr != nil {
+					slog.Error("unable to send notification", "error", notifyErr)
+				}
 				os.Exit(1)
 			}
 			authTokenChannel <- token
@@ -248,12 +329,20 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 			data, err := json.MarshalIndent(auth, "", " ")
 			if err != nil {
 				slog.Error("unable to marshal token", "error", err)
+				notifyErr := notifications.Publish(client, notify, []byte(fmt.Sprintf("Failed to marshal the authentication token value recieved from the Whoop API. Additional context below: \n %s", err)), internal.EventErrors.String())
+				if notifyErr != nil {
+					slog.Error("unable to send notification", "error", notifyErr)
+				}
 				os.Exit(1)
 			}
 
 			err = os.WriteFile(config.Credentials.CredentialsFile, data, 0755)
 			if err != nil {
 				slog.Error("unable to write token file", "error", err)
+				notifyErr := notifications.Publish(client, notify, []byte(fmt.Sprintf("Failed to write the authentication token value to the file. Additional context below: \n %s", err)), internal.EventErrors.String())
+				if notifyErr != nil {
+					slog.Error("unable to send notification", "error", notifyErr)
+				}
 				os.Exit(1)
 			}
 		}
@@ -270,28 +359,47 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 
 			slog.Info("Starting data collection")
 
+			var ua string = UserAgent
+
 			token, err := internal.ReadTokenFromFile(config.Credentials.CredentialsFile)
 			if err != nil {
 				slog.Error("unable to read token file", "error", err)
+				notifyErr := notifications.Publish(client, notify, []byte(fmt.Sprintf("Failed to read the authentication token from file during the regular daily retreive cycle. Additional context below: \n %s", err)), internal.EventErrors.String())
+				if notifyErr != nil {
+					slog.Error("unable to send notification", "error", notifyErr)
+				}
 				os.Exit(1)
 			}
 
 			var user internal.User
 
-			finalDataRaw, err := getData(ctx, user, client, token, &config.Server.FirstRunDownload)
+			finalDataRaw, err := getData(ctx, user, client, token, &config.Server.FirstRunDownload, ua)
 			if err != nil {
 				slog.Error("unable to get data", "error", err)
+				notifyErr := notifications.Publish(client, notify, []byte(fmt.Sprintf("Failed to get data from the Whoop API. Additional context below: \n %s", err)), internal.EventErrors.String())
+				if notifyErr != nil {
+					slog.Error("unable to send notification", "error", notifyErr)
+				}
 				os.Exit(1)
 			}
 
 			// Setup the exporters
 			err = manageExporters(&config, finalDataRaw)
 			if err != nil {
-				slog.Error("unable to manage exporters", "error", err)
+				slog.Error("An error occured with the data exporter.", "error", err)
+				notifyErr := notifications.Publish(client, notify, []byte(fmt.Sprintf("An error occured with the data exporter. Additional context below: \n %s", err)), internal.EventErrors.String())
+				if notifyErr != nil {
+					slog.Error("unable to send notification", "error", notifyErr)
+				}
 				os.Exit(1)
 			}
 
 			slog.Info("Data collection complete")
+			err = notifications.Publish(client, notify, []byte("Daily data collection complete."), internal.EventSuccess.String())
+			if err != nil {
+				slog.Error("unable to send notification", "error", err)
+			}
+
 		}
 
 	}()
@@ -323,8 +431,10 @@ func manageExporters(cfg *internal.ConfigurationData, data []byte) error {
 	case "file":
 		err := fileExp.Export(data)
 		if err != nil {
-			slog.Error("unable to export data with the file exporter", "error", err)
-			internal.LogError(err)
+			err := errors.Join(err, errors.New("unable to export data with the file exporter"))
+			if err != nil {
+				slog.Error("unable to export data with the file exporter", "error", err)
+			}
 			return err
 
 		}
@@ -332,12 +442,15 @@ func manageExporters(cfg *internal.ConfigurationData, data []byte) error {
 	case "s3":
 		err := awsS3Exp.Export(data)
 		if err != nil {
-			slog.Error("unable to export data with the s3 exporter", "error", err)
-			internal.LogError(err)
+			err := errors.Join(err, errors.New("unable to export data with the s3 exporter"))
+			if err != nil {
+				slog.Error("unable to export data with the s3 exporter", "error", err)
+			}
 			return err
 		}
 	default:
 		slog.Error("unknown exporter", "exporter", cfg.Export.Method)
+		return errors.New("unknown exporter")
 
 	}
 
@@ -346,7 +459,7 @@ func manageExporters(cfg *internal.ConfigurationData, data []byte) error {
 }
 
 // getData queries the Whoop API and gets the user data
-func getData(ctx context.Context, user internal.User, client *http.Client, token oauth2.Token, firstDownload *bool) ([]byte, error) {
+func getData(ctx context.Context, user internal.User, client *http.Client, token oauth2.Token, firstDownload *bool, ua string) ([]byte, error) {
 
 	if firstDownload == nil {
 		slog.Debug("firstDownload is nil. Unable to determine if this is the first download")
@@ -360,7 +473,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		slog.Debug("Filter string", "filter", filterString)
 
-		sleep, err := user.GetSleepCollection(ctx, client, token.AccessToken, filterString)
+		sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, filterString, ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -368,7 +481,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.SleepCollection = *sleep
 
-		recovery, err := user.GetRecoveryCollection(ctx, client, token.AccessToken, filterString)
+		recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, filterString, ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -376,7 +489,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.RecoveryCollection = *recovery
 
-		workout, err := user.GetWorkoutCollection(ctx, client, token.AccessToken, filterString)
+		workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, filterString, ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -384,7 +497,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.WorkoutCollection = *workout
 
-		cycle, err := user.GetCycleCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
+		cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, filterString, ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -395,7 +508,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 	if *firstDownload {
 
-		data, err := user.GetUserProfileData(ctx, client, token.AccessToken)
+		data, err := user.GetUserProfileData(ctx, client, internal.DEFAULT_WHOOP_API_USER_DATA_URL, token.AccessToken, ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -403,7 +516,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.UserData = *data
 
-		measurements, err := user.GetUserMeasurements(ctx, client, token.AccessToken)
+		measurements, err := user.GetUserMeasurements(ctx, client, internal.DEFAULT_WHOOP_API_USER_MEASUREMENT_DATA_URL, token.AccessToken, ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -411,7 +524,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.UserMesaurements = *measurements
 
-		sleep, err := user.GetSleepCollection(ctx, client, token.AccessToken, "")
+		sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, "", ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -419,7 +532,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.SleepCollection = *sleep
 
-		recovery, err := user.GetRecoveryCollection(ctx, client, token.AccessToken, "")
+		recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, "", ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -427,7 +540,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.RecoveryCollection = *recovery
 
-		workout, err := user.GetWorkoutCollection(ctx, client, token.AccessToken, "")
+		workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, "", ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err
@@ -435,7 +548,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 		user.WorkoutCollection = *workout
 
-		cycle, err := user.GetCycleCollection(ctx, GlobalHTTPClient, token.AccessToken, "")
+		cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, "", ua)
 		if err != nil {
 			internal.LogError(err)
 			return []byte{}, err

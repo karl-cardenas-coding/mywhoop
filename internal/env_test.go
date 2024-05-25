@@ -10,7 +10,11 @@ import (
 
 func TestExtractEnvVariablesError(t *testing.T) {
 
-	expectedMsg := "the required env variables WHOOP_CLIENT_ID and WHOOP_CLIENT_ID are not set"
+	os.Unsetenv("WHOOP_CLIENT_ID")
+	os.Unsetenv("WHOOP_CLIENT_SECRET")
+	os.Unsetenv("WHOOP_CREDENTIALS_FILE")
+
+	expectedMsg := "the required env variables WHOOP_CLIENT_ID and WHOOP_CLIENT_SECRET are not set"
 	_, err := ExtractEnvVariables()
 	if err == nil {
 		t.Log(err)
@@ -26,12 +30,13 @@ func TestExtractEnvVariablesError(t *testing.T) {
 
 func TestExtractEnvVariablesClient(t *testing.T) {
 
+	cleanUpEnvVars()
+
 	os.Setenv("WHOOP_CLIENT_ID", "AAAAAAAAAAAAAAAAAAA")
 	expectedMsg := "the required env variable WHOOP_CLIENT_SECRET is not set"
 	_, err := ExtractEnvVariables()
 
 	if err == nil {
-		t.Log(err)
 		t.Errorf("Expected  an error, but got %v", err)
 	}
 
@@ -43,6 +48,8 @@ func TestExtractEnvVariablesClient(t *testing.T) {
 }
 
 func TestExtractEnvVariablesClientSecret(t *testing.T) {
+
+	cleanUpEnvVars()
 
 	os.Setenv("WHOOP_CLIENT_SECRET", "BBBBBBBBBBBBBBBBBBBBB")
 	expectedMsg := "the required env variable WHOOP_CLIENT_ID is not set"
