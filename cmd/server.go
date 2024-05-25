@@ -190,7 +190,10 @@ func server(ctx context.Context) error {
 		}
 
 		slog.Info("Data collection complete")
-		notifications.Publish(client, notificationMethod, []byte("Initial data collection complete."), internal.EventSuccess.String())
+		err = notifications.Publish(client, notificationMethod, []byte("Initial data collection complete."), internal.EventSuccess.String())
+		if err != nil {
+			slog.Error("unable to send notification", "error", err)
+		}
 
 		return nil
 
@@ -392,7 +395,10 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 			}
 
 			slog.Info("Data collection complete")
-			notifications.Publish(client, notify, []byte("Daily data collection complete."), internal.EventSuccess.String())
+			err = notifications.Publish(client, notify, []byte("Daily data collection complete."), internal.EventSuccess.String())
+			if err != nil {
+				slog.Error("unable to send notification", "error", err)
+			}
 
 		}
 
@@ -425,7 +431,10 @@ func manageExporters(cfg *internal.ConfigurationData, data []byte) error {
 	case "file":
 		err := fileExp.Export(data)
 		if err != nil {
-			errors.Join(err, errors.New("unable to export data with the file exporter"))
+			err := errors.Join(err, errors.New("unable to export data with the file exporter"))
+			if err != nil {
+				slog.Error("unable to export data with the file exporter", "error", err)
+			}
 			return err
 
 		}
@@ -433,7 +442,10 @@ func manageExporters(cfg *internal.ConfigurationData, data []byte) error {
 	case "s3":
 		err := awsS3Exp.Export(data)
 		if err != nil {
-			errors.Join(err, errors.New("unable to export data with the s3 exporter"))
+			err := errors.Join(err, errors.New("unable to export data with the s3 exporter"))
+			if err != nil {
+				slog.Error("unable to export data with the s3 exporter", "error", err)
+			}
 			return err
 		}
 	default:

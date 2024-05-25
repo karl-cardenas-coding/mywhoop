@@ -21,7 +21,7 @@ func TestNewNtfy(t *testing.T) {
 	}
 
 	expected := "errors"
-	if ntfy.Events != expected {
+	if ntfy != nil && ntfy.Events != expected {
 		t.Errorf("Expected %v, got %v", expected, ntfy.Events)
 	}
 

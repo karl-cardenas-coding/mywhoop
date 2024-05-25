@@ -151,7 +151,10 @@ func dump(ctx context.Context) error {
 	finalDataRaw, err := json.MarshalIndent(user, "", "  ")
 	if err != nil {
 		internal.LogError(err)
-		notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+		if notifyErr != nil {
+			slog.Error("unable to send notification", "error", notifyErr)
+		}
 		return err
 	}
 
@@ -185,9 +188,9 @@ func dump(ctx context.Context) error {
 
 	}
 	slog.Info("All Whoop data downloaded successfully")
-	notifyErr := notifications.Publish(client, notificationMethod, []byte("Successfully downloaded all Whoop data."), internal.EventSuccess.String())
-	if notifyErr != nil {
-		slog.Error("unable to send notification", "error", notifyErr)
+	err = notifications.Publish(client, notificationMethod, []byte("Successfully downloaded all Whoop data."), internal.EventSuccess.String())
+	if err != nil {
+		slog.Error("unable to send notification", "error", err)
 	}
 
 	return nil
