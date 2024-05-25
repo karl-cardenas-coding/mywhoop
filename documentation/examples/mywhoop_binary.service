@@ -1,0 +1,19 @@
+[Unit]
+Description=MyWhoop
+Documentation="https://github.com/karl-cardenas-coding/mywhoop"
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/mywhoop server --config /home/ubuntu/.mywhoop.yaml
+Restart=on-failure
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/
+Environment="WHOOP_CLIENT_ID=*************"
+Environment="WHOOP_CLIENT_SECRET==*************""
+Environment="NOTIFICATION_NTFY_AUTH_TOKEN==*************""
+Environment="WHOOP_CREDENTIALS_FILE=/home/ubuntu/token.json
+
+[Install]
+WantedBy=multi-user.target
