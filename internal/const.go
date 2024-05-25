@@ -3,7 +3,9 @@
 
 package internal
 
-import "time"
+import (
+	"time"
+)
 
 const (
 	// AccessTokenURL is the URL to get an access token from the Whoop API

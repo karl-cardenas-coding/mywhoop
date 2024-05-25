@@ -86,10 +86,10 @@ func InitLogger(cfg *internal.ConfigurationData) error {
 		slog.Group("Config", slog.String("File", cfgFile)),
 	)
 
-	ok := internal.CheckConfigFile(cfgFile)
+	ok, configFilePath := internal.CheckConfigFile(cfgFile)
 	if ok {
-		slog.Info("config file found", "config", cfgFile)
-		config, err := internal.GenerateConfigStruct(cfgFile)
+		slog.Info("config file found", "config", configFilePath)
+		config, err := internal.GenerateConfigStruct(configFilePath)
 		if err != nil {
 			slog.Error("unable to generate configuration struct", "error", err)
 			os.Exit(1)

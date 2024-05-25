@@ -185,7 +185,7 @@ func dump(ctx context.Context) error {
 
 	}
 	slog.Info("All Whoop data downloaded successfully")
-	notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventSuccess.String())
+	notifyErr := notifications.Publish(client, notificationMethod, []byte("Successfully downloaded all Whoop data."), internal.EventSuccess.String())
 	if notifyErr != nil {
 		slog.Error("unable to send notification", "error", notifyErr)
 	}

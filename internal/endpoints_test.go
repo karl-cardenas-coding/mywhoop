@@ -59,12 +59,15 @@ func TestGetUserProfileData(t *testing.T) {
 				r.Method = "GET"
 				w.WriteHeader(http.StatusOK)
 				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{
+				_, err := w.Write([]byte(`{
 					"user_id": 11111112,
 					"email": "test@email.com",
 					"first_name": "testName",
 					"last_name": "testLastName"
 				}`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
 			})),
 			false,
 		},
@@ -74,8 +77,11 @@ func TestGetUserProfileData(t *testing.T) {
 				r.Method = "GET"
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{
+				_, err := w.Write([]byte(`{
 					"error": "Internal Server Error"`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
 			})),
 			true,
 		},
@@ -85,8 +91,11 @@ func TestGetUserProfileData(t *testing.T) {
 				r.Method = "GET"
 				w.WriteHeader(http.StatusOK)
 				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{
+				_, err := w.Write([]byte(`{
 					"unexpect: 42`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
 			})),
 			true,
 		},
@@ -145,11 +154,14 @@ func TestGetUserMeasurements(t *testing.T) {
 				r.Method = "GET"
 				w.WriteHeader(http.StatusOK)
 				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{
+				_, err := w.Write([]byte(`{
 					"height_meter": 1.78,
 					"weight_kilogram": 66.678085,
 					"max_heart_rate": 198
 				}`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
 			})),
 			false,
 		},
@@ -159,8 +171,11 @@ func TestGetUserMeasurements(t *testing.T) {
 				r.Method = "GET"
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{
+				_, err := w.Write([]byte(`{
 					"error": "Internal Server Error"`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
 			})),
 			true,
 		},
@@ -170,8 +185,11 @@ func TestGetUserMeasurements(t *testing.T) {
 				r.Method = "GET"
 				w.WriteHeader(http.StatusOK)
 				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{
+				_, err := w.Write([]byte(`{
 					"unexpect: 42`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
 			})),
 			true,
 		},
@@ -259,7 +277,7 @@ func TestGetSleepCollection(t *testing.T) {
 				r.Method = "GET"
 				w.WriteHeader(http.StatusOK)
 				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{"records":[{
+				_, err := w.Write([]byte(`{"records":[{
 					"id": 1053725843,
 					"user_id": 11111110,
 					"created_at": "2024-05-19T21:16:24.607Z",
@@ -292,6 +310,9 @@ func TestGetSleepCollection(t *testing.T) {
 						"sleep_efficiency_percentage": 99.670616
 					}
 				}]}`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
 			})),
 			false,
 		},
@@ -338,7 +359,7 @@ func TestGetSleepCollection(t *testing.T) {
 				r.Method = "GET"
 				w.WriteHeader(http.StatusOK)
 				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{"records":[{
+				_, err := w.Write([]byte(`{"records":[{
 				"id": 1052702379,
 				"user_id": 11111110,
 				"created_at": "2024-05-19T05:40:30.547Z",
@@ -371,6 +392,9 @@ func TestGetSleepCollection(t *testing.T) {
 					"sleep_efficiency_percentage": 77.05682
 				}
 				}]}`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
 			})),
 			false,
 		},
@@ -380,8 +404,11 @@ func TestGetSleepCollection(t *testing.T) {
 				r.Method = "GET"
 				w.WriteHeader(http.StatusForbidden)
 				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{
+				_, err := w.Write([]byte(`{
 					"unexpect: 42`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
 			})),
 			true,
 		},
@@ -391,8 +418,11 @@ func TestGetSleepCollection(t *testing.T) {
 				r.Method = "GET"
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{
+				_, err := w.Write([]byte(`{
 					"unexpect: 42`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
 			})),
 			true,
 		},
@@ -545,6 +575,748 @@ func TestGetSleepCollection(t *testing.T) {
 						result.SleepCollectionRecords[i].Score.SleepEfficiencyPercentage)
 				}
 
+			}
+		}
+
+	}
+
+}
+
+func TestGetRecoveryCollection(t *testing.T) {
+
+	tests := []struct {
+		id                     int
+		userRecoveryCollection RecoveryCollection
+		ts                     *httptest.Server
+		errorExpected          bool
+	}{
+		{
+			0, RecoveryCollection{
+				RecoveryRecords: []RecoveryRecords{
+					{
+						CycleID:    578161638,
+						SleepID:    1059898994,
+						UserID:     14465117,
+						CreatedAt:  time.Date(2024, 05, 24, 9, 20, 18, 917000000, time.UTC),
+						UpdatedAt:  time.Date(2024, 05, 24, 12, 45, 38, 5000000, time.UTC),
+						ScoreState: "SCORED",
+						Score: RecoveryScore{
+							UserCalibrating:  false,
+							RecoveryScore:    66,
+							RestingHeartRate: 58,
+							HrvRmssdMilli:    27.39852,
+							Spo2Percentage:   94.72727,
+							SkinTempCelsius:  35.2,
+						},
+					},
+				},
+				NextToken: "",
+			},
+			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r.Method = "GET"
+				w.WriteHeader(http.StatusOK)
+				w.Header().Set("Content-Type", "application/json")
+				_, err := w.Write([]byte(`{
+					"records": [
+					  {
+						"cycle_id": 578161638,
+						"sleep_id": 1059898994,
+						"user_id": 14465117,
+						"created_at": "2024-05-24T09:20:18.917Z",
+						"updated_at": "2024-05-24T12:45:38.005Z",
+						"score_state": "SCORED",
+						"score": {
+						  "user_calibrating": false,
+						  "recovery_score": 66,
+						  "resting_heart_rate": 58,
+						  "hrv_rmssd_milli": 27.39852,
+						  "spo2_percentage": 94.72727,
+						  "skin_temp_celsius": 35.2
+						}
+					  }
+					]
+				  }`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
+			})),
+			false,
+		},
+		{
+			0, RecoveryCollection{
+				RecoveryRecords: []RecoveryRecords{
+					{
+						CycleID:    578161638,
+						SleepID:    1059898994,
+						UserID:     14465117,
+						CreatedAt:  time.Date(2024, 05, 24, 9, 20, 18, 917000000, time.UTC),
+						UpdatedAt:  time.Date(2024, 05, 24, 12, 45, 38, 5000000, time.UTC),
+						ScoreState: "SCORED",
+						Score: RecoveryScore{
+							UserCalibrating:  false,
+							RecoveryScore:    66,
+							RestingHeartRate: 58,
+							HrvRmssdMilli:    27.39852,
+							Spo2Percentage:   94.72727,
+							SkinTempCelsius:  35.2,
+						},
+					},
+				},
+				NextToken: "",
+			},
+			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r.Method = "GET"
+				w.WriteHeader(http.StatusOK)
+				w.Header().Set("Content-Type", "application/json")
+				_, err := w.Write([]byte(`{
+					"records": [
+					  {
+						"cycle_id": 578161638,
+						"sleep_id": 1059898994,
+						"user_id": 14465117,
+						"created_at": "2024-05-24T09:20:18.917Z",
+						"updated_at": "2024-05-24T12:45:38.005Z",
+						"score_state": "SCORED",
+						"score": {
+						  "user_calibrating": false,
+						  "recovery_score": 66,
+						  "resting_heart_rate": 58,
+						  "hrv_rmssd_milli": 27.39852,
+						  "spo2_percentage": 94.72727,
+						  "skin_temp_celsius": 35.2
+						}
+					  }
+					]
+				  }`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
+			})),
+			false,
+		},
+		{
+			0, RecoveryCollection{},
+			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r.Method = "GET"
+				w.WriteHeader(http.StatusForbidden)
+				w.Header().Set("Content-Type", "application/json")
+				_, err := w.Write([]byte(`{
+					"unexpect: 42`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
+
+			})),
+			true,
+		},
+		{
+			0, RecoveryCollection{},
+			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r.Method = "GET"
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Header().Set("Content-Type", "application/json")
+				_, err := w.Write([]byte(`{
+					"unexpect: 42`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
+			})),
+			true,
+		},
+	}
+
+	client := CreateHTTPClient()
+
+	for index, test := range tests {
+		test.id = index + 1
+		defer test.ts.Close()
+		ctx := context.Background()
+		testUser := User{
+			RecoveryCollection: test.userRecoveryCollection,
+		}
+
+		t.Log("Test Case: ", test.id)
+
+		result, err := testUser.GetRecoveryCollection(ctx, client, test.ts.URL, "abc", "", "mock-user-agent")
+		if err != nil && !test.errorExpected {
+			t.Fatalf("Test Case %d - Unexpected error: %v", test.id, err)
+		}
+
+		if result != nil {
+
+			if len(result.RecoveryRecords) != len(test.userRecoveryCollection.RecoveryRecords) {
+				t.Errorf("Test Case %d - Expected %v, got %v", test.id, len(test.userRecoveryCollection.RecoveryRecords), len(result.RecoveryRecords))
+			}
+
+			for i := 0; i < len(result.RecoveryRecords); i++ {
+
+				if result.RecoveryRecords[i].CycleID != test.userRecoveryCollection.RecoveryRecords[i].CycleID {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userRecoveryCollection.RecoveryRecords[i].CycleID, result.RecoveryRecords[i].CycleID)
+				}
+
+				if result.RecoveryRecords[i].SleepID != test.userRecoveryCollection.RecoveryRecords[i].SleepID {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userRecoveryCollection.RecoveryRecords[i].SleepID, result.RecoveryRecords[i].SleepID)
+				}
+
+				if result.RecoveryRecords[i].UserID != test.userRecoveryCollection.RecoveryRecords[i].UserID {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userRecoveryCollection.RecoveryRecords[i].UserID, result.RecoveryRecords[i].UserID)
+				}
+
+				if result.RecoveryRecords[i].CreatedAt != test.userRecoveryCollection.RecoveryRecords[i].CreatedAt {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userRecoveryCollection.RecoveryRecords[i].CreatedAt, result.RecoveryRecords[i].CreatedAt)
+				}
+
+				if result.RecoveryRecords[i].UpdatedAt != test.userRecoveryCollection.RecoveryRecords[i].UpdatedAt {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userRecoveryCollection.RecoveryRecords[i].UpdatedAt, result.RecoveryRecords[i].UpdatedAt)
+				}
+
+				if result.RecoveryRecords[i].ScoreState != test.userRecoveryCollection.RecoveryRecords[i].ScoreState {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userRecoveryCollection.RecoveryRecords[i].ScoreState, result.RecoveryRecords[i].ScoreState)
+				}
+
+				if result.RecoveryRecords[i].Score.UserCalibrating != test.userRecoveryCollection.RecoveryRecords[i].Score.UserCalibrating {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userRecoveryCollection.RecoveryRecords[i].Score.UserCalibrating, result.RecoveryRecords[i].Score.UserCalibrating)
+				}
+
+				if result.RecoveryRecords[i].Score.RecoveryScore != test.userRecoveryCollection.RecoveryRecords[i].Score.RecoveryScore {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userRecoveryCollection.RecoveryRecords[i].Score.RecoveryScore, result.RecoveryRecords[i].Score.RecoveryScore)
+				}
+
+				if result.RecoveryRecords[i].Score.RestingHeartRate != test.userRecoveryCollection.RecoveryRecords[i].Score.RestingHeartRate {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userRecoveryCollection.RecoveryRecords[i].Score.RestingHeartRate, result.RecoveryRecords[i].Score.RestingHeartRate)
+				}
+
+				if result.RecoveryRecords[i].Score.HrvRmssdMilli != test.userRecoveryCollection.RecoveryRecords[i].Score.HrvRmssdMilli {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userRecoveryCollection.RecoveryRecords[i].Score.HrvRmssdMilli, result.RecoveryRecords[i].Score.HrvRmssdMilli)
+				}
+
+				if result.RecoveryRecords[i].Score.Spo2Percentage != test.userRecoveryCollection.RecoveryRecords[i].Score.Spo2Percentage {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userRecoveryCollection.RecoveryRecords[i].Score.Spo2Percentage, result.RecoveryRecords[i].Score.Spo2Percentage)
+				}
+
+				if result.RecoveryRecords[i].Score.SkinTempCelsius != test.userRecoveryCollection.RecoveryRecords[i].Score.SkinTempCelsius {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userRecoveryCollection.RecoveryRecords[i].Score.SkinTempCelsius, result.RecoveryRecords[i].Score.SkinTempCelsius)
+				}
+
+			}
+		}
+
+	}
+
+}
+
+func TestGetWorkoutCollection(t *testing.T) {
+
+	tests := []struct {
+		id                    int
+		userWorkoutCollection WorkoutCollection
+		ts                    *httptest.Server
+		errorExpected         bool
+	}{
+		{
+			0, WorkoutCollection{
+				Records: []WorkoutRecords{
+					{
+						ID:             1059528008,
+						UserID:         19999999,
+						CreatedAt:      time.Date(2024, 05, 24, 01, 48, 52, 178000000, time.UTC),
+						UpdatedAt:      time.Date(2024, 05, 24, 01, 56, 11, 338000000, time.UTC),
+						Start:          time.Date(2024, 05, 24, 01, 9, 00, 475000000, time.UTC),
+						End:            time.Date(2024, 05, 24, 01, 32, 59, 418000000, time.UTC),
+						TimezoneOffset: "-07:00",
+						SportID:        71,
+						ScoreState:     "SCORED",
+						Score: WorkoutScore{
+							Strain:              7.9998,
+							AverageHeartRate:    132,
+							MaxHeartRate:        162,
+							Kilojoule:           866.2699,
+							PercentRecorded:     100,
+							DistanceMeter:       0,
+							AltitudeGainMeter:   0,
+							AltitudeChangeMeter: 0,
+							ZoneDuration: ZoneDuration{
+								ZoneZeroMilli:  4806,
+								ZoneOneMilli:   159578,
+								ZoneTwoMilli:   151924,
+								ZoneThreeMilli: 724754,
+								ZoneFourMilli:  397920,
+								ZoneFiveMilli:  0,
+							},
+						},
+					},
+				},
+				NextToken: "",
+			},
+			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r.Method = "GET"
+				w.WriteHeader(http.StatusOK)
+				w.Header().Set("Content-Type", "application/json")
+				_, err := w.Write([]byte(`{
+					"records": [
+					  {
+						"id": 1059528008,
+						"user_id": 19999999,
+						"created_at": "2024-05-24T01:48:52.178Z",
+						"updated_at": "2024-05-24T01:56:11.338Z",
+						"start": "2024-05-24T01:09:00.475Z",
+						"end": "2024-05-24T01:32:59.418Z",
+						"timezone_offset": "-07:00",
+						"sport_id": 71,
+						"score_state": "SCORED",
+						"score": {
+						  "strain": 7.9998,
+						  "average_heart_rate": 132,
+						  "max_heart_rate": 162,
+						  "kilojoule": 866.2699,
+						  "percent_recorded": 100,
+						  "distance_meter": 0,
+						  "altitude_gain_meter": 0,
+						  "altitude_change_meter": 0,
+						  "zone_duration": {
+							"zone_zero_milli": 4806,
+							"zone_one_milli": 159578,
+							"zone_two_milli": 151924,
+							"zone_three_milli": 724754,
+							"zone_four_milli": 397920,
+							"zone_five_milli": 0
+						  }
+						}
+					  }
+					]
+				  }`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
+			})),
+			false,
+		},
+		{
+			0, WorkoutCollection{
+				Records: []WorkoutRecords{
+					{
+						ID:             1059528008,
+						UserID:         19999999,
+						CreatedAt:      time.Date(2024, 05, 24, 01, 48, 52, 178000000, time.UTC),
+						UpdatedAt:      time.Date(2024, 05, 24, 01, 56, 11, 338000000, time.UTC),
+						Start:          time.Date(2024, 05, 24, 01, 9, 00, 475000000, time.UTC),
+						End:            time.Date(2024, 05, 24, 01, 32, 59, 418000000, time.UTC),
+						TimezoneOffset: "-07:00",
+						SportID:        71,
+						ScoreState:     "SCORED",
+						Score: WorkoutScore{
+							Strain:              7.9998,
+							AverageHeartRate:    132,
+							MaxHeartRate:        162,
+							Kilojoule:           866.2699,
+							PercentRecorded:     100,
+							DistanceMeter:       0,
+							AltitudeGainMeter:   0,
+							AltitudeChangeMeter: 0,
+							ZoneDuration: ZoneDuration{
+								ZoneZeroMilli:  4806,
+								ZoneOneMilli:   159578,
+								ZoneTwoMilli:   151924,
+								ZoneThreeMilli: 724754,
+								ZoneFourMilli:  397920,
+								ZoneFiveMilli:  0,
+							},
+						},
+					},
+				},
+				NextToken: "",
+			},
+			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r.Method = "GET"
+				w.WriteHeader(http.StatusOK)
+				w.Header().Set("Content-Type", "application/json")
+				_, err := w.Write([]byte(`{
+					"records": [
+					  {
+						"id": 1059528008,
+						"user_id": 19999999,
+						"created_at": "2024-05-24T01:48:52.178Z",
+						"updated_at": "2024-05-24T01:56:11.338Z",
+						"start": "2024-05-24T01:09:00.475Z",
+						"end": "2024-05-24T01:32:59.418Z",
+						"timezone_offset": "-07:00",
+						"sport_id": 71,
+						"score_state": "SCORED",
+						"score": {
+						  "strain": 7.9998,
+						  "average_heart_rate": 132,
+						  "max_heart_rate": 162,
+						  "kilojoule": 866.2699,
+						  "percent_recorded": 100,
+						  "distance_meter": 0,
+						  "altitude_gain_meter": 0,
+						  "altitude_change_meter": 0,
+						  "zone_duration": {
+							"zone_zero_milli": 4806,
+							"zone_one_milli": 159578,
+							"zone_two_milli": 151924,
+							"zone_three_milli": 724754,
+							"zone_four_milli": 397920,
+							"zone_five_milli": 0
+						  }
+						}
+					  }
+					]
+				  }`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
+			})),
+			false,
+		},
+		{
+			0, WorkoutCollection{},
+			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r.Method = "GET"
+				w.WriteHeader(http.StatusForbidden)
+				w.Header().Set("Content-Type", "application/json")
+				_, err := w.Write([]byte(`{
+					"unexpect: 42`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
+			})),
+			true,
+		},
+		{
+			0, WorkoutCollection{},
+			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r.Method = "GET"
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Header().Set("Content-Type", "application/json")
+				_, err := w.Write([]byte(`{
+					"unexpect: 42`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
+			})),
+			true,
+		},
+	}
+
+	client := CreateHTTPClient()
+
+	for index, test := range tests {
+		test.id = index + 1
+		defer test.ts.Close()
+		ctx := context.Background()
+		testUser := User{
+			WorkoutCollection: test.userWorkoutCollection,
+		}
+
+		t.Log("Test Case: ", test.id)
+
+		result, err := testUser.GetWorkoutCollection(ctx, client, test.ts.URL, "abc", "", "mock-user-agent")
+		if err != nil && !test.errorExpected {
+			t.Fatalf("Test Case %d - Unexpected error: %v", test.id, err)
+		}
+
+		if result != nil {
+
+			if len(result.Records) != len(test.userWorkoutCollection.Records) {
+				t.Errorf("Test Case %d - Expected %v, got %v", test.id, len(test.userWorkoutCollection.Records), len(result.Records))
+			}
+
+			for i := 0; i < len(result.Records); i++ {
+
+				if result.Records[i].ID != test.userWorkoutCollection.Records[i].ID {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].ID, result.Records[i].ID)
+				}
+
+				if result.Records[i].UserID != test.userWorkoutCollection.Records[i].UserID {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].UserID, result.Records[i].UserID)
+				}
+
+				if result.Records[i].CreatedAt != test.userWorkoutCollection.Records[i].CreatedAt {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].CreatedAt, result.Records[i].CreatedAt)
+				}
+
+				if result.Records[i].UpdatedAt != test.userWorkoutCollection.Records[i].UpdatedAt {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].UpdatedAt, result.Records[i].UpdatedAt)
+				}
+
+				if result.Records[i].Start != test.userWorkoutCollection.Records[i].Start {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].Start, result.Records[i].Start)
+				}
+
+				if result.Records[i].End != test.userWorkoutCollection.Records[i].End {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].End, result.Records[i].End)
+				}
+
+				if result.Records[i].TimezoneOffset != test.userWorkoutCollection.Records[i].TimezoneOffset {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].TimezoneOffset, result.Records[i].TimezoneOffset)
+				}
+
+				if result.Records[i].SportID != test.userWorkoutCollection.Records[i].SportID {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].SportID, result.Records[i].SportID)
+				}
+
+				if result.Records[i].ScoreState != test.userWorkoutCollection.Records[i].ScoreState {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].ScoreState, result.Records[i].ScoreState)
+				}
+
+				if result.Records[i].Score.Strain != test.userWorkoutCollection.Records[i].Score.Strain {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].Score.Strain, result.Records[i].Score.Strain)
+				}
+
+				if result.Records[i].Score.AverageHeartRate != test.userWorkoutCollection.Records[i].Score.AverageHeartRate {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].Score.AverageHeartRate, result.Records[i].Score.AverageHeartRate)
+				}
+
+				if result.Records[i].Score.MaxHeartRate != test.userWorkoutCollection.Records[i].Score.MaxHeartRate {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].Score.MaxHeartRate, result.Records[i].Score.MaxHeartRate)
+				}
+
+				if result.Records[i].Score.Kilojoule != test.userWorkoutCollection.Records[i].Score.Kilojoule {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].Score.Kilojoule, result.Records[i].Score.Kilojoule)
+				}
+
+				if result.Records[i].Score.PercentRecorded != test.userWorkoutCollection.Records[i].Score.PercentRecorded {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].Score.PercentRecorded, result.Records[i].Score.PercentRecorded)
+				}
+
+				if result.Records[i].Score.DistanceMeter != test.userWorkoutCollection.Records[i].Score.DistanceMeter {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].Score.DistanceMeter, result.Records[i].Score.DistanceMeter)
+				}
+
+				if result.Records[i].Score.AltitudeGainMeter != test.userWorkoutCollection.Records[i].Score.AltitudeGainMeter {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].Score.AltitudeGainMeter, result.Records[i].Score.AltitudeGainMeter)
+				}
+
+				if result.Records[i].Score.AltitudeChangeMeter != test.userWorkoutCollection.Records[i].Score.AltitudeChangeMeter {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].Score.AltitudeChangeMeter, result.Records[i].Score.AltitudeChangeMeter)
+				}
+
+				if result.Records[i].Score.ZoneDuration.ZoneZeroMilli != test.userWorkoutCollection.Records[i].Score.ZoneDuration.ZoneZeroMilli {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].Score.ZoneDuration.ZoneZeroMilli, result.Records[i].Score.ZoneDuration.ZoneZeroMilli)
+				}
+
+				if result.Records[i].Score.ZoneDuration.ZoneOneMilli != test.userWorkoutCollection.Records[i].Score.ZoneDuration.ZoneOneMilli {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].Score.ZoneDuration.ZoneOneMilli, result.Records[i].Score.ZoneDuration.ZoneOneMilli)
+				}
+
+				if result.Records[i].Score.ZoneDuration.ZoneTwoMilli != test.userWorkoutCollection.Records[i].Score.ZoneDuration.ZoneTwoMilli {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].Score.ZoneDuration.ZoneTwoMilli, result.Records[i].Score.ZoneDuration.ZoneTwoMilli)
+				}
+
+				if result.Records[i].Score.ZoneDuration.ZoneThreeMilli != test.userWorkoutCollection.Records[i].Score.ZoneDuration.ZoneThreeMilli {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].Score.ZoneDuration.ZoneThreeMilli, result.Records[i].Score.ZoneDuration.ZoneThreeMilli)
+				}
+
+				if result.Records[i].Score.ZoneDuration.ZoneFourMilli != test.userWorkoutCollection.Records[i].Score.ZoneDuration.ZoneFourMilli {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].Score.ZoneDuration.ZoneFourMilli, result.Records[i].Score.ZoneDuration.ZoneFourMilli)
+				}
+
+				if result.Records[i].Score.ZoneDuration.ZoneFiveMilli != test.userWorkoutCollection.Records[i].Score.ZoneDuration.ZoneFiveMilli {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userWorkoutCollection.Records[i].Score.ZoneDuration.ZoneFiveMilli, result.Records[i].Score.ZoneDuration.ZoneFiveMilli)
+				}
+
+			}
+		}
+
+	}
+
+}
+
+func TestGetCycleCollection(t *testing.T) {
+
+	tests := []struct {
+		id                  int
+		userCycleCollection CycleCollection
+		ts                  *httptest.Server
+		errorExpected       bool
+	}{
+		{
+			0, CycleCollection{
+				Records: []CycleRecords{
+					{
+						ID:             571373432,
+						UserID:         19999999,
+						CreatedAt:      time.Date(2024, 05, 14, 10, 12, 58, 83000000, time.UTC),
+						UpdatedAt:      time.Date(2024, 05, 15, 13, 27, 45, 950000000, time.UTC),
+						Start:          time.Date(2024, 05, 14, 05, 15, 14, 199000000, time.UTC),
+						End:            time.Date(2024, 05, 15, 05, 06, 01, 83000000, time.UTC),
+						TimezoneOffset: "-07:00",
+						ScoreState:     "SCORED",
+						Score: CycleScore{
+							Strain:           14.583735,
+							Kilojoule:        9503.399,
+							AverageHeartRate: 76,
+							MaxHeartRate:     157,
+						},
+					},
+					{
+						ID:             570921306,
+						UserID:         19999999,
+						CreatedAt:      time.Date(2024, 05, 13, 14, 10, 10, 248000000, time.UTC),
+						UpdatedAt:      time.Date(2024, 05, 14, 10, 13, 03, 243000000, time.UTC),
+						Start:          time.Date(2024, 05, 13, 04, 20, 13, 925000000, time.UTC),
+						End:            time.Date(2024, 05, 14, 05, 15, 14, 99000000, time.UTC),
+						TimezoneOffset: "-07:00",
+						ScoreState:     "SCORED",
+						Score: CycleScore{
+							Strain:           9.334525,
+							Kilojoule:        8259.693,
+							AverageHeartRate: 74,
+							MaxHeartRate:     154,
+						},
+					},
+				},
+				NextToken: "",
+			},
+			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r.Method = "GET"
+				w.WriteHeader(http.StatusOK)
+				w.Header().Set("Content-Type", "application/json")
+				_, err := w.Write([]byte(`{
+					"records": [
+					  {
+						"id": 571373432,
+						"user_id": 19999999,
+						"created_at": "2024-05-14T10:12:58.083Z",
+						"updated_at": "2024-05-15T13:27:45.950Z",
+						"start": "2024-05-14T05:15:14.199Z",
+						"end": "2024-05-15T05:06:01.083Z",
+						"timezone_offset": "-07:00",
+						"score_state": "SCORED",
+						"score": {
+						  "strain": 14.583735,
+						  "kilojoule": 9503.399,
+						  "average_heart_rate": 76,
+						  "max_heart_rate": 157
+						}
+					  },
+					  {
+						"id": 570921306,
+						"user_id": 19999999,
+						"created_at": "2024-05-13T14:10:10.248Z",
+						"updated_at": "2024-05-14T10:13:03.243Z",
+						"start": "2024-05-13T04:20:13.925Z",
+						"end": "2024-05-14T05:15:14.099Z",
+						"timezone_offset": "-07:00",
+						"score_state": "SCORED",
+						"score": {
+						  "strain": 9.334525,
+						  "kilojoule": 8259.693,
+						  "average_heart_rate": 74,
+						  "max_heart_rate": 154
+						}
+					  }
+					]
+				  }`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
+			})),
+			false,
+		},
+		{
+			0, CycleCollection{},
+			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r.Method = "GET"
+				w.WriteHeader(http.StatusForbidden)
+				w.Header().Set("Content-Type", "application/json")
+				_, err := w.Write([]byte(`{
+					"unexpect: 42`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
+			})),
+			true,
+		},
+		{
+			0, CycleCollection{},
+			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r.Method = "GET"
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Header().Set("Content-Type", "application/json")
+				_, err := w.Write([]byte(`{
+					"unexpect: 42`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
+			})),
+			true,
+		},
+	}
+
+	client := CreateHTTPClient()
+
+	for index, test := range tests {
+		test.id = index + 1
+		defer test.ts.Close()
+		ctx := context.Background()
+		testUser := User{
+			CycleCollection: test.userCycleCollection,
+		}
+
+		t.Log("Test Case: ", test.id)
+
+		result, err := testUser.GetCycleCollection(ctx, client, test.ts.URL, "abc", "", "mock-user-agent")
+		if err != nil && !test.errorExpected {
+			t.Fatalf("Test Case %d - Unexpected error: %v", test.id, err)
+		}
+
+		if result != nil {
+
+			if len(result.Records) != len(test.userCycleCollection.Records) {
+				t.Errorf("Test Case %d - Expected %v, got %v", test.id, len(test.userCycleCollection.Records), len(result.Records))
+			}
+
+			for i := 0; i < len(result.Records); i++ {
+
+				if result.Records[i].ID != test.userCycleCollection.Records[i].ID {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userCycleCollection.Records[i].ID, result.Records[i].ID)
+				}
+
+				if result.Records[i].UserID != test.userCycleCollection.Records[i].UserID {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userCycleCollection.Records[i].UserID, result.Records[i].UserID)
+				}
+
+				if result.Records[i].CreatedAt != test.userCycleCollection.Records[i].CreatedAt {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userCycleCollection.Records[i].CreatedAt, result.Records[i].CreatedAt)
+				}
+
+				if result.Records[i].UpdatedAt != test.userCycleCollection.Records[i].UpdatedAt {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userCycleCollection.Records[i].UpdatedAt, result.Records[i].UpdatedAt)
+				}
+
+				if result.Records[i].Start != test.userCycleCollection.Records[i].Start {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userCycleCollection.Records[i].Start, result.Records[i].Start)
+				}
+
+				if result.Records[i].End != test.userCycleCollection.Records[i].End {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userCycleCollection.Records[i].End, result.Records[i].End)
+				}
+
+				if result.Records[i].TimezoneOffset != test.userCycleCollection.Records[i].TimezoneOffset {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userCycleCollection.Records[i].TimezoneOffset, result.Records[i].TimezoneOffset)
+				}
+
+				if result.Records[i].ScoreState != test.userCycleCollection.Records[i].ScoreState {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userCycleCollection.Records[i].ScoreState, result.Records[i].ScoreState)
+				}
+
+				if result.Records[i].Score.Strain != test.userCycleCollection.Records[i].Score.Strain {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userCycleCollection.Records[i].Score.Strain, result.Records[i].Score.Strain)
+				}
+
+				if result.Records[i].Score.Kilojoule != test.userCycleCollection.Records[i].Score.Kilojoule {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userCycleCollection.Records[i].Score.Kilojoule, result.Records[i].Score.Kilojoule)
+				}
+
+				if result.Records[i].Score.AverageHeartRate != test.userCycleCollection.Records[i].Score.AverageHeartRate {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userCycleCollection.Records[i].Score.AverageHeartRate, result.Records[i].Score.AverageHeartRate)
+				}
+
+				if result.Records[i].Score.MaxHeartRate != test.userCycleCollection.Records[i].Score.MaxHeartRate {
+					t.Errorf("Test Case %d - Expected %v, got %v", test.id, test.userCycleCollection.Records[i].Score.MaxHeartRate, result.Records[i].Score.MaxHeartRate)
+				}
 			}
 		}
 

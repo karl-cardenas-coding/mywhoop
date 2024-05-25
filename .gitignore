@@ -42,6 +42,10 @@ tests/data/
 mywhoop
 mywhoop*
 
+# Tests
+
+out.svg
+
 
 # Config
 

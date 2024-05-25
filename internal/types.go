@@ -97,15 +97,15 @@ type CycleScore struct {
 	MaxHeartRate     int     `json:"max_heart_rate"`
 }
 type CycleRecords struct {
-	ID             int         `json:"id"`
-	UserID         int         `json:"user_id"`
-	CreatedAt      time.Time   `json:"created_at"`
-	UpdatedAt      time.Time   `json:"updated_at"`
-	Start          time.Time   `json:"start"`
-	End            interface{} `json:"end"`
-	TimezoneOffset string      `json:"timezone_offset"`
-	ScoreState     string      `json:"score_state"`
-	Score          CycleScore  `json:"score"`
+	ID             int        `json:"id"`
+	UserID         int        `json:"user_id"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+	Start          time.Time  `json:"start"`
+	End            time.Time  `json:"end"`
+	TimezoneOffset string     `json:"timezone_offset"`
+	ScoreState     string     `json:"score_state"`
+	Score          CycleScore `json:"score"`
 }
 
 type RecoveryCollection struct {
