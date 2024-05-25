@@ -12,7 +12,7 @@ Group=ubuntu
 WorkingDirectory=/home/ubuntu/
 Environment="WHOOP_CLIENT_ID=*************"
 Environment="WHOOP_CLIENT_SECRET==*************""
-Environment="NOTIFICATION_NTFY_AUTH_TOKEN==*************""
+Environment="NOTIFICATION_NTFY_AUTH_TOKEN=*************""
 Environment="WHOOP_CREDENTIALS_FILE=/home/ubuntu/token.json
 
 [Install]
