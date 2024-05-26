@@ -20,8 +20,6 @@ var (
 	CredentialsFile string
 	// cfgFile is the myWhoop configuration file
 	cfgFile string
-	// Exporter is the exporter to use for storing data
-	Exporter string
 	// ConfigurationData is the configuration data
 	Configuration internal.ConfigurationData
 	// UserAgent is the value to use for the User-Agent header
@@ -64,7 +62,6 @@ func init() {
 	// Global Flag - Config File
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "myWhoop config file - default is $HOME/.mywhoop.yaml")
 	rootCmd.PersistentFlags().StringVarP(&VerbosityLevel, "debug", "d", "", "Enable debug output. Use the values DEBUG, INFO, WARN, ERROR, Default is INFO.")
-	rootCmd.PersistentFlags().StringVarP(&Exporter, "exporter", "e", "", "Specify an exporter to use. Supporter exporters are file, and s3. Default is file.")
 	rootCmd.PersistentFlags().StringVar(&CredentialsFile, "credentials", "", "File path to the Whoop credentials file that contains a valid authentication token.")
 
 	UserAgent = fmt.Sprintf("mywhoop/%s", VersionString)
@@ -101,10 +98,6 @@ func InitLogger(cfg *internal.ConfigurationData) error {
 	cfg.Credentials = envConfigVars.Credentials
 
 	// Prioritize CLI flags
-
-	if Exporter != "" {
-		cfg.Export.Method = Exporter
-	}
 
 	if CredentialsFile != "" {
 		cfg.Credentials.CredentialsFile = CredentialsFile

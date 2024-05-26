@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"testing"
 )
 
@@ -28,6 +28,59 @@ type UserData struct {
 	Email     string `json:"email"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
+}
+
+func TestNewFileExport(t *testing.T) {
+
+	tests := []struct {
+		filePath       string
+		fileType       string
+		fileName       string
+		fileNamePrefix string
+	}{
+		{
+			filePath:       "tests/data/",
+			fileType:       "json",
+			fileName:       "user",
+			fileNamePrefix: "test",
+		},
+		{
+			filePath:       "tests/data/",
+			fileType:       "json",
+			fileName:       "user",
+			fileNamePrefix: "",
+		},
+		{
+			filePath:       "tests/data/",
+			fileType:       "json",
+			fileName:       "",
+			fileNamePrefix: "",
+		},
+		{
+			filePath:       "tests/data/",
+			fileType:       "",
+			fileName:       "",
+			fileNamePrefix: "",
+		},
+	}
+
+	for _, tc := range tests {
+
+		exp := NewFileExport(tc.filePath, tc.fileType, tc.fileName, tc.fileNamePrefix)
+		if exp.FilePath != tc.filePath {
+			t.Errorf("Expected %s error, got: %v", tc.filePath, exp.FilePath)
+		}
+		if exp.FileType != tc.fileType {
+			t.Errorf("Expected %s error, got: %v", tc.fileType, exp.FileType)
+		}
+		if exp.FileName != tc.fileName {
+			t.Errorf("Expected %s error, got: %v", tc.fileName, exp.FileName)
+		}
+		if exp.FileNamePrefix != tc.fileNamePrefix {
+			t.Errorf("Expected %s error, got: %v", tc.fileNamePrefix, exp.FileNamePrefix)
+		}
+	}
+
 }
 
 func TestGenerateName(t *testing.T) {
@@ -103,8 +156,6 @@ func TestCleanUp(t *testing.T) {
 
 func TestExportData(t *testing.T) {
 
-	defer cleanUp()
-
 	// Test case 1: Successful export
 	user := &User{
 		UserData: UserData{
@@ -145,6 +196,11 @@ func TestExportData(t *testing.T) {
 		t.Errorf("Failed to remove file: %v", err)
 	}
 
+	err = cleanUp("../tests/data/")
+	if err != nil {
+		t.Errorf("Failed to remove directory: %v", err)
+	}
+
 }
 
 func TestExportDataError(t *testing.T) {
@@ -180,23 +236,125 @@ func TestExportDataError(t *testing.T) {
 
 }
 
-// cleanUp removes the tests directory
-func cleanUp() {
-	currentDir, err := os.Getwd()
-	if err != nil {
-		slog.Error("Failed to remove directory", "msg", err)
-		os.Exit(1)
+func TestWriteToFileError(t *testing.T) {
+
+	tests := []struct {
+		id int
+		FileExport
+		data             []byte
+		errorExpected    bool
+		createTestFile   bool
+		checkFileCreated bool
+	}{
+		{
+			0,
+			FileExport{
+				FilePath:       "../tests/data/",
+				FileType:       "json",
+				FileName:       "test_user",
+				FileNamePrefix: "",
+			},
+			[]byte("test"),
+			false,
+			false,
+			true,
+		}, {
+			0,
+			FileExport{
+				FilePath:       "../tests/data/",
+				FileType:       "json",
+				FileName:       "test_user",
+				FileNamePrefix: "",
+			},
+			[]byte("test 2"),
+			false,
+			true,
+			true,
+		},
 	}
 
-	folderPath := path.Join(currentDir, "tests")
-	err = os.RemoveAll(folderPath)
+	for index, tc := range tests {
+
+		tc.id = index + 1
+
+		if tc.createTestFile {
+			err := os.MkdirAll("../tests/data/", 0755)
+			if err != nil {
+				t.Errorf("Test Case - %d: Failed to create directory: %v", tc.id, err)
+			}
+
+			file, err := os.Create(filepath.Join(tc.FilePath, tc.FileName+"."+tc.FileType))
+			if err != nil {
+				t.Errorf("Test Case - %d: Failed to create file: %v", tc.id, err)
+			}
+
+			_, err = file.Write(tc.data)
+			if err != nil {
+				t.Errorf("Test Case - %d: Failed to write to file: %v", tc.id, err)
+			}
+
+			err = file.Close()
+			if err != nil {
+				t.Errorf("Test Case - %d: Failed to close file: %v", tc.id, err)
+			}
+		}
+
+		err := writeToFile(tc.FileExport, tc.data)
+		if tc.errorExpected && err == nil {
+			t.Errorf("Test Case - %d: Expected non-nil error, got nil", tc.id)
+		}
+
+		if tc.checkFileCreated {
+			_, err := os.Stat(filepath.Join(tc.FilePath, tc.FileName+"."+tc.FileType))
+			if err != nil {
+				if os.IsNotExist(err) {
+					t.Errorf("Test Case - %d: File was not created", tc.id)
+				}
+			}
+		}
+
+		if !tc.errorExpected && err != nil {
+			t.Errorf("Test Case - %d: Expected nil error, got: %v", tc.id, err)
+		}
+
+		err = cleanUp("../tests/data/")
+		if err != nil {
+			t.Errorf("Test Case - %d: Failed to remove directory: %v", tc.id, err)
+		}
+
+	}
+
+}
+
+// cleanUp removes the tests directory
+func cleanUp(path string) error {
+
+	var pathToDelete string
+
+	currentDir, err := os.Getwd()
+	if err != nil {
+		slog.Error("unable to get current directory", "error", err)
+		return err
+	}
+
+	pathToDelete = filepath.Join(currentDir, "tests", "data")
+
+	if path != "" {
+		pathToDelete = path
+	} else {
+		// pathToDelete = path.Join(currentDir, "tests", "data")
+	}
+
+	err = os.RemoveAll(pathToDelete)
 	if err != nil {
 		slog.Error("Failed to remove directory", "msg", err)
 		err := exec.Command("rm -rf export/tests/").Run()
 		if err != nil {
 			slog.Error("Failed to to issue remove command", "msg", err)
-			os.Exit(1)
+			return err
 		}
-		os.Exit(1)
+		return err
 	}
+
+	return nil
 }

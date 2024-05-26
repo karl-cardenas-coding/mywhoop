@@ -81,39 +81,41 @@ func server(ctx context.Context) error {
 		slog.Error("unable to evaluate configuration options", "error", err)
 		return err
 	}
-
-	//Setup the exporters
-	fileExp := export.FileExport{
-		FilePath: Configuration.Export.FileExport.FilePath,
-		FileType: Configuration.Export.FileExport.FileType,
-		FileName: Configuration.Export.FileExport.FileName,
-	}
-
-	awsS3Exp := export.AWS_S3{
-		Region: Configuration.Export.AWSS3.Region,
-		Bucket: Configuration.Export.AWSS3.Bucket,
-	}
-
+	var exportSelected export.Export
+	// Initialize the data exporters
 	switch cfg.Export.Method {
 	case "file":
-		err := fileExp.Setup()
-		if err != nil {
-			slog.Error("unable to setup file export", "error", err)
-			return err
-		}
-	case "s3":
-		err := awsS3Exp.Setup()
-		if err != nil {
-			slog.Error("unable to setup s3 export", "error", err)
-			return err
-		}
+		fileExp := export.NewFileExport(cfg.Export.FileExport.FilePath,
+			cfg.Export.FileExport.FileType,
+			cfg.Export.FileExport.FileName,
+			cfg.Export.FileExport.FileNamePrefix,
+		)
 
+		if cfg.Export.FileExport.FileNamePrefix == "" {
+			cfg.Export.FileExport.FileNamePrefix = "user"
+		}
+		// Configure the filename to ensure uniqueness
+		fileName := fmt.Sprintf("%s_%s", cfg.Export.FileExport.FileNamePrefix, internal.GetCurrentDate())
+		fileExp.FileName = fileName
+
+		exportSelected = fileExp
+	case "s3":
+		awsS3Exp := export.NewAwsS3Export(cfg.Export.AWSS3.Region, cfg.Export.AWSS3.Bucket)
+		exportSelected = awsS3Exp
 	default:
 		slog.Error("unknown exporter", "exporter", cfg.Export.Method)
 	}
 
+	// Setup the notification method
+	err = exportSelected.Setup()
+	if err != nil {
+		slog.Error("unable to setup data exporter", "error", err)
+		return err
+	}
+
 	var notificationMethod notifications.Notification
 
+	// Initialize the notification method
 	switch Configuration.Notification.Method {
 	case "ntfy":
 		ntfy := notifications.NewNtfy()
@@ -121,14 +123,17 @@ func server(ctx context.Context) error {
 		ntfy.SubscriptionID = cfg.Notification.Ntfy.SubscriptionID
 		ntfy.UserName = cfg.Notification.Ntfy.UserName
 		ntfy.Events = cfg.Notification.Ntfy.Events
-		err = ntfy.SetUp()
-		if err != nil {
-			return err
-		}
-		slog.Info("ntfy notification method enabled")
+		slog.Info("ntfy notification method specified")
 		notificationMethod = ntfy
 	default:
 		slog.Info("no notification method specified. Defaulting to stdout.")
+	}
+
+	// Setup the notification method
+	err = notificationMethod.SetUp()
+	if err != nil {
+		slog.Error("unable to setup notification method", "error", err)
+		return err
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
@@ -178,11 +183,20 @@ func server(ctx context.Context) error {
 			return err
 		}
 
-		// Setup the exporters
-		err = manageExporters(&cfg, finalDataRaw)
+		err = exportSelected.Export(finalDataRaw)
 		if err != nil {
-			slog.Error("An error occured with the data exporter.", "error", err)
-			notifyErr := notifications.Publish(client, notificationMethod, []byte(fmt.Sprintf("An error occured with the data exporter. Additional context below: \n %s", err)), internal.EventErrors.String())
+			slog.Error("unable to export data", "error", err)
+			notifyErr := notifications.Publish(client, notificationMethod, []byte(fmt.Sprintf("unable to export data. Additional error message: \n: %s", err)), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
+			return err
+		}
+
+		err = exportSelected.CleanUp()
+		if err != nil {
+			slog.Error("unable to clean up export", "error", err)
+			notifyErr := notifications.Publish(client, notificationMethod, []byte(fmt.Sprintf("unable to clean up export. Additional error message: \n: %s", err)), internal.EventErrors.String())
 			if notifyErr != nil {
 				slog.Error("unable to send notification", "error", notifyErr)
 			}
@@ -214,7 +228,7 @@ func server(ctx context.Context) error {
 	// Start the server entry point
 	go func(c internal.ConfigurationData) {
 
-		err := StartServer(ctx, c, client, notificationMethod)
+		err := StartServer(ctx, c, client, exportSelected, notificationMethod)
 		if err != nil {
 			slog.Error("unable to start server", "error", err)
 			notifyErr := notifications.Publish(client, notificationMethod, []byte(fmt.Sprintf("unable to start server. Additional error message: \n: %s", err)), internal.EventErrors.String())
@@ -230,34 +244,14 @@ func server(ctx context.Context) error {
 	if sig == syscall.SIGINT || sig == syscall.SIGTERM {
 		slog.Info("Server shutdown signal received")
 		slog.Info("Cleaning up server resources")
-		switch cfg.Export.Method {
-		case "file":
-			err := fileExp.CleanUp()
-			if err != nil {
-				slog.Error("unable to clean up file export", "error", err)
-				notifyErr := notifications.Publish(client, notificationMethod, []byte(fmt.Sprintf("unable to clean up file export. Additional error message: \n: %s", err)), internal.EventErrors.String())
-				if notifyErr != nil {
-					slog.Error("unable to send notification", "error", notifyErr)
-				}
-			}
-		case "s3":
-			err := awsS3Exp.CleanUp()
-			if err != nil {
-				slog.Error("unable to clean up s3 export", "error", err)
-				notifyErr := notifications.Publish(client, notificationMethod, []byte(fmt.Sprintf("unable to clean up s3 export. Additional error message: \n: %s", err)), internal.EventErrors.String())
-				if notifyErr != nil {
-					slog.Error("unable to send notification", "error", notifyErr)
-				}
-			}
-
-		default:
-			slog.Error("unknown exporter", "exporter", cfg.Export.Method)
-			notifyErr := notifications.Publish(client, notificationMethod, []byte("An error occured when attemoting to export the data. An unknown exporter was provided."), internal.EventErrors.String())
+		err := exportSelected.CleanUp()
+		if err != nil {
+			slog.Error("unable to clean up export", "error", err)
+			notifyErr := notifications.Publish(client, notificationMethod, []byte(fmt.Sprintf("unable to clean up export. Additional error message: \n: %s", err)), internal.EventErrors.String())
 			if notifyErr != nil {
 				slog.Error("unable to send notification", "error", notifyErr)
 			}
 		}
-
 		slog.Info("Server shutdown complete")
 		os.Exit(0)
 	}
@@ -266,7 +260,7 @@ func server(ctx context.Context) error {
 }
 
 // StartServer starts the long running server.
-func StartServer(ctx context.Context, config internal.ConfigurationData, client *http.Client, notify notifications.Notification) error {
+func StartServer(ctx context.Context, config internal.ConfigurationData, client *http.Client, exp export.Export, notify notifications.Notification) error {
 
 	ok, _, err := internal.VerfyToken(config.Credentials.CredentialsFile)
 	if err != nil {
@@ -383,11 +377,20 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 				os.Exit(1)
 			}
 
-			// Setup the exporters
-			err = manageExporters(&config, finalDataRaw)
+			err = exp.Export(finalDataRaw)
 			if err != nil {
-				slog.Error("An error occured with the data exporter.", "error", err)
-				notifyErr := notifications.Publish(client, notify, []byte(fmt.Sprintf("An error occured with the data exporter. Additional context below: \n %s", err)), internal.EventErrors.String())
+				slog.Error("unable to export data", "error", err)
+				notifyErr := notifications.Publish(client, notify, []byte(fmt.Sprintf("Failed to export data. Additional context below: \n %s", err)), internal.EventErrors.String())
+				if notifyErr != nil {
+					slog.Error("unable to send notification", "error", notifyErr)
+				}
+				os.Exit(1)
+			}
+
+			err = exp.CleanUp()
+			if err != nil {
+				slog.Error("unable to clean up export", "error", err)
+				notifyErr := notifications.Publish(client, notify, []byte(fmt.Sprintf("Failed to clean up export. Additional context below: \n %s", err)), internal.EventErrors.String())
 				if notifyErr != nil {
 					slog.Error("unable to send notification", "error", notifyErr)
 				}
@@ -405,57 +408,6 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 	}()
 
 	return nil
-}
-
-// manageExporters manages the exporters based on the configuration received
-func manageExporters(cfg *internal.ConfigurationData, data []byte) error {
-
-	if cfg.Export.FileExport.FileNamePrefix == "" {
-		cfg.Export.FileExport.FileNamePrefix = "user"
-	}
-	// Configure the filename to ensure uniqueness
-	fileName := fmt.Sprintf("%s_%s", cfg.Export.FileExport.FileNamePrefix, internal.GetCurrentDate())
-
-	fileExp := export.FileExport{
-		FilePath: cfg.Export.FileExport.FilePath,
-		FileType: cfg.Export.FileExport.FileType,
-		FileName: fileName,
-	}
-
-	awsS3Exp := export.AWS_S3{
-		Region: cfg.Export.AWSS3.Region,
-		Bucket: cfg.Export.AWSS3.Bucket,
-	}
-
-	switch cfg.Export.Method {
-	case "file":
-		err := fileExp.Export(data)
-		if err != nil {
-			err := errors.Join(err, errors.New("unable to export data with the file exporter"))
-			if err != nil {
-				slog.Error("unable to export data with the file exporter", "error", err)
-			}
-			return err
-
-		}
-
-	case "s3":
-		err := awsS3Exp.Export(data)
-		if err != nil {
-			err := errors.Join(err, errors.New("unable to export data with the s3 exporter"))
-			if err != nil {
-				slog.Error("unable to export data with the s3 exporter", "error", err)
-			}
-			return err
-		}
-	default:
-		slog.Error("unknown exporter", "exporter", cfg.Export.Method)
-		return errors.New("unknown exporter")
-
-	}
-
-	return nil
-
 }
 
 // getData queries the Whoop API and gets the user data

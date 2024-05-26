@@ -9,6 +9,14 @@ func (f *AWS_S3) Setup() error {
 	return nil
 }
 
+// NewAwsS3Export creates a new AWS S3 export
+func NewAwsS3Export(region, bucket string) *AWS_S3 {
+	return &AWS_S3{
+		Region: region,
+		Bucket: bucket,
+	}
+}
+
 // Export exports the data to AWS S3
 func (f *AWS_S3) Export(data []byte) error {
 	//  TODO: Implement this method

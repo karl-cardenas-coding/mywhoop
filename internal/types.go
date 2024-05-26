@@ -211,7 +211,7 @@ type Credentials struct {
 
 /* Event
 
-Event is a struct that contains the event data for the event.
+Event is a struct that contains the event data for the event. Used to determine the type of event to sennd in the notification.
 
 */
 

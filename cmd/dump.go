@@ -158,15 +158,13 @@ func dump(ctx context.Context) error {
 		return err
 	}
 
-	fileExp := export.FileExport{
-		FilePath:       Configuration.Export.FileExport.FilePath,
-		FileType:       Configuration.Export.FileExport.FileType,
-		FileName:       Configuration.Export.FileExport.FileName,
-		FileNamePrefix: Configuration.Export.FileExport.FileNamePrefix,
-	}
-
 	switch Configuration.Export.Method {
 	case "file":
+		fileExp := export.NewFileExport(Configuration.Export.FileExport.FilePath,
+			Configuration.Export.FileExport.FileType,
+			Configuration.Export.FileExport.FileName,
+			Configuration.Export.FileExport.FileNamePrefix,
+		)
 		err = fileExp.Export(finalDataRaw)
 		if err != nil {
 			notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
@@ -177,6 +175,12 @@ func dump(ctx context.Context) error {
 		}
 		slog.Info("Data exported successfully", "file", fileExp.FileName)
 	default:
+		slog.Info("no export method specified. Defaulting to file.")
+		fileExp := export.NewFileExport(Configuration.Export.FileExport.FilePath,
+			Configuration.Export.FileExport.FileType,
+			Configuration.Export.FileExport.FileName,
+			Configuration.Export.FileExport.FileNamePrefix,
+		)
 		err = fileExp.Export(finalDataRaw)
 		if err != nil {
 			notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
@@ -188,9 +192,11 @@ func dump(ctx context.Context) error {
 
 	}
 	slog.Info("All Whoop data downloaded successfully")
-	err = notifications.Publish(client, notificationMethod, []byte("Successfully downloaded all Whoop data."), internal.EventSuccess.String())
-	if err != nil {
-		slog.Error("unable to send notification", "error", err)
+	if notificationMethod != nil {
+		err = notifications.Publish(client, notificationMethod, []byte("Successfully downloaded all Whoop data."), internal.EventSuccess.String())
+		if err != nil {
+			slog.Error("unable to send notification", "error", err)
+		}
 	}
 
 	return nil
