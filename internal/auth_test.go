@@ -4,8 +4,12 @@
 package internal
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -30,6 +34,128 @@ func TestGetEndpoint(t *testing.T) {
 
 	if got.TokenURL != expected.TokenURL {
 		t.Errorf("an error occured. Expected %s but got %s", expected.TokenURL, got.TokenURL)
+	}
+
+}
+
+func TestRefreshToken(t *testing.T) {
+
+	client := CreateHTTPClient()
+
+	type expected struct {
+		AccessToken  string
+		RefreshToken string
+		TokenType    string
+		Scope        string
+		ExperiesIn   int
+	}
+
+	tests := []struct {
+		id            int
+		auth          AuthRequest
+		exp           expected
+		ts            *httptest.Server
+		errorExpected bool
+	}{
+		{
+			0,
+			AuthRequest{
+				AuthToken:    DEFAULT_ACCESS_TOKEN_URL,
+				ClientID:     "testClientID",
+				ClientSecret: "testClientSecret",
+				RefreshToken: "testRefresh",
+				TokenURL:     DEFAULT_ACCESS_TOKEN_URL,
+				Client:       client,
+			},
+			expected{
+				AccessToken:  "jkdjkasdsiaoiasoiuashnbnxgyyd4.G43yAmvMpGI8R5d_3MYVM8N0xFSCLOrAB2sGNUgl9U0",
+				TokenType:    "bearer",
+				Scope:        "offline read:profile read:recovery read:cycles read:workout read:sleep read:body_measurement",
+				ExperiesIn:   3599,
+				RefreshToken: "jfhkjfdkhjfdskljlkccxcxsdezzZ.uwypCEcZDN3zK-4PjSTrT9nADIE5AJGxYgs8FvYVx18",
+			},
+			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r.Method = "GET"
+				w.WriteHeader(http.StatusOK)
+				w.Header().Set("Content-Type", "application/json")
+				_, err := w.Write([]byte(`{
+					"access_token": "jkdjkasdsiaoiasoiuashnbnxgyyd4.G43yAmvMpGI8R5d_3MYVM8N0xFSCLOrAB2sGNUgl9U0",
+					"expires_in": 3599,
+					"refresh_token": "jfhkjfdkhjfdskljlkccxcxsdezzZ.uwypCEcZDN3zK-4PjSTrT9nADIE5AJGxYgs8FvYVx18",
+					"scope": "offline read:profile read:recovery read:cycles read:workout read:sleep read:body_measurement",
+					"token_type": "bearer"
+				}`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
+			})),
+			false,
+		},
+		{
+			0,
+			AuthRequest{
+				AuthToken:    DEFAULT_ACCESS_TOKEN_URL,
+				ClientID:     "testClientID",
+				ClientSecret: "testClientSecret",
+				RefreshToken: "testRefresh",
+				TokenURL:     DEFAULT_ACCESS_TOKEN_URL,
+				Client:       client,
+			},
+			expected{},
+			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				r.Method = "GET"
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Header().Set("Content-Type", "application/json")
+				_, err := w.Write([]byte(`11212154544545`))
+				if err != nil {
+					t.Fatalf("Error writing response: %v", err)
+				}
+			})),
+			true,
+		},
+	}
+
+	for index, test := range tests {
+		test.id = index + 1
+		defer test.ts.Close()
+		ctx := context.Background()
+
+		test.auth.TokenURL = test.ts.URL
+
+		token, err := RefreshToken(ctx, test.auth)
+		if err != nil && !test.errorExpected {
+			t.Errorf("Test Case - %d: Failed to refresh token: %v", test.id, err)
+		}
+
+		fmt.Println(token)
+
+		if err == nil && test.errorExpected {
+			t.Errorf("Test Case - %d: Expected an error but got none", test.id)
+		}
+
+		if token.AccessToken != test.exp.AccessToken {
+			t.Errorf("Test Case - %d: Expected %s but got %s", test.id, test.exp.AccessToken, token.AccessToken)
+		}
+
+		if token.RefreshToken != test.exp.RefreshToken {
+			t.Errorf("Test Case - %d: Expected %s but got %s", test.id, test.exp.RefreshToken, token.RefreshToken)
+		}
+
+		if token.TokenType != test.exp.TokenType {
+			t.Errorf("Test Case - %d: Expected %s but got %s", test.id, test.exp.TokenType, token.TokenType)
+		}
+
+		// An empty OAuth2 token return with an expiration value. This checks to make sure we are not dealing with an empty token
+		if token.AccessToken != "" && token.RefreshToken != "" {
+
+			expiresIn := int(time.Until(token.Expiry).Seconds()) + 1
+
+			if expiresIn != test.exp.ExperiesIn {
+				t.Errorf("Test Case - %d: Expires -  Expected %d but got %d", test.id, test.exp.ExperiesIn, expiresIn)
+			}
+
+		}
+
 	}
 
 }
@@ -260,6 +386,126 @@ func TestReadTokenFromFile(t *testing.T) {
 
 		if token.Expiry != test.token.Expiry {
 			t.Errorf("Test Case - %d: Expected %s but got %s", test.id, test.token.Expiry, token.Expiry)
+		}
+
+		err = cleanUp("../tests/data/")
+		if err != nil {
+			t.Errorf("Test Case - %d: Failed to clean up: %v", test.id, err)
+		}
+
+	}
+
+}
+
+func TestVerfyToken(t *testing.T) {
+
+	tests := []struct {
+		id               int
+		content          interface{}
+		errorExpected    bool
+		createFileBefore bool
+		valid            bool
+		filePath         string
+	}{
+		// Valid token
+		{
+			0,
+			oauth2.Token{
+				AccessToken:  "askjdsajklsdlkjfasdk",
+				RefreshToken: "4ssdjfdsjokdfsopfdopkdfsjksdjiujiosaoi",
+				TokenType:    "Bearer",
+				Expiry:       time.Now().Add(30 * time.Minute),
+			},
+			false,
+			true,
+			true,
+			"../tests/data/token.json",
+		},
+		// Invalid token
+		{
+			0,
+			oauth2.Token{
+				AccessToken:  "askjdsajklsdlkjfasdk",
+				RefreshToken: "4ssdjfdsjokdfsopfdopkdfsjksdjiujiosaoi",
+				TokenType:    "Bearer",
+				// Expired 5 minutes ago
+				Expiry: time.Now().Add(-5 * time.Minute),
+			},
+			false,
+			true,
+			false,
+			"../tests/data/token.json",
+		},
+		// No token file available
+		{
+			0,
+			oauth2.Token{},
+			true,
+			false,
+			false,
+			"../tests/data/token.json",
+		},
+		// Invalid file content
+		{
+			0,
+			"invalid",
+			true,
+			true,
+			false,
+			"../tests/data/token.json",
+		},
+	}
+
+	for index, test := range tests {
+		test.id = index + 1
+
+		filePath := filepath.Join("../tests/data/", "token.json")
+
+		if test.createFileBefore {
+
+			err := os.MkdirAll("../tests/data/", 0755)
+			if err != nil {
+				t.Errorf("Test Case - %d: Failed to create directory: %v", test.id, err)
+			}
+
+			file, err := os.Create(filePath)
+			if err != nil {
+				t.Errorf("Test Case - %d: Failed to create file: %v", test.id, err)
+			}
+
+			value, err := json.MarshalIndent(test.content, " ", " ")
+			if err != nil {
+				t.Errorf("Test Case - %d: Failed to marshal token: %v", test.id, err)
+			}
+
+			_, err = file.WriteString(string(value))
+			if err != nil {
+				t.Errorf("Test Case - %d: Failed to write to file: %v", test.id, err)
+			}
+
+			err = file.Close()
+			if err != nil {
+				t.Errorf("Test Case - %d: Failed to close file: %v", test.id, err)
+			}
+
+		}
+
+		valid, _, err := VerfyToken(test.filePath)
+
+		if err != nil && !test.errorExpected {
+			t.Errorf("Test Case - %d: Failed to verify token: %v", test.id, err)
+		}
+
+		if err == nil && test.errorExpected {
+			t.Errorf("Test Case - %d: Expected an error but got none", test.id)
+		}
+
+		if valid && test.errorExpected {
+			t.Errorf("Test Case - %d: Token is valid but expected an error", test.id)
+		}
+
+		if valid != test.valid {
+			t.Errorf("Test Case - %d: Expected token with the following valid value %t but got %t", test.id, test.valid, valid)
 		}
 
 		err = cleanUp("../tests/data/")

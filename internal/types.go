@@ -4,6 +4,7 @@
 package internal
 
 import (
+	"net/http"
 	"strings"
 	"time"
 
@@ -164,6 +165,29 @@ type WorkoutRecords struct {
 	SportID        int          `json:"sport_id"`
 	ScoreState     string       `json:"score_state"`
 	Score          WorkoutScore `json:"score"`
+}
+
+/*
+
+Authorization Data Structures
+
+*/
+
+type AuthRequest struct {
+	// Authorization URL for the Whoop API
+	AuthorizationURL string
+	// AuthToken is the OAuth2 token for the Whoop API
+	AuthToken string
+	// RefreshToken is the OAuth2 refresh token for the Whoop API
+	RefreshToken string
+	// client is the HTTP client to use for making requests
+	Client *http.Client
+	// The client ID for the Whoop API
+	ClientID string
+	// The client secret for the Whoop API
+	ClientSecret string
+	//Token URL for the Whoop API
+	TokenURL string
 }
 
 /*

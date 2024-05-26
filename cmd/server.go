@@ -126,14 +126,17 @@ func server(ctx context.Context) error {
 		slog.Info("ntfy notification method specified")
 		notificationMethod = ntfy
 	default:
+		notificationMethod = nil
 		slog.Info("no notification method specified. Defaulting to stdout.")
 	}
 
 	// Setup the notification method
-	err = notificationMethod.SetUp()
-	if err != nil {
-		slog.Error("unable to setup notification method", "error", err)
-		return err
+	if notificationMethod != nil {
+		err = notificationMethod.SetUp()
+		if err != nil {
+			slog.Error("unable to setup notification method", "error", err)
+			return err
+		}
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
@@ -286,6 +289,7 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 	// The token is refreshed in the background so that the server can continue to run.
 	go func() {
 		ticker := time.NewTicker(55 * time.Minute)
+		// ticker := time.NewTicker(2 * time.Minute) // DEBUG PURPOSES
 		defer ticker.Stop()
 
 		for range ticker.C {
@@ -300,7 +304,17 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 				os.Exit(1)
 			}
 
-			token, err := internal.RefreshToken(ctx, currentToken.AccessToken, currentToken.RefreshToken, client)
+			auth := internal.AuthRequest{
+				AuthToken:        currentToken.AccessToken,
+				RefreshToken:     currentToken.RefreshToken,
+				Client:           client,
+				ClientID:         os.Getenv("WHOOP_CLIENT_ID"),
+				ClientSecret:     os.Getenv("WHOOP_CLIENT_SECRET"),
+				TokenURL:         internal.DEFAULT_ACCESS_TOKEN_URL,
+				AuthorizationURL: internal.DEFAULT_AUTHENTICATION_URL,
+			}
+
+			token, err := internal.RefreshToken(ctx, auth)
 			if err != nil {
 				slog.Error("unable to refresh token", "error", err)
 				notifyErr := notifications.Publish(client, notify, []byte(fmt.Sprintf("Unable to refresh the authentication token. Additional context below: \n: %s", err)), internal.EventErrors.String())
