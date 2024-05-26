@@ -445,6 +445,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 			return []byte{}, err
 		}
 
+		sleep.NextToken = ""
 		user.SleepCollection = *sleep
 
 		recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, filterString, ua)
@@ -453,6 +454,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 			return []byte{}, err
 		}
 
+		recovery.NextToken = ""
 		user.RecoveryCollection = *recovery
 
 		workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, filterString, ua)
@@ -461,6 +463,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 			return []byte{}, err
 		}
 
+		workout.NextToken = ""
 		user.WorkoutCollection = *workout
 
 		cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, filterString, ua)
@@ -469,6 +472,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 			return []byte{}, err
 		}
 
+		cycle.NextToken = ""
 		user.CycleCollection = *cycle
 	}
 
@@ -496,6 +500,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 			return []byte{}, err
 		}
 
+		sleep.NextToken = ""
 		user.SleepCollection = *sleep
 
 		recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, "", ua)
@@ -504,6 +509,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 			return []byte{}, err
 		}
 
+		recovery.NextToken = ""
 		user.RecoveryCollection = *recovery
 
 		workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, "", ua)
@@ -520,6 +526,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 			return []byte{}, err
 		}
 
+		cycle.NextToken = ""
 		user.CycleCollection = *cycle
 
 		// Set to false so that the entire data is not downloaded again

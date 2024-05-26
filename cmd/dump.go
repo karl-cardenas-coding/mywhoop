@@ -110,6 +110,7 @@ func dump(ctx context.Context) error {
 		return err
 	}
 
+	sleep.NextToken = ""
 	user.SleepCollection = *sleep
 
 	recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, "", ua)
@@ -122,6 +123,7 @@ func dump(ctx context.Context) error {
 		return err
 	}
 
+	recovery.NextToken = ""
 	user.RecoveryCollection = *recovery
 
 	workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, "", ua)
@@ -134,6 +136,7 @@ func dump(ctx context.Context) error {
 		return err
 	}
 
+	workout.NextToken = ""
 	user.WorkoutCollection = *workout
 
 	cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, "", ua)
@@ -145,7 +148,7 @@ func dump(ctx context.Context) error {
 		}
 		return err
 	}
-
+	cycle.NextToken = ""
 	user.CycleCollection = *cycle
 
 	finalDataRaw, err := json.MarshalIndent(user, "", "  ")
