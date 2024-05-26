@@ -333,7 +333,7 @@ func cleanUp(path string) error {
 
 	currentDir, err := os.Getwd()
 	if err != nil {
-		slog.Error("unable to get current directory", "error", err)
+
 		return err
 	}
 
@@ -341,8 +341,6 @@ func cleanUp(path string) error {
 
 	if path != "" {
 		pathToDelete = path
-	} else {
-		// pathToDelete = path.Join(currentDir, "tests", "data")
 	}
 
 	err = os.RemoveAll(pathToDelete)
@@ -350,7 +348,6 @@ func cleanUp(path string) error {
 		slog.Error("Failed to remove directory", "msg", err)
 		err := exec.Command("rm -rf export/tests/").Run()
 		if err != nil {
-			slog.Error("Failed to to issue remove command", "msg", err)
 			return err
 		}
 		return err

@@ -251,7 +251,7 @@ func writeLocalToken(filePath string, token *oauth2.Token) error {
 	}
 	defer f.Close()
 
-	json, err := json.Marshal(token)
+	json, err := json.MarshalIndent(token, " ", " ")
 	if err != nil {
 		return err
 	}
@@ -301,6 +301,7 @@ func ReadTokenFromFile(filePath string) (oauth2.Token, error) {
 	var token oauth2.Token
 	err = json.NewDecoder(f).Decode(&token)
 	if err != nil {
+		slog.Error("unable to decode token file", "error", err)
 		return oauth2.Token{}, err
 	}
 
