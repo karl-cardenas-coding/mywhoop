@@ -100,7 +100,19 @@ func server(ctx context.Context) error {
 
 		exportSelected = fileExp
 	case "s3":
-		awsS3Exp := export.NewAwsS3Export(cfg.Export.AWSS3.Region, cfg.Export.AWSS3.Bucket)
+		awsS3Exp, err := export.NewAwsS3Export(cfg.Export.AWSS3.Region, cfg.Export.AWSS3.Bucket, cfg.Export.AWSS3.Profile, client)
+		if err != nil {
+			slog.Error("unable to initialize AWS S3 export", "error", err)
+			return err
+		}
+
+		if cfg.Export.AWSS3.FileConfig.FileNamePrefix == "" {
+			cfg.Export.AWSS3.FileConfig.FileNamePrefix = "user"
+		}
+		// Configure the filename to ensure uniqueness
+		fileName := fmt.Sprintf("%s_%s", cfg.Export.FileExport.FileNamePrefix, internal.GetCurrentDate())
+		awsS3Exp.FileConfig.FileName = fileName
+
 		exportSelected = awsS3Exp
 	default:
 		slog.Error("unknown exporter", "exporter", cfg.Export.Method)

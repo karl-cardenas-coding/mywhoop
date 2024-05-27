@@ -6,7 +6,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"log/slog"
 	"os"
 
@@ -71,7 +71,6 @@ func dump(ctx context.Context) error {
 		}
 		notificationMethod = ntfy
 		slog.Info("Ntfy notification method configured")
-		fmt.Println("Events", ntfy.Events)
 	default:
 		slog.Info("no notification method specified. Defaulting to stdout.")
 	}
@@ -88,68 +87,68 @@ func dump(ctx context.Context) error {
 
 	user.UserData = *data
 
-	measurements, err := user.GetUserMeasurements(ctx, client, internal.DEFAULT_WHOOP_API_USER_MEASUREMENT_DATA_URL, token.AccessToken, ua)
-	if err != nil {
-		internal.LogError(err)
-		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
-		if notifyErr != nil {
-			slog.Error("unable to send notification", "error", notifyErr)
-		}
-		return err
-	}
+	// measurements, err := user.GetUserMeasurements(ctx, client, internal.DEFAULT_WHOOP_API_USER_MEASUREMENT_DATA_URL, token.AccessToken, ua)
+	// if err != nil {
+	// 	internal.LogError(err)
+	// 	notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+	// 	if notifyErr != nil {
+	// 		slog.Error("unable to send notification", "error", notifyErr)
+	// 	}
+	// 	return err
+	// }
 
-	user.UserMesaurements = *measurements
+	// user.UserMesaurements = *measurements
 
-	sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, "", ua)
-	if err != nil {
-		internal.LogError(err)
-		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
-		if notifyErr != nil {
-			slog.Error("unable to send notification", "error", notifyErr)
-		}
-		return err
-	}
+	// sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, "", ua)
+	// if err != nil {
+	// 	internal.LogError(err)
+	// 	notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+	// 	if notifyErr != nil {
+	// 		slog.Error("unable to send notification", "error", notifyErr)
+	// 	}
+	// 	return err
+	// }
 
-	sleep.NextToken = ""
-	user.SleepCollection = *sleep
+	// sleep.NextToken = ""
+	// user.SleepCollection = *sleep
 
-	recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, "", ua)
-	if err != nil {
-		internal.LogError(err)
-		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
-		if notifyErr != nil {
-			slog.Error("unable to send notification", "error", notifyErr)
-		}
-		return err
-	}
+	// recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, "", ua)
+	// if err != nil {
+	// 	internal.LogError(err)
+	// 	notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+	// 	if notifyErr != nil {
+	// 		slog.Error("unable to send notification", "error", notifyErr)
+	// 	}
+	// 	return err
+	// }
 
-	recovery.NextToken = ""
-	user.RecoveryCollection = *recovery
+	// recovery.NextToken = ""
+	// user.RecoveryCollection = *recovery
 
-	workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, "", ua)
-	if err != nil {
-		internal.LogError(err)
-		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
-		if notifyErr != nil {
-			slog.Error("unable to send notification", "error", notifyErr)
-		}
-		return err
-	}
+	// workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, "", ua)
+	// if err != nil {
+	// 	internal.LogError(err)
+	// 	notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+	// 	if notifyErr != nil {
+	// 		slog.Error("unable to send notification", "error", notifyErr)
+	// 	}
+	// 	return err
+	// }
 
-	workout.NextToken = ""
-	user.WorkoutCollection = *workout
+	// workout.NextToken = ""
+	// user.WorkoutCollection = *workout
 
-	cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, "", ua)
-	if err != nil {
-		internal.LogError(err)
-		notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
-		if notifyErr != nil {
-			slog.Error("unable to send notification", "error", notifyErr)
-		}
-		return err
-	}
-	cycle.NextToken = ""
-	user.CycleCollection = *cycle
+	// cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, "", ua)
+	// if err != nil {
+	// 	internal.LogError(err)
+	// 	notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+	// 	if notifyErr != nil {
+	// 		slog.Error("unable to send notification", "error", notifyErr)
+	// 	}
+	// 	return err
+	// }
+	// cycle.NextToken = ""
+	// user.CycleCollection = *cycle
 
 	finalDataRaw, err := json.MarshalIndent(user, "", "  ")
 	if err != nil {
@@ -161,7 +160,7 @@ func dump(ctx context.Context) error {
 		return err
 	}
 
-	switch Configuration.Export.Method {
+	switch cfg.Export.Method {
 	case "file":
 		fileExp := export.NewFileExport(Configuration.Export.FileExport.FilePath,
 			Configuration.Export.FileExport.FileType,
@@ -177,6 +176,28 @@ func dump(ctx context.Context) error {
 			return err
 		}
 		slog.Info("Data exported successfully", "file", fileExp.FileName)
+	case "s3":
+		awsS3, err := export.NewAwsS3Export(cfg.Export.AWSS3.Region,
+			cfg.Export.AWSS3.Bucket,
+			cfg.Export.AWSS3.Profile,
+			client)
+		if err != nil {
+			return errors.New("unable initialize AWS S3 export. Additional error context: " + err.Error())
+		}
+
+		awsS3.FileConfig.FileName = cfg.Export.AWSS3.FileConfig.FileName
+		awsS3.FileConfig.FileNamePrefix = cfg.Export.AWSS3.FileConfig.FileNamePrefix
+		awsS3.FileConfig.FileType = cfg.Export.AWSS3.FileConfig.FileType
+
+		err = awsS3.Export(finalDataRaw)
+		if err != nil {
+			notifyErr := notifications.Publish(client, notificationMethod, []byte(err.Error()), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
+			return errors.New("unable to export data to AWS S3. Additional error context: " + err.Error())
+		}
+
 	default:
 		slog.Info("no export method specified. Defaulting to file.")
 		fileExp := export.NewFileExport(Configuration.Export.FileExport.FilePath,

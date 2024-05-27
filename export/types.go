@@ -3,6 +3,8 @@
 
 package export
 
+import "github.com/aws/aws-sdk-go-v2/service/s3"
+
 type Export interface {
 	Setup() error
 	Export(data []byte) error
@@ -25,4 +27,10 @@ type AWS_S3 struct {
 	Region string `yaml:"region"`
 	// Bucket is the name of the S3 bucket.
 	Bucket string `yaml:"bucket"`
+	// S3Client is the S3 client.
+	S3Client *s3.Client `yaml:"-"`
+	// FileConfig contains the file configuration.
+	FileConfig FileExport `yaml:"fileConfig"`
+	// Profile is AWS profile to use.
+	Profile string `yaml:"profile"`
 }

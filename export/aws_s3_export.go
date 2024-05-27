@@ -3,6 +3,19 @@
 
 package export
 
+import (
+	"bytes"
+	"context"
+	"errors"
+	"fmt"
+	"net/http"
+	"os"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+)
+
 // Setup sets up the AWS S3 export and any resources required
 func (f *AWS_S3) Setup() error {
 	//  TODO: Implement this method
@@ -10,21 +23,121 @@ func (f *AWS_S3) Setup() error {
 }
 
 // NewAwsS3Export creates a new AWS S3 export
-func NewAwsS3Export(region, bucket string) *AWS_S3 {
-	return &AWS_S3{
-		Region: region,
-		Bucket: bucket,
+func NewAwsS3Export(region, bucket, profile string, client *http.Client) (*AWS_S3, error) {
+
+	if region == "" {
+
+		envValue := os.Getenv("AWS_REGION")
+		if envValue == "" {
+			return nil, fmt.Errorf("AWS region is required")
+		}
 	}
+
+	if bucket == "" {
+		return nil, fmt.Errorf("S3 bucket is required")
+	}
+
+	opts := []func(*config.LoadOptions) error{
+		config.WithRegion(region),
+		config.WithHTTPClient(client),
+		config.WithAssumeRoleCredentialOptions(func(aro *stscreds.AssumeRoleOptions) {
+			aro.TokenProvider = stscreds.StdinTokenProvider
+		}),
+	}
+
+	// Check if the profile is set through the ENV variable
+	envValue := os.Getenv("AWS_PROFILE")
+	if envValue != "" {
+		// override the incoming parameter due to precedence
+		profile = envValue
+	}
+
+	// If a profile is set, either through ENV var or from config, load the configuration with the profile
+	if profile != "" {
+		opts = append(opts, config.WithSharedConfigProfile(profile))
+	}
+
+	cfg, err := config.LoadDefaultConfig(context.TODO(), opts...)
+	if err != nil {
+		return nil, fmt.Errorf("ERROR LOADING AWS CONFIG: %v", err)
+	}
+
+	creds, err := cfg.Credentials.Retrieve(context.TODO())
+	if err != nil {
+		return nil, errors.New("ERROR RETRIEVING AWS CREDENTIALS")
+	}
+	if creds.Expired() {
+		return nil, errors.New("AWS CREDENTIALS EXPIRED")
+	}
+
+	s3Client := s3.NewFromConfig(cfg)
+
+	defaultFileConfig := FileExport{
+		FileName:       "user.json",
+		FileType:       "json",
+		FileNamePrefix: "",
+	}
+
+	return &AWS_S3{
+		Region:     region,
+		Bucket:     bucket,
+		S3Client:   s3Client,
+		FileConfig: defaultFileConfig,
+	}, nil
 }
 
 // Export exports the data to AWS S3
 func (f *AWS_S3) Export(data []byte) error {
-	//  TODO: Implement this method
+
+	s3c := f.S3Client
+
+	err := uploadCheck(&data, f.FileConfig, f.Bucket)
+	if err != nil {
+		return err
+	}
+
+	_, err = s3c.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket:   &f.Bucket,
+		Key:      &f.FileConfig.FileName,
+		Body:     bytes.NewReader(data),
+		Metadata: map[string]string{"Content-Type": "application/json"},
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // CleanUp cleans up the AWS S3 export and any resources
 func (f *AWS_S3) CleanUp() error {
 	//  TODO: Implement this method
+	return nil
+}
+
+// uploadCheck checks if the data, file export and bucket are valid
+func uploadCheck(data *[]byte, f FileExport, bucket string) error {
+
+	if data == nil {
+		return errors.New("data is required")
+
+	}
+
+	if len(*data) == 0 {
+		return errors.New("data is empty")
+	}
+
+	if f.FileName == "" {
+		return errors.New("file name is required")
+	}
+
+	if f.FileType == "" {
+		return errors.New("file type is required")
+	}
+
+	if bucket == "" {
+		return errors.New("bucket is required")
+	}
+
 	return nil
 }
