@@ -266,3 +266,20 @@ func EventFromString(s string) Event {
 func (e Event) String() string {
 	return string(e)
 }
+
+// Export is the interface for exporting data
+type Export interface {
+	Setup() error
+	Export(data []byte) error
+	CleanUp() error
+}
+
+// Notification is an interface that defines the methods for a notification service.
+// It requires two method functions SetUp and Send.
+// Consumers can use the Publish method to send notifications using the notification service.
+type Notification interface {
+	// SetUp sets up the notification service and returns an error if the setup fails.
+	SetUp() error
+	// Send sends a notification using the notification service with the provided data and event.
+	Publish(clinet *http.Client, data []byte, event string) error
+}

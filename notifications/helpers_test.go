@@ -23,7 +23,7 @@ func TestPublishSuccess(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	err := Publish(client, ntfy, msg, event)
+	err := ntfy.Publish(client, msg, event)
 	if err != nil {
 		t.Errorf("Publish() returned an error: %v", err)
 	}
@@ -36,23 +36,9 @@ func TestPublishErrorMissingClient(t *testing.T) {
 	msg := []byte("test message for error")
 	event := "test event 2"
 
-	err := Publish(nil, ntfy, msg, event)
+	err := ntfy.Publish(nil, msg, event)
 	if err == nil {
 		t.Errorf("Publish() did not return an error for missing client")
 
 	}
-
-}
-
-func TestPublishErrorMissingNotificationMethod(t *testing.T) {
-
-	client := &http.Client{}
-	msg := []byte("test message for error")
-	event := "test event 3"
-
-	err := Publish(client, nil, msg, event)
-	if err == nil {
-		t.Errorf("Publish() did not return an error for missing notification method")
-	}
-
 }

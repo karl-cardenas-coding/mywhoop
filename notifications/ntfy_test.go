@@ -80,7 +80,7 @@ func TestSend(t *testing.T) {
 	ntfy := NewNtfy()
 	ntfy.ServerEndpoint = ts.URL
 
-	err := ntfy.Send(client, []byte("test"), ":tada")
+	err := ntfy.Publish(client, []byte("test"), ":tada")
 	if err != nil {
 		t.Errorf("Error sending Ntfy notification: %v", err)
 	}
@@ -104,7 +104,7 @@ func TestSendWithError(t *testing.T) {
 	ntfy := NewNtfy()
 	ntfy.ServerEndpoint = ts.URL
 
-	err := ntfy.Send(client, []byte("test"), "error")
+	err := ntfy.Publish(client, []byte("test"), "error")
 	if err != nil {
 		t.Errorf("Error sending Ntfy notification: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestSendWithMissingClientError(t *testing.T) {
 	ntfy := NewNtfy()
 	ntfy.ServerEndpoint = ts.URL
 
-	err := ntfy.Send(nil, []byte("test"), "error")
+	err := ntfy.Publish(nil, []byte("test"), "error")
 	if err == nil {
 		t.Errorf("Expected error due to missing http client but got nil")
 

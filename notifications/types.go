@@ -3,20 +3,6 @@
 
 package notifications
 
-import (
-	"net/http"
-)
-
-// Notification is an interface that defines the methods for a notification service.
-// It requires two method functions SetUp and Send.
-// Consumers can use the Publish method to send notifications using the notification service.
-type Notification interface {
-	// SetUp sets up the notification service and returns an error if the setup fails.
-	SetUp() error
-	// Send sends a notification using the notification service with the provided data and event.
-	Send(clinet *http.Client, data []byte, event string) error
-}
-
 // Ntfy is a struct that contains the configuration for the Ntfy notification service.
 // Visit https://docs.ntfy.sh/ for more information.
 type Ntfy struct {

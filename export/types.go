@@ -5,12 +5,6 @@ package export
 
 import "github.com/aws/aws-sdk-go-v2/service/s3"
 
-type Export interface {
-	Setup() error
-	Export(data []byte) error
-	CleanUp() error
-}
-
 type FileExport struct {
 	// FilePath is the path to the file to be created. If not provided, the default path is the data folder in the current directory.
 	FilePath string `yaml:"filePath"`
