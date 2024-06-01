@@ -174,10 +174,6 @@ func fileExportDefaults(f *FileExport) error {
 			f.FileType = "json"
 		}
 
-		if !f.ServerMode {
-			f.ServerMode = true
-		}
-
 	}
 
 	return nil
