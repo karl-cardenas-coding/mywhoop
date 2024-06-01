@@ -16,12 +16,13 @@ func (f *FileExport) Setup() error {
 }
 
 // NewFileExport creates a new file export
-func NewFileExport(filePath, fileType, fileName, fileNamePrefix string) *FileExport {
+func NewFileExport(filePath, fileType, fileName, fileNamePrefix string, serverMode bool) *FileExport {
 	return &FileExport{
 		FilePath:       filePath,
 		FileType:       fileType,
 		FileName:       fileName,
 		FileNamePrefix: fileNamePrefix,
+		ServerMode:     serverMode,
 	}
 }
 
@@ -62,15 +63,18 @@ func (f *FileExport) Export(data []byte) error {
 // generateName generates the name of the file to be created
 func generateName(cfg FileExport) string {
 
-	var fileName string
+	if cfg.ServerMode {
 
-	if cfg.FileNamePrefix != "" {
-		fileName = cfg.FileNamePrefix + "_" + cfg.FileName + "." + cfg.FileType
-	} else {
-		fileName = cfg.FileName + "." + cfg.FileType
+		if cfg.FileNamePrefix != "" {
+			return cfg.FileNamePrefix + "_" + cfg.FileName + "_" + getCurrentDate() + "." + cfg.FileType
+		}
+		return cfg.FileName + "_" + getCurrentDate() + "." + cfg.FileType
 	}
 
-	return fileName
+	if cfg.FileNamePrefix != "" {
+		return cfg.FileNamePrefix + "_" + cfg.FileName + "." + cfg.FileType
+	}
+	return cfg.FileName + "." + cfg.FileType
 
 }
 

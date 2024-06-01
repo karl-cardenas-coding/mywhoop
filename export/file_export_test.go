@@ -5,6 +5,7 @@ package export
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -37,36 +38,41 @@ func TestNewFileExport(t *testing.T) {
 		fileType       string
 		fileName       string
 		fileNamePrefix string
+		serverMode     bool
 	}{
 		{
 			filePath:       "tests/data/",
 			fileType:       "json",
 			fileName:       "user",
 			fileNamePrefix: "test",
+			serverMode:     false,
 		},
 		{
 			filePath:       "tests/data/",
 			fileType:       "json",
 			fileName:       "user",
 			fileNamePrefix: "",
+			serverMode:     false,
 		},
 		{
 			filePath:       "tests/data/",
 			fileType:       "json",
 			fileName:       "",
 			fileNamePrefix: "",
+			serverMode:     true,
 		},
 		{
 			filePath:       "tests/data/",
 			fileType:       "",
 			fileName:       "",
 			fileNamePrefix: "",
+			serverMode:     true,
 		},
 	}
 
 	for _, tc := range tests {
 
-		exp := NewFileExport(tc.filePath, tc.fileType, tc.fileName, tc.fileNamePrefix)
+		exp := NewFileExport(tc.filePath, tc.fileType, tc.fileName, tc.fileNamePrefix, tc.serverMode)
 		if exp.FilePath != tc.filePath {
 			t.Errorf("Expected %s error, got: %v", tc.filePath, exp.FilePath)
 		}
@@ -86,35 +92,62 @@ func TestNewFileExport(t *testing.T) {
 func TestGenerateName(t *testing.T) {
 
 	type test struct {
-		testCase int
-		file     FileExport
-		want     string
+		testCase    int
+		description string
+		file        FileExport
+		want        string
 	}
 
 	tests := []test{
 		{
+			description: "Test case 1: File name with custom prefix prefix",
 			file: FileExport{
 				FileNamePrefix: "test",
 				FileName:       "user",
 				FileType:       "json",
+				ServerMode:     false,
 			},
 			want: "test_user.json",
 		},
 		{
+			description: "Test case 2: File name with empty prefix",
 			file: FileExport{
 				FileNamePrefix: "",
 				FileName:       "user",
 				FileType:       "json",
+				ServerMode:     false,
 			},
 			want: "user.json",
 		},
 		{
+			description: "Test case 3: File name with empty prefix and file name",
 			file: FileExport{
 				FileNamePrefix: "",
 				FileName:       "",
 				FileType:       "",
+				ServerMode:     false,
 			},
 			want: ".",
+		},
+		{
+			description: "Test case 4: Server mode enabled",
+			file: FileExport{
+				FileNamePrefix: "",
+				FileName:       "user",
+				FileType:       "json",
+				ServerMode:     true,
+			},
+			want: fmt.Sprintf("user_%s.json", getCurrentDate()),
+		},
+		{
+			description: "Test case 5: Server mode enabled with custom prefix",
+			file: FileExport{
+				FileNamePrefix: "test",
+				FileName:       "user",
+				FileType:       "json",
+				ServerMode:     true,
+			},
+			want: fmt.Sprintf("test_user_%s.json", getCurrentDate()),
 		},
 	}
 
@@ -122,7 +155,7 @@ func TestGenerateName(t *testing.T) {
 		tc.testCase = index
 		got := generateName(tc.file)
 		if got != tc.want {
-			t.Errorf("Test Case #%d - Expected %s error, got: %v", tc.testCase, tc.want, got)
+			t.Errorf("%s - Expected %s error, got: %v", tc.description, tc.want, got)
 		}
 	}
 

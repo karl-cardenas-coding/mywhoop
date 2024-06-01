@@ -14,6 +14,8 @@ type FileExport struct {
 	FileName string `yaml:"fileName"`
 	// FileNamePrefix is used to prefix the file name. If not provided, the default prefix is empty.
 	FileNamePrefix string `yaml:"fileNamePrefix"`
+	// ServerMode is used to determine if the file is being exported in server mode. This ensures the file name is unique and contains a timestamp.
+	ServerMode bool `yaml:"serverMode"`
 }
 
 type AWS_S3 struct {

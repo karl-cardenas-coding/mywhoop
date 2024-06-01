@@ -166,6 +166,7 @@ func dump(ctx context.Context) error {
 			Configuration.Export.FileExport.FileType,
 			Configuration.Export.FileExport.FileName,
 			Configuration.Export.FileExport.FileNamePrefix,
+			false,
 		)
 		err = fileExp.Export(finalDataRaw)
 		if err != nil {
@@ -180,15 +181,13 @@ func dump(ctx context.Context) error {
 		awsS3, err := export.NewAwsS3Export(cfg.Export.AWSS3.Region,
 			cfg.Export.AWSS3.Bucket,
 			cfg.Export.AWSS3.Profile,
-			client)
+			client,
+			&cfg.Export.AWSS3.FileConfig,
+			false,
+		)
 		if err != nil {
 			return errors.New("unable initialize AWS S3 export. Additional error context: " + err.Error())
 		}
-
-		awsS3.FileConfig.FileName = cfg.Export.AWSS3.FileConfig.FileName
-		awsS3.FileConfig.FileNamePrefix = cfg.Export.AWSS3.FileConfig.FileNamePrefix
-		awsS3.FileConfig.FileType = cfg.Export.AWSS3.FileConfig.FileType
-
 		err = awsS3.Export(finalDataRaw)
 		if err != nil {
 			notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
@@ -204,6 +203,7 @@ func dump(ctx context.Context) error {
 			Configuration.Export.FileExport.FileType,
 			Configuration.Export.FileExport.FileName,
 			Configuration.Export.FileExport.FileNamePrefix,
+			false,
 		)
 		err = fileExp.Export(finalDataRaw)
 		if err != nil {

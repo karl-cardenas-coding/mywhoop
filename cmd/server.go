@@ -89,31 +89,23 @@ func server(ctx context.Context) error {
 			cfg.Export.FileExport.FileType,
 			cfg.Export.FileExport.FileName,
 			cfg.Export.FileExport.FileNamePrefix,
+			true,
 		)
 
 		if cfg.Export.FileExport.FileNamePrefix == "" {
 			cfg.Export.FileExport.FileNamePrefix = "user"
 		}
-		// Configure the filename to ensure uniqueness
-		fileName := fmt.Sprintf("%s_%s", cfg.Export.FileExport.FileNamePrefix, internal.GetCurrentDate())
-		fileExp.FileName = fileName
 
 		exportSelected = fileExp
 	case "s3":
-		awsS3Exp, err := export.NewAwsS3Export(cfg.Export.AWSS3.Region, cfg.Export.AWSS3.Bucket, cfg.Export.AWSS3.Profile, client)
+		awsS3Exp, err := export.NewAwsS3Export(cfg.Export.AWSS3.Region, cfg.Export.AWSS3.Bucket, cfg.Export.AWSS3.Profile, client, &cfg.Export.AWSS3.FileConfig, true)
 		if err != nil {
 			slog.Error("unable to initialize AWS S3 export", "error", err)
 			return err
 		}
 
-		if cfg.Export.AWSS3.FileConfig.FileNamePrefix == "" {
-			cfg.Export.AWSS3.FileConfig.FileNamePrefix = "user"
-		}
-		// Configure the filename to ensure uniqueness
-		fileName := fmt.Sprintf("%s_%s", cfg.Export.FileExport.FileNamePrefix, internal.GetCurrentDate())
-		awsS3Exp.FileConfig.FileName = fileName
-
 		exportSelected = awsS3Exp
+		slog.Info("AWS S3 export method specified")
 	default:
 		slog.Error("unknown exporter", "exporter", cfg.Export.Method)
 	}
@@ -135,11 +127,13 @@ func server(ctx context.Context) error {
 		ntfy.SubscriptionID = cfg.Notification.Ntfy.SubscriptionID
 		ntfy.UserName = cfg.Notification.Ntfy.UserName
 		ntfy.Events = cfg.Notification.Ntfy.Events
-		slog.Info("ntfy notification method specified")
+		slog.Info("Ntfy notification method specified")
 		notificationMethod = ntfy
 	default:
-		notificationMethod = nil
-		slog.Info("no notification method specified. Defaulting to stdout.")
+		slog.Info("No notification method specified. Defaulting to stdout.")
+		std := notifications.NewStdout()
+		notificationMethod = std
+
 	}
 
 	// Setup the notification method

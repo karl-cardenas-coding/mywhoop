@@ -53,6 +53,15 @@ func (n *Ntfy) Publish(client *http.Client, data []byte, event string) error {
 
 	}
 
+	if data == nil {
+		return errors.New("no data provided for external notification")
+	}
+
+	if event == "" {
+		return errors.New("no event provided for external notification")
+
+	}
+
 	ok := canSendMsg(n.Events, event)
 
 	if !ok {

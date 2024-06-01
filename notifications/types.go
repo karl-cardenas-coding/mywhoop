@@ -19,3 +19,7 @@ type Ntfy struct {
 	// Events is a list of events that the Ntfy service can send notifications for. Supported events are errors, success, or all. Default is errors.
 	Events string `yaml:"events" validate:"oneof=errors success all"`
 }
+
+// Stdout is a struct that contains the configuration for the sending messages to stdout.
+// Stdout is only used to allow for scenarios where no notification method is provided. By default messages are sent to stdout.
+type Stdout struct{}

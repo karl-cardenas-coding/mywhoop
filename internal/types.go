@@ -281,5 +281,5 @@ type Notification interface {
 	// SetUp sets up the notification service and returns an error if the setup fails.
 	SetUp() error
 	// Send sends a notification using the notification service with the provided data and event.
-	Publish(clinet *http.Client, data []byte, event string) error
+	Publish(client *http.Client, data []byte, event string) error
 }

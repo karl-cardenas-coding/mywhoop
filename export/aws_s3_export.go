@@ -10,9 +10,11 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
@@ -23,7 +25,7 @@ func (f *AWS_S3) Setup() error {
 }
 
 // NewAwsS3Export creates a new AWS S3 export
-func NewAwsS3Export(region, bucket, profile string, client *http.Client) (*AWS_S3, error) {
+func NewAwsS3Export(region, bucket, profile string, client *http.Client, f *FileExport, serverMode bool) (*AWS_S3, error) {
 
 	if region == "" {
 
@@ -72,17 +74,16 @@ func NewAwsS3Export(region, bucket, profile string, client *http.Client) (*AWS_S
 
 	s3Client := s3.NewFromConfig(cfg)
 
-	defaultFileConfig := FileExport{
-		FileName:       "user.json",
-		FileType:       "json",
-		FileNamePrefix: "",
+	err = fileExportDefaults(f)
+	if err != nil {
+		return nil, err
 	}
 
 	return &AWS_S3{
 		Region:     region,
 		Bucket:     bucket,
 		S3Client:   s3Client,
-		FileConfig: defaultFileConfig,
+		FileConfig: *f,
 	}, nil
 }
 
@@ -96,14 +97,40 @@ func (f *AWS_S3) Export(data []byte) error {
 		return err
 	}
 
-	_, err = s3c.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket:   &f.Bucket,
-		Key:      &f.FileConfig.FileName,
-		Body:     bytes.NewReader(data),
-		Metadata: map[string]string{"Content-Type": "application/json"},
-	})
-	if err != nil {
-		return err
+	fileName := generateObjectKey(f.FileConfig)
+
+	// If the data is greater than 5 MB part size, upload the data in parts.
+	if int64(len(data)) > manager.MinUploadPartSize*1024*1024 {
+
+		largeBuffer := bytes.NewReader(data)
+		uploader := manager.NewUploader(s3c, func(u *manager.Uploader) {
+			u.PartSize = manager.MinUploadPartSize * 1024 * 1024
+		})
+		_, err := uploader.Upload(context.TODO(), &s3.PutObjectInput{
+			Bucket:   &f.Bucket,
+			Key:      &fileName,
+			Body:     largeBuffer,
+			Metadata: map[string]string{"Content-Type": "application/json"},
+		})
+
+		if err != nil {
+			return err
+		}
+
+	}
+
+	// If the data is less than 5 MB, upload the data as a single part.
+	if int64(len(data)) <= manager.MinUploadPartSize*1024*1024 {
+
+		_, err = s3c.PutObject(context.TODO(), &s3.PutObjectInput{
+			Bucket:   &f.Bucket,
+			Key:      &fileName,
+			Body:     bytes.NewReader(data),
+			Metadata: map[string]string{"Content-Type": "application/json"},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -113,6 +140,65 @@ func (f *AWS_S3) Export(data []byte) error {
 func (f *AWS_S3) CleanUp() error {
 	//  TODO: Implement this method
 	return nil
+}
+
+// fileExportDefaults sets the default values for the file export
+func fileExportDefaults(f *FileExport) error {
+
+	h, err := os.UserHomeDir()
+	if err != nil {
+		return errors.New("unable to get user home directory")
+	}
+
+	if f == nil {
+		f = &FileExport{
+			FilePath:       path.Join(h, "data"),
+			FileName:       "user",
+			FileType:       "json",
+			FileNamePrefix: "",
+			ServerMode:     true,
+		}
+
+	}
+
+	if f != nil {
+
+		if f.FilePath == "" {
+			f.FilePath = path.Join(h, "data")
+		}
+
+		if f.FileName == "" {
+			f.FileName = "user"
+		}
+		if f.FileType == "" || f.FileType != "json" {
+			f.FileType = "json"
+		}
+
+		if !f.ServerMode {
+			f.ServerMode = true
+		}
+
+	}
+
+	return nil
+}
+
+// generateName generates the name of the file to be created
+func generateObjectKey(cfg FileExport) string {
+
+	if cfg.ServerMode {
+
+		if cfg.FileNamePrefix != "" {
+			return cfg.FileNamePrefix + "_" + cfg.FileName + "_" + getCurrentDate() + "." + cfg.FileType
+		}
+		return cfg.FileName + "_" + getCurrentDate() + "." + cfg.FileType
+	}
+
+	if cfg.FileNamePrefix != "" {
+		return cfg.FileNamePrefix + "_" + cfg.FileName + "." + cfg.FileType
+	}
+	return cfg.FileName + "." + cfg.FileType
+
 }
 
 // uploadCheck checks if the data, file export and bucket are valid
