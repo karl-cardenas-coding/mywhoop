@@ -20,7 +20,6 @@ import (
 
 // Setup sets up the AWS S3 export and any resources required
 func (f *AWS_S3) Setup() error {
-	//  TODO: Implement this method
 	return nil
 }
 
@@ -90,9 +89,13 @@ func NewAwsS3Export(region, bucket, profile string, client *http.Client, f *File
 // Export exports the data to AWS S3
 func (f *AWS_S3) Export(data []byte) error {
 
+	if f == nil || f.S3Client == nil {
+		return errors.New("s3 client is required")
+	}
+
 	s3c := f.S3Client
 
-	err := uploadCheck(&data, f.FileConfig, f.Bucket)
+	err := uploadCheck(&data, &f.FileConfig, f.Bucket)
 	if err != nil {
 		return err
 	}
@@ -100,7 +103,7 @@ func (f *AWS_S3) Export(data []byte) error {
 	fileName := generateObjectKey(f.FileConfig)
 
 	// If the data is greater than 5 MB part size, upload the data in parts.
-	if int64(len(data)) > manager.MinUploadPartSize*1024*1024 {
+	if int64(len(data)) > manager.MinUploadPartSize {
 
 		largeBuffer := bytes.NewReader(data)
 		uploader := manager.NewUploader(s3c, func(u *manager.Uploader) {
@@ -120,7 +123,7 @@ func (f *AWS_S3) Export(data []byte) error {
 	}
 
 	// If the data is less than 5 MB, upload the data as a single part.
-	if int64(len(data)) <= manager.MinUploadPartSize*1024*1024 {
+	if int64(len(data)) <= manager.MinUploadPartSize {
 
 		_, err = s3c.PutObject(context.TODO(), &s3.PutObjectInput{
 			Bucket:   &f.Bucket,
@@ -138,7 +141,6 @@ func (f *AWS_S3) Export(data []byte) error {
 
 // CleanUp cleans up the AWS S3 export and any resources
 func (f *AWS_S3) CleanUp() error {
-	//  TODO: Implement this method
 	return nil
 }
 
@@ -167,9 +169,6 @@ func fileExportDefaults(f *FileExport) error {
 			f.FilePath = path.Join(h, "data")
 		}
 
-		if f.FileName == "" {
-			f.FileName = "user"
-		}
 		if f.FileType == "" || f.FileType != "json" {
 			f.FileType = "json"
 		}
@@ -184,21 +183,35 @@ func generateObjectKey(cfg FileExport) string {
 
 	if cfg.ServerMode {
 
-		if cfg.FileNamePrefix != "" {
+		if cfg.FileNamePrefix != "" && cfg.FileName != "" {
 			return cfg.FileNamePrefix + "_" + cfg.FileName + "_" + getCurrentDate() + "." + cfg.FileType
 		}
-		return cfg.FileName + "_" + getCurrentDate() + "." + cfg.FileType
+
+		if cfg.FileName != "" {
+			return cfg.FileName + "_" + getCurrentDate() + "." + cfg.FileType
+		}
+
+		return getCurrentDate() + "." + cfg.FileType
 	}
 
 	if cfg.FileNamePrefix != "" {
 		return cfg.FileNamePrefix + "_" + cfg.FileName + "." + cfg.FileType
 	}
+
+	if cfg.FileName != "" {
+		return "user" + "." + cfg.FileType
+	}
+
 	return cfg.FileName + "." + cfg.FileType
 
 }
 
 // uploadCheck checks if the data, file export and bucket are valid
-func uploadCheck(data *[]byte, f FileExport, bucket string) error {
+func uploadCheck(data *[]byte, f *FileExport, bucket string) error {
+
+	if f == nil {
+		return errors.New("file export is required")
+	}
 
 	if data == nil {
 		return errors.New("data is required")

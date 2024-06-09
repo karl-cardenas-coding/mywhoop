@@ -19,8 +19,8 @@ func TestFileNotFound(t *testing.T) {
 func TestInvalidYAML(t *testing.T) {
 
 	c, err := readConfigFileYaml("../tests/invalid_config.yaml")
-	if err != nil {
-		t.Fatalf("Failed to read the Yaml file %v", err)
+	if err == nil {
+		t.Fatalf("error expected but got nil %v", err)
 	}
 
 	err = validateConfiguration(c)
