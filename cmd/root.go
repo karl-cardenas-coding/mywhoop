@@ -70,18 +70,11 @@ func init() {
 
 // InitLogger initializes the logger
 func InitLogger(cfg *internal.ConfigurationData) error {
-	outputLvl := strings.ToUpper(VerbosityLevel)
-	slog.SetDefault(logger(outputLvl))
 
 	envConfigVars, err := internal.ExtractEnvVariables()
 	if err != nil {
 		return err
 	}
-
-	slog.Debug("Environment Configuration",
-		slog.Group("Verbosity", slog.String("Level", outputLvl)),
-		slog.Group("Config", slog.String("File", cfgFile)),
-	)
 
 	ok, configFilePath := internal.CheckConfigFile(cfgFile)
 	if ok {
@@ -103,9 +96,15 @@ func InitLogger(cfg *internal.ConfigurationData) error {
 		cfg.Credentials.CredentialsFile = CredentialsFile
 	}
 
-	if outputLvl != "" {
-		cfg.Debug = outputLvl
+	outputLvl := strings.ToUpper(VerbosityLevel)
+	if outputLvl == "" {
+		outputLvl = cfg.Debug
 	}
+	slog.SetDefault(logger(outputLvl))
+	slog.Debug("Environment Configuration",
+		slog.Group("Verbosity", slog.String("Level", outputLvl)),
+		slog.Group("Config", slog.String("File", cfgFile)),
+	)
 
 	if cfg.Credentials.CredentialsFile == "" {
 		cfg.Credentials.CredentialsFile = internal.DEFAULT_CREDENTIALS_FILE

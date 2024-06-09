@@ -153,18 +153,10 @@ func server(ctx context.Context) error {
 		ok, _, err := internal.VerfyToken(cfg.Credentials.CredentialsFile)
 		if err != nil {
 			slog.Error("unable to verify authentication token", "error", err)
-			notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
-			if notifyErr != nil {
-				slog.Error("unable to send notification", "error", notifyErr)
-			}
 			return err
 		}
 
 		if !ok {
-			notifyErr := notificationMethod.Publish(client, []byte("unable to verify authentication token"), internal.EventErrors.String())
-			if notifyErr != nil {
-				slog.Error("unable to send notification", "error", notifyErr)
-			}
 			return errors.New("auth token is invalid or expired")
 		}
 
@@ -173,10 +165,6 @@ func server(ctx context.Context) error {
 		token, err := internal.ReadTokenFromFile(cfg.Credentials.CredentialsFile)
 		if err != nil {
 			slog.Error("unable to read token file", "error", err)
-			notifyErr := notificationMethod.Publish(client, []byte(fmt.Sprintf("unable to read the authentication token from file. Additional error message: \n: %s", err)), internal.EventErrors.String())
-			if notifyErr != nil {
-				slog.Error("unable to send notification", "error", notifyErr)
-			}
 			return err
 		}
 
@@ -185,30 +173,18 @@ func server(ctx context.Context) error {
 		finalDataRaw, err := getData(ctx, user, client, token, &cfg.Server.FirstRunDownload, ua)
 		if err != nil {
 			slog.Error("unable to get data", "error", err)
-			notifyErr := notificationMethod.Publish(client, []byte(fmt.Sprintf("unable to get data from Whoop API. Additional error message: \n: %s", err)), internal.EventErrors.String())
-			if notifyErr != nil {
-				slog.Error("unable to send notification", "error", notifyErr)
-			}
 			return err
 		}
 
 		err = exportSelected.Export(finalDataRaw)
 		if err != nil {
 			slog.Error("unable to export data", "error", err)
-			notifyErr := notificationMethod.Publish(client, []byte(fmt.Sprintf("unable to export data. Additional error message: \n: %s", err)), internal.EventErrors.String())
-			if notifyErr != nil {
-				slog.Error("unable to send notification", "error", notifyErr)
-			}
 			return err
 		}
 
 		err = exportSelected.CleanUp()
 		if err != nil {
 			slog.Error("unable to clean up export", "error", err)
-			notifyErr := notificationMethod.Publish(client, []byte(fmt.Sprintf("unable to clean up export. Additional error message: \n: %s", err)), internal.EventErrors.String())
-			if notifyErr != nil {
-				slog.Error("unable to send notification", "error", notifyErr)
-			}
 			return err
 		}
 
@@ -240,7 +216,7 @@ func server(ctx context.Context) error {
 		err := StartServer(ctx, c, client, exportSelected, notificationMethod)
 		if err != nil {
 			slog.Error("unable to start server", "error", err)
-			notifyErr := notificationMethod.Publish(client, []byte(fmt.Sprintf("unable to start server. Additional error message: \n: %s", err)), internal.EventErrors.String())
+			notifyErr := notificationMethod.Publish(client, []byte(fmt.Sprintf("unable to start server. Additional error message: \n %s", err)), internal.EventErrors.String())
 			if notifyErr != nil {
 				slog.Error("unable to send notification", "error", notifyErr)
 			}
@@ -256,7 +232,7 @@ func server(ctx context.Context) error {
 		err := exportSelected.CleanUp()
 		if err != nil {
 			slog.Error("unable to clean up export", "error", err)
-			notifyErr := notificationMethod.Publish(client, []byte(fmt.Sprintf("unable to clean up export. Additional error message: \n: %s", err)), internal.EventErrors.String())
+			notifyErr := notificationMethod.Publish(client, []byte(fmt.Sprintf("unable to clean up export. Additional error message: \n %s", err)), internal.EventErrors.String())
 			if notifyErr != nil {
 				slog.Error("unable to send notification", "error", notifyErr)
 			}
@@ -303,7 +279,7 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 			currentToken, err := internal.ReadTokenFromFile(config.Credentials.CredentialsFile)
 			if err != nil {
 				slog.Error("unable to read token file", "error", err)
-				notifyErr := notify.Publish(client, []byte(fmt.Sprintf("Unable to read the authentication token from file. Additional context below: \n: %s", err)), internal.EventErrors.String())
+				notifyErr := notify.Publish(client, []byte(fmt.Sprintf("Unable to read the authentication token from file. Additional context below: \n %s", err)), internal.EventErrors.String())
 				if notifyErr != nil {
 					slog.Error("unable to send notification", "error", notifyErr)
 				}
@@ -323,7 +299,7 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 			token, err := internal.RefreshToken(ctx, auth)
 			if err != nil {
 				slog.Error("unable to refresh token", "error", err)
-				notifyErr := notify.Publish(client, []byte(fmt.Sprintf("Unable to refresh the authentication token. Additional context below: \n: %s", err)), internal.EventErrors.String())
+				notifyErr := notify.Publish(client, []byte(fmt.Sprintf("Unable to refresh the authentication token. Additional context below: \n %s", err)), internal.EventErrors.String())
 				if notifyErr != nil {
 					slog.Error("unable to send notification", "error", notifyErr)
 				}

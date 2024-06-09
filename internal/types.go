@@ -25,8 +25,8 @@ type AuthCredentials struct {
 }
 
 type User struct {
-	UserData           UserData           `json:"user_data"`
-	UserMesaurements   UserMesaurements   `json:"user_mesaurements"`
+	UserData           UserData           `json:"user_data,omitempty"`
+	UserMesaurements   UserMesaurements   `json:"user_mesaurements,omitempty"`
 	SleepCollection    SleepCollection    `json:"sleep_collection"`
 	RecoveryCollection RecoveryCollection `json:"recovery_collection"`
 	WorkoutCollection  WorkoutCollection  `json:"workout_collection"`
@@ -216,7 +216,7 @@ type ConfigExport struct {
 
 type NotificationConfig struct {
 	// Method is the notification method to use. If no method is specified, then no external notification is sent.
-	Method string `yaml:"method" validate:"oneof=ntfy"`
+	Method string `yaml:"method" validate:"oneof=ntfy ''"`
 	// Ntfy is the configuration settings for the Ntfy notification service.
 	Ntfy notifications.Ntfy `yaml:"ntfy" validate:"required_if=Method ntfy"`
 }

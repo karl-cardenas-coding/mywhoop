@@ -92,7 +92,7 @@ func readConfigFileYaml(file string) (ConfigurationData, error) {
 	dc.KnownFields(true)
 
 	if err := dc.Decode(&config); err != nil {
-		return ConfigurationData{}, errors.New("unable to decode the YAML file")
+		return ConfigurationData{}, errors.New("unable to decode the YAML file. Ensure the file is in the correct format and that all fields are correct")
 	}
 
 	// Set debug values to all upper case.
