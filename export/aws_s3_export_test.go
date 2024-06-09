@@ -729,7 +729,7 @@ func TestUploadCheck(t *testing.T) {
 				ServerMode:     true,
 			},
 			bucket:        "mywhoop",
-			errorExpected: true,
+			errorExpected: false,
 		},
 		{
 			description: "Test case 7: file export with empty file type",

@@ -222,10 +222,6 @@ func uploadCheck(data *[]byte, f *FileExport, bucket string) error {
 		return errors.New("data is empty")
 	}
 
-	if f.FileName == "" {
-		return errors.New("file name is required")
-	}
-
 	if f.FileType == "" {
 		return errors.New("file type is required")
 	}
