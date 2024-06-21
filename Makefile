@@ -12,7 +12,11 @@ license:
 
 opensource:
 	@echo "Checking for open source licenses"
-	~/go/bin/go-licenses report github.com/karl-cardenas-coding/mywhoop --template=documentation/open-source.tpl > documentation/open-source.md 
+	~/go/bin/go-licenses report github.com/karl-cardenas-coding/mywhoop --ignore $$(go list -m) --include_tests \
+		--ignore $$(tr -d ' \n' <<<"$${{ inputs.ignore-modules }}") \
+		--ignore $$(tr -d ' \n' <<<"$${{ inputs.ignore-modules }}") \
+		--ignore $$(go list std | awk 'NR > 1 { printf(",") } { printf("%s",$0) } END { print "" }') \
+		--template=documentation/open-source.tpl > documentation/open-source.md
 
 tests: ## Run tests
 	@echo "Running tests"
