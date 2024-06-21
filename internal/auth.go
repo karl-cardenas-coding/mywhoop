@@ -28,36 +28,28 @@ func getEndpoint() oauth2.Endpoint {
 }
 
 // RefreshToken refreshes the access token
-func RefreshToken(ctx context.Context, accessToken, refreshToken string, client *http.Client) (oauth2.Token, error) {
+func RefreshToken(ctx context.Context, auth AuthRequest) (oauth2.Token, error) {
 
 	const (
 		method string = "POST"
 	)
 
-	clientID := os.Getenv("WHOOP_CLIENT_ID")
-	clientSecret := os.Getenv("WHOOP_CLIENT_SECRET")
-
-	if clientID == "" || clientSecret == "" {
-		return oauth2.Token{}, fmt.Errorf("ClientID and ClientSecret environment variables not set")
-
-	}
-
 	var payloadString strings.Builder
 	var token oauth2.Token
-	fmt.Fprintf(&payloadString, "grant_type=refresh_token&refresh_token=%s&client_id=%s&client_secret=%s", refreshToken, clientID, clientSecret)
+	fmt.Fprintf(&payloadString, "grant_type=refresh_token&refresh_token=%s&client_id=%s&client_secret=%s", auth.RefreshToken, auth.ClientID, auth.ClientSecret)
 	payloadString.WriteString("&scope=offline read:profile read:recovery read:cycles read:workout read:sleep read:body_measurement")
 
 	payload := strings.NewReader(payloadString.String())
 
-	req, err := http.NewRequest(method, DEFAULT_ACCESS_TOKEN_URL, payload)
+	req, err := http.NewRequest(method, auth.TokenURL, payload)
 	if err != nil {
 		return oauth2.Token{}, err
 	}
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Add("Authorization", "Bearer "+accessToken)
+	req.Header.Add("Authorization", "Bearer "+auth.AuthToken)
 
-	res, err := client.Do(req)
+	res, err := auth.Client.Do(req)
 	if err != nil {
 		return oauth2.Token{}, err
 	}
@@ -73,18 +65,18 @@ func RefreshToken(ctx context.Context, accessToken, refreshToken string, client 
 		return oauth2.Token{}, err
 	}
 
-	var auth AuthCredentials
-	err = json.Unmarshal(body, &auth)
+	var newAuth AuthCredentials
+	err = json.Unmarshal(body, &newAuth)
 	if err != nil {
 		LogError(err)
 		return oauth2.Token{}, err
 	}
 
 	token = oauth2.Token{
-		AccessToken:  auth.AccessToken,
-		TokenType:    auth.TokenType,
-		RefreshToken: auth.RefreshToken,
-		Expiry:       time.Now().Local().Add(time.Second * time.Duration(auth.ExpiresIn)),
+		AccessToken:  newAuth.AccessToken,
+		TokenType:    newAuth.TokenType,
+		RefreshToken: newAuth.RefreshToken,
+		Expiry:       time.Now().Local().Add(time.Second * time.Duration(newAuth.ExpiresIn)),
 	}
 
 	return token, nil
@@ -251,7 +243,7 @@ func writeLocalToken(filePath string, token *oauth2.Token) error {
 	}
 	defer f.Close()
 
-	json, err := json.Marshal(token)
+	json, err := json.MarshalIndent(token, " ", " ")
 	if err != nil {
 		return err
 	}
@@ -301,6 +293,7 @@ func ReadTokenFromFile(filePath string) (oauth2.Token, error) {
 	var token oauth2.Token
 	err = json.NewDecoder(f).Decode(&token)
 	if err != nil {
+		slog.Error("unable to decode token file", "error", err)
 		return oauth2.Token{}, err
 	}
 

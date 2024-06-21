@@ -20,8 +20,6 @@ var (
 	CredentialsFile string
 	// cfgFile is the myWhoop configuration file
 	cfgFile string
-	// Exporter is the exporter to use for storing data
-	Exporter string
 	// ConfigurationData is the configuration data
 	Configuration internal.ConfigurationData
 	// UserAgent is the value to use for the User-Agent header
@@ -64,7 +62,6 @@ func init() {
 	// Global Flag - Config File
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "myWhoop config file - default is $HOME/.mywhoop.yaml")
 	rootCmd.PersistentFlags().StringVarP(&VerbosityLevel, "debug", "d", "", "Enable debug output. Use the values DEBUG, INFO, WARN, ERROR, Default is INFO.")
-	rootCmd.PersistentFlags().StringVarP(&Exporter, "exporter", "e", "", "Specify an exporter to use. Supporter exporters are file, and s3. Default is file.")
 	rootCmd.PersistentFlags().StringVar(&CredentialsFile, "credentials", "", "File path to the Whoop credentials file that contains a valid authentication token.")
 
 	UserAgent = fmt.Sprintf("mywhoop/%s", VersionString)
@@ -73,18 +70,11 @@ func init() {
 
 // InitLogger initializes the logger
 func InitLogger(cfg *internal.ConfigurationData) error {
-	outputLvl := strings.ToUpper(VerbosityLevel)
-	slog.SetDefault(logger(outputLvl))
 
 	envConfigVars, err := internal.ExtractEnvVariables()
 	if err != nil {
 		return err
 	}
-
-	slog.Debug("Environment Configuration",
-		slog.Group("Verbosity", slog.String("Level", outputLvl)),
-		slog.Group("Config", slog.String("File", cfgFile)),
-	)
 
 	ok, configFilePath := internal.CheckConfigFile(cfgFile)
 	if ok {
@@ -102,17 +92,19 @@ func InitLogger(cfg *internal.ConfigurationData) error {
 
 	// Prioritize CLI flags
 
-	if Exporter != "" {
-		cfg.Export.Method = Exporter
-	}
-
 	if CredentialsFile != "" {
 		cfg.Credentials.CredentialsFile = CredentialsFile
 	}
 
-	if outputLvl != "" {
-		cfg.Debug = outputLvl
+	outputLvl := strings.ToUpper(VerbosityLevel)
+	if outputLvl == "" {
+		outputLvl = cfg.Debug
 	}
+	slog.SetDefault(logger(outputLvl))
+	slog.Debug("Environment Configuration",
+		slog.Group("Verbosity", slog.String("Level", outputLvl)),
+		slog.Group("Config", slog.String("File", cfgFile)),
+	)
 
 	if cfg.Credentials.CredentialsFile == "" {
 		cfg.Credentials.CredentialsFile = internal.DEFAULT_CREDENTIALS_FILE

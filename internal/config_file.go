@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 )
 
 func CheckConfigFile(filePath string) (bool, string) {
@@ -88,9 +88,11 @@ func readConfigFileYaml(file string) (ConfigurationData, error) {
 
 	config := ConfigurationData{}
 
-	err = yaml.Unmarshal(fileContent, &config)
-	if err != nil {
-		return ConfigurationData{}, errors.New("unable to unmarshall the YAML file")
+	dc := yaml.NewDecoder(strings.NewReader(string(fileContent)))
+	dc.KnownFields(true)
+
+	if err := dc.Decode(&config); err != nil {
+		return ConfigurationData{}, errors.New("unable to decode the YAML file. Ensure the file is in the correct format and that all fields are correct")
 	}
 
 	// Set debug values to all upper case.

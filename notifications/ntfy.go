@@ -45,11 +45,20 @@ func (n *Ntfy) SetUp() error {
 }
 
 // Send sends a notification using the Ntfy service with the provided data.
-func (n *Ntfy) Send(client *http.Client, data []byte, event string) error {
+func (n *Ntfy) Publish(client *http.Client, data []byte, event string) error {
 
 	if client == nil {
 		slog.Info("no http client specified for external notification")
 		return errors.New("no http client specified for external notification")
+
+	}
+
+	if data == nil {
+		return errors.New("no data provided for external notification")
+	}
+
+	if event == "" {
+		return errors.New("no event provided for external notification")
 
 	}
 

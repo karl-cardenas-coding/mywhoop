@@ -4,6 +4,7 @@
 package internal
 
 import (
+	"net/http"
 	"strings"
 	"time"
 
@@ -24,8 +25,8 @@ type AuthCredentials struct {
 }
 
 type User struct {
-	UserData           UserData           `json:"user_data"`
-	UserMesaurements   UserMesaurements   `json:"user_mesaurements"`
+	UserData           UserData           `json:"user_data,omitempty"`
+	UserMesaurements   UserMesaurements   `json:"user_mesaurements,omitempty"`
 	SleepCollection    SleepCollection    `json:"sleep_collection"`
 	RecoveryCollection RecoveryCollection `json:"recovery_collection"`
 	WorkoutCollection  WorkoutCollection  `json:"workout_collection"`
@@ -47,7 +48,7 @@ type UserMesaurements struct {
 
 type SleepCollection struct {
 	SleepCollectionRecords []SleepCollectionRecords `json:"records"`
-	NextToken              string                   `json:"next_token"`
+	NextToken              string                   `json:"next_token,omitempty"`
 }
 type StageSummary struct {
 	TotalInBedTimeMilli         int `json:"total_in_bed_time_milli"`
@@ -88,7 +89,7 @@ type SleepCollectionRecords struct {
 
 type CycleCollection struct {
 	Records   []CycleRecords `json:"records"`
-	NextToken string         `json:"next_token"`
+	NextToken string         `json:"next_token,omitempty"`
 }
 type CycleScore struct {
 	Strain           float64 `json:"strain"`
@@ -110,7 +111,7 @@ type CycleRecords struct {
 
 type RecoveryCollection struct {
 	RecoveryRecords []RecoveryRecords `json:"records"`
-	NextToken       string            `json:"next_token"`
+	NextToken       string            `json:"next_token,omitempty"`
 }
 type RecoveryScore struct {
 	UserCalibrating  bool    `json:"user_calibrating"`
@@ -132,7 +133,7 @@ type RecoveryRecords struct {
 
 type WorkoutCollection struct {
 	Records   []WorkoutRecords `json:"records"`
-	NextToken string           `json:"next_token"`
+	NextToken string           `json:"next_token,omitempty"`
 }
 type ZoneDuration struct {
 	ZoneZeroMilli  int `json:"zone_zero_milli"`
@@ -167,6 +168,29 @@ type WorkoutRecords struct {
 }
 
 /*
+
+Authorization Data Structures
+
+*/
+
+type AuthRequest struct {
+	// Authorization URL for the Whoop API
+	AuthorizationURL string
+	// AuthToken is the OAuth2 token for the Whoop API
+	AuthToken string
+	// RefreshToken is the OAuth2 refresh token for the Whoop API
+	RefreshToken string
+	// client is the HTTP client to use for making requests
+	Client *http.Client
+	// The client ID for the Whoop API
+	ClientID string
+	// The client secret for the Whoop API
+	ClientSecret string
+	//Token URL for the Whoop API
+	TokenURL string
+}
+
+/*
 * Configuration File Data Structures
  */
 
@@ -192,7 +216,7 @@ type ConfigExport struct {
 
 type NotificationConfig struct {
 	// Method is the notification method to use. If no method is specified, then no external notification is sent.
-	Method string `yaml:"method" validate:"oneof=ntfy"`
+	Method string `yaml:"method" validate:"oneof=ntfy ''"`
 	// Ntfy is the configuration settings for the Ntfy notification service.
 	Ntfy notifications.Ntfy `yaml:"ntfy" validate:"required_if=Method ntfy"`
 }
@@ -211,7 +235,7 @@ type Credentials struct {
 
 /* Event
 
-Event is a struct that contains the event data for the event.
+Event is a struct that contains the event data for the event. Used to determine the type of event to sennd in the notification.
 
 */
 
@@ -241,4 +265,21 @@ func EventFromString(s string) Event {
 // String returns the string representation of an Event type.
 func (e Event) String() string {
 	return string(e)
+}
+
+// Export is the interface for exporting data
+type Export interface {
+	Setup() error
+	Export(data []byte) error
+	CleanUp() error
+}
+
+// Notification is an interface that defines the methods for a notification service.
+// It requires two method functions SetUp and Send.
+// Consumers can use the Publish method to send notifications using the notification service.
+type Notification interface {
+	// SetUp sets up the notification service and returns an error if the setup fails.
+	SetUp() error
+	// Send sends a notification using the notification service with the provided data and event.
+	Publish(client *http.Client, data []byte, event string) error
 }

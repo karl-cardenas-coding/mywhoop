@@ -3,20 +3,6 @@
 
 package notifications
 
-import (
-	"net/http"
-)
-
-// Notification is an interface that defines the methods for a notification service.
-// It requires two method functions SetUp and Send.
-// Consumers can use the Publish method to send notifications using the notification service.
-type Notification interface {
-	// SetUp sets up the notification service and returns an error if the setup fails.
-	SetUp() error
-	// Send sends a notification using the notification service with the provided data and event.
-	Send(clinet *http.Client, data []byte, event string) error
-}
-
 // Ntfy is a struct that contains the configuration for the Ntfy notification service.
 // Visit https://docs.ntfy.sh/ for more information.
 type Ntfy struct {
@@ -31,5 +17,9 @@ type Ntfy struct {
 	// Password is the password for the Ntfy service. Required if the Ntfy service requires authentication using username and password. Provide the password in the environment variable NOTIFICATION_NTFY_PASSWORD.
 	Password string `yaml:"-"`
 	// Events is a list of events that the Ntfy service can send notifications for. Supported events are errors, success, or all. Default is errors.
-	Events string `yaml:"events" validate:"oneof=errors success all"`
+	Events string `yaml:"events" validate:"oneof=errors success all '' "`
 }
+
+// Stdout is a struct that contains the configuration for the sending messages to stdout.
+// Stdout is only used to allow for scenarios where no notification method is provided. By default messages are sent to stdout.
+type Stdout struct{}
