@@ -108,6 +108,7 @@ func server(ctx context.Context) error {
 		slog.Info("AWS S3 export method specified")
 	default:
 		slog.Error("unknown exporter", "exporter", cfg.Export.Method)
+		return errors.New("unknown exporter")
 	}
 
 	// Setup the notification method

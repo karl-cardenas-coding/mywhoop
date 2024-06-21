@@ -73,6 +73,8 @@ func dump(ctx context.Context) error {
 		slog.Info("Ntfy notification method configured")
 	default:
 		slog.Info("no notification method specified. Defaulting to stdout.")
+		std := notifications.NewStdout()
+		notificationMethod = std
 	}
 
 	data, err := user.GetUserProfileData(ctx, client, internal.DEFAULT_WHOOP_API_USER_DATA_URL, token.AccessToken, ua)

@@ -63,10 +63,16 @@ func NewAwsS3Export(region, bucket, profile string, client *http.Client, f *File
 		return nil, fmt.Errorf("ERROR LOADING AWS CONFIG: %v", err)
 	}
 
+	if cfg.Credentials == nil {
+		return nil, errors.New("ERROR LOADING AWS CREDENTIALS")
+
+	}
+
 	creds, err := cfg.Credentials.Retrieve(context.TODO())
 	if err != nil {
 		return nil, errors.New("ERROR RETRIEVING AWS CREDENTIALS")
 	}
+
 	if creds.Expired() {
 		return nil, errors.New("AWS CREDENTIALS EXPIRED")
 	}

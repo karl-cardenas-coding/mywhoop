@@ -15,7 +15,7 @@ A tool for gathering and retaining your own Whoop data.
 
 
 ```shell
-nohup ./mywhoop server --first-run-download -d DEBUG > output.log 2>&1 &
+nohup ./mywhoop server -d DEBUG > output.log 2>&1 &
 ```
 
 ## Overview

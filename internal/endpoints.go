@@ -36,7 +36,11 @@ func (u User) GetUserProfileData(ctx context.Context, client *http.Client, url, 
 		return nil, err
 	}
 
-	if response == nil || response.StatusCode != http.StatusOK {
+	if response == nil {
+		return nil, errors.New("the HTTP request for user profile data returned an empty response struct")
+	}
+
+	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("the HTTP request for user profile data returned an empty response struct or a non-200 status code. Status Code: %d", response.StatusCode)
 	}
 
@@ -77,7 +81,11 @@ func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, url,
 		LogError(err)
 		return nil, err
 	}
-	if response == nil || response.StatusCode != http.StatusOK {
+	if response == nil {
+		return nil, errors.New("the HTTP request for user profile data returned an empty response struct")
+	}
+
+	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("the HTTP request for user profile data returned an empty response struct or a non-200 status code. Status Code: %d", response.StatusCode)
 	}
 
