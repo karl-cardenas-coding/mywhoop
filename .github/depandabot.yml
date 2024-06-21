@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    target-branch: "main"
+    commit-message:
+      prefix: "chore:"
+
+  - package-ecosystem: "github-actions"
+    directory: "/" 
+    schedule:
+      interval: "monthly"
+    target-branch: "main"
+    commit-message:
+      prefix: "chore:"
