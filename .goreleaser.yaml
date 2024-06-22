@@ -14,9 +14,10 @@ before:
     - go mod tidy
 
 builds:
-  - ldflags:
-    - -s -w -X github.com/karl-cardenas-coding/mywhoop/cmd.VersionString={{.Version}}
-  - env:
+  - id: primary
+    ldflags:
+      - -s -w -X github.com/karl-cardenas-coding/mywhoop/cmd.VersionString={{.Version}}
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -43,6 +44,11 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+  split: true
 
 changelog:
   sort: asc

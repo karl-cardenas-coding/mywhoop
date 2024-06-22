@@ -3,7 +3,6 @@ module github.com/karl-cardenas-coding/mywhoop
 go 1.22
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.30.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.21
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.21
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.1
@@ -25,6 +24,7 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/Microsoft/hcsshim v0.12.0 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.30.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.2 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.8 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.12 // indirect
