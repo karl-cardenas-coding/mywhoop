@@ -33,7 +33,7 @@ jobs:
           make tests-coverage
 
   lint:
-      name: lint
+      name: Lint
       runs-on: ubuntu-latest
       steps:
         - name: Check out code into the Go module directory

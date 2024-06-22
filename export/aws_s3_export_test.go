@@ -12,12 +12,11 @@ import (
 	"path"
 	"testing"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/docker/go-connections/nat"
-	"github.com/testcontainers/testcontainers-go"
+	testcontainers "github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/localstack"
 )
 
@@ -600,25 +599,18 @@ func s3Client(ctx context.Context, l *localstack.LocalStackContainer, region str
 		return nil, err
 	}
 
-	customResolver := aws.EndpointResolverWithOptionsFunc(
-		func(service, region string, opts ...interface{}) (aws.Endpoint, error) {
-			return aws.Endpoint{
-				PartitionID:   "aws",
-				URL:           fmt.Sprintf("http://%s:%d", host, mappedPort.Int()),
-				SigningRegion: region,
-			}, nil
-		})
-
 	awsCfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(region),
-		config.WithEndpointResolverWithOptions(customResolver),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider("aaaa", "bbb", "cccc")),
 	)
 	if err != nil {
 		return nil, err
 	}
 
+	endpoint := fmt.Sprintf("http://%s:%s", host, mappedPort.Port())
+
 	client := s3.NewFromConfig(awsCfg, func(o *s3.Options) {
+		o.BaseEndpoint = &endpoint
 		o.UsePathStyle = true
 	})
 
