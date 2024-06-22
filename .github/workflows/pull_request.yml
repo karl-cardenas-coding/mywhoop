@@ -30,6 +30,7 @@ jobs:
 
       - name: Go Tests
         run: |
+          mkdir -p tests/data
           make tests-coverage
 
   lint:
@@ -78,4 +79,4 @@ jobs:
       - name: build & execute
         run: |
             go build -ldflags="-X 'github.com/karl-cardenas-coding/mywhoop/cmd.VersionString=1.0.0'" -o=mywhoop -v
-            ./mywhoop version
+            ./mywhoop
