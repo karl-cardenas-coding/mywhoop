@@ -35,3 +35,16 @@ view-coverage: ## View the code coverage
 nil: ## Check for nil errors
 	@echo "Checking for nil errors"
 	~/go/bin/nilaway ./...
+
+## Cleaning
+
+clean: ## Clean the binary file
+	@echo "Cleaning the binary file"
+	rm -f dist/
+	rm mywhoop mywhoop_linux_amd64 mywhoop_linux_arm64 mywhoop_darwin_amd64 mywhoop_windows_amd64.exe
+
+
+## Release
+
+release-preview: # Create a preview release
+	goreleaser release --snapshot --clean
