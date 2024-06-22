@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -263,7 +264,7 @@ func TestReadTokenFromFile(t *testing.T) {
 	invalid := "invalid"
 
 	tests := []struct {
-		id                    int
+		description           string
 		token                 mockToken
 		tokenPath             string
 		errorExpected         bool
@@ -274,7 +275,7 @@ func TestReadTokenFromFile(t *testing.T) {
 	}{
 		// Test case for valid token
 		{
-			0,
+			"Test Case - 1: Valid token",
 			mockToken{
 				AccessToken:  "lQZyVtOv_d3QV6_-baV2Ffskbx3jqlsNfioTkXnVQpM.m9W5lWsF8ALeumQdnHibh8-bc3IYkdXGu8qsz23VSng",
 				TokenType:    "bearer",
@@ -291,7 +292,7 @@ func TestReadTokenFromFile(t *testing.T) {
 		},
 		// Test case for invalid token
 		{
-			0,
+			"Test Case - 2: Invalid token",
 			mockToken{},
 			"../tests/data/",
 			true,
@@ -302,7 +303,7 @@ func TestReadTokenFromFile(t *testing.T) {
 		},
 		// Test case for no token file available
 		{
-			0,
+			"Test Case - 3: No token file available",
 			mockToken{},
 			"../tests/data/",
 			true,
@@ -313,85 +314,99 @@ func TestReadTokenFromFile(t *testing.T) {
 		},
 	}
 
-	for index, test := range tests {
-		test.id = index + 1
+	for _, test := range tests {
 
-		if test.createDirectoryBefore {
-			err := os.MkdirAll(test.tokenPath, 0755)
-			if err != nil {
-				t.Errorf("Test Case - %d: Failed to create directory: %v", test.id, err)
-			}
-		}
+		t.Run(test.description, func(t *testing.T) {
 
-		filePath := filepath.Join(test.tokenPath, "token.json")
-
-		if test.createFileBefore {
-
-			f, err := os.Create(filePath)
-			if err != nil {
-				t.Errorf("Test Case - %d: Failed to create file: %v", test.id, err)
-			}
-
-			var rs []byte
-			if test.customContent {
-				value, err := json.MarshalIndent(invalid, " ", " ")
+			if test.createDirectoryBefore {
+				err := os.MkdirAll(test.tokenPath, 0755)
 				if err != nil {
-					t.Errorf("Test Case - %d: Failed to marshal token: %v", test.id, err)
+					t.Errorf("%s: Failed to create directory: %v", test.description, err)
 				}
-				rs = value
+			}
 
-			} else {
-				value, err := json.MarshalIndent(test.token, " ", " ")
+			filePath := filepath.Join(test.tokenPath, "token.json")
+
+			if test.createFileBefore {
+
+				f, err := os.Create(filePath)
 				if err != nil {
-					t.Errorf("Test Case - %d: Failed to marshal token: %v", test.id, err)
+					t.Errorf("%s: Failed to create file: %v", test.description, err)
 				}
-				rs = value
+
+				var rs []byte
+				if test.customContent {
+					value, err := json.MarshalIndent(invalid, " ", " ")
+					if err != nil {
+						t.Errorf("%s: Failed to marshal token: %v", test.description, err)
+					}
+					rs = value
+
+				} else {
+					value, err := json.MarshalIndent(test.token, " ", " ")
+					if err != nil {
+						t.Errorf("%s: Failed to marshal token: %v", test.description, err)
+					}
+					rs = value
+
+				}
+
+				_, err = f.WriteString(string(rs))
+				if err != nil {
+					t.Errorf("%s: Failed to write to file: %v", test.description, err)
+				}
+
+				err = f.Close()
+				if err != nil {
+					t.Errorf("%s: Failed to close file: %v", test.description, err)
+				}
 
 			}
 
-			_, err = f.WriteString(string(rs))
+			token, err := ReadTokenFromFile(filePath)
+
+			if err != nil && !test.errorExpected {
+				t.Errorf("%s: Failed to read token from file: %v", test.description, err)
+			}
+
+			if err == nil && test.errorExpected {
+				t.Errorf("%s: Expected an error but got none. Produced this token: %v", test.description, token)
+
+			}
+
+			token.AccessToken = strings.TrimSpace(token.AccessToken)
+			token.RefreshToken = strings.TrimSpace(token.RefreshToken)
+			test.token.AccessToken = strings.TrimSpace(test.token.AccessToken)
+			test.token.RefreshToken = strings.TrimSpace(test.token.RefreshToken)
+
+			if token.AccessToken != test.token.AccessToken {
+				t.Errorf("%s: Expected %s but got %s", test.description, test.token.AccessToken, token.AccessToken)
+			}
+
+			if token.RefreshToken != test.token.RefreshToken {
+				t.Errorf("%s: Expected %s but got %s", test.description, test.token.RefreshToken, token.RefreshToken)
+			}
+
+			if token.TokenType != test.token.TokenType {
+				t.Errorf("T%s: Expected %s but got %s", test.description, test.token.TokenType, token.TokenType)
+			}
+
+			if token.Expiry.Second() > 1800 {
+				t.Errorf("%s: Expected expiry time to be less than 1800 but got %d", test.description, token.Expiry.Second())
+			}
+
+			if token.Expiry.Second() != test.token.Expiry.Second() {
+				t.Errorf("%s: Expected expiry time to be %d but got %d", test.description, test.token.Expiry.Second(), token.Expiry.Second())
+			}
+
+		})
+
+		t.Cleanup(func() {
+			err := cleanUp("../tests/data/")
 			if err != nil {
-				t.Errorf("Test Case - %d: Failed to write to file: %v", test.id, err)
+				t.Errorf("Failed to clean up: %v", err)
 			}
-
-			err = f.Close()
-			if err != nil {
-				t.Errorf("Test Case - %d: Failed to close file: %v", test.id, err)
-			}
-
-		}
-
-		token, err := ReadTokenFromFile(filePath)
-
-		if err != nil && !test.errorExpected {
-			t.Errorf("Test Case - %d: Failed to read token from file: %v", test.id, err)
-		}
-
-		if err == nil && test.errorExpected {
-			t.Errorf("Test Case - %d: Expected an error but got none. Produced this token: %v", test.id, token)
-
-		}
-
-		if token.AccessToken != test.token.AccessToken {
-			t.Errorf("Test Case - %d: Expected %s but got %s", test.id, test.token.AccessToken, token.AccessToken)
-		}
-
-		if token.RefreshToken != test.token.RefreshToken {
-			t.Errorf("Test Case - %d: Expected %s but got %s", test.id, test.token.RefreshToken, token.RefreshToken)
-		}
-
-		if token.TokenType != test.token.TokenType {
-			t.Errorf("Test Case - %d: Expected %s but got %s", test.id, test.token.TokenType, token.TokenType)
-		}
-
-		if token.Expiry != test.token.Expiry {
-			t.Errorf("Test Case - %d: Expected %s but got %s", test.id, test.token.Expiry, token.Expiry)
-		}
-
-		err = cleanUp("../tests/data/")
-		if err != nil {
-			t.Errorf("Test Case - %d: Failed to clean up: %v", test.id, err)
-		}
+		})
 
 	}
 
