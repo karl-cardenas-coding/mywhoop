@@ -53,3 +53,4 @@ out.svg
 # Config
 
 private_config.yaml
+dist/
