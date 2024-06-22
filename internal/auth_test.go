@@ -399,11 +399,13 @@ func TestReadTokenFromFile(t *testing.T) {
 				t.Errorf("%s: Expected expiry time to be %d but got %d", test.description, test.token.Expiry.Second(), token.Expiry.Second())
 			}
 
-			err = cleanUp("../tests/data/")
-			if err != nil {
-				t.Errorf("%s: Failed to clean up: %v", test.description, err)
-			}
+		})
 
+		t.Cleanup(func() {
+			err := cleanUp("../tests/data/")
+			if err != nil {
+				t.Errorf("Failed to clean up: %v", err)
+			}
 		})
 
 	}

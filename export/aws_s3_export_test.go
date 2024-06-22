@@ -62,7 +62,7 @@ func TestNewAwsS3Export(t *testing.T) {
 				ServerMode: true,
 			},
 			client,
-			true,
+			false,
 			false,
 			false,
 		},
