@@ -60,7 +60,7 @@ jobs:
         - name: Run golangci-lint
           uses: golangci/golangci-lint-action@v6.0.1
           with:
-              args: -v
+              args: --verbose --timeout=2m
 
   compile:
     name: Compile validation
