@@ -1,6 +1,7 @@
 // Copyright (c) karl-cardenas-coding
 // SPDX-License-Identifier: Apache-2.0
 
+// A collection of data exporter that can be used to remotely ship data to a variety of destinations.
 package export
 
 import "github.com/aws/aws-sdk-go-v2/service/s3"

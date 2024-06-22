@@ -96,10 +96,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-path:  'dist/mywhoop_*.zip'
+      # - name: Generate artifact attestation
+      #   uses: actions/attest-build-provenance@v1
+      #   with:
+      #     subject-path:  'dist/mywhoop_*.zip'
 
 
   Docker:
@@ -139,10 +139,10 @@ jobs:
           build-args: |
             VERSION=${{ needs.tag.outputs.VERSION }}
 
-      - name: Generate SBOM attestation
-        uses: actions/attest-sbom@v1
-        with:
-          subject-name: ${{ github.repository }}
-          subject-digest: ${{ steps.build-and-push.outputs.digest }}
-          sbom-path: 'sbom.json'
-          push-to-registry: true
+      # - name: Generate SBOM attestation
+      #   uses: actions/attest-sbom@v1
+      #   with:
+      #     subject-name: ${{ github.repository }}
+      #     subject-digest: ${{ steps.build-and-push.outputs.digest }}
+      #     sbom-path: 'sbom.json'
+      #     push-to-registry: true

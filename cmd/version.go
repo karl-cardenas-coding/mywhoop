@@ -27,10 +27,10 @@ func init() {
 
 var VersionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print the current version number of go-lambda-cleanup",
-	Long:  `Prints the current version number of go-lambda-cleanup`,
+	Short: "Print the current version number of mywhoop",
+	Long:  `Prints the current version number of mywhoop`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		version := fmt.Sprintf("mywhoop %s", VersionString)
+		version := fmt.Sprintf("mywhoop v%s", VersionString)
 		slog.Info(version)
 		client := internal.CreateHTTPClient()
 		_, message, err := checkForNewRelease(client, VersionString, UserAgent, url)

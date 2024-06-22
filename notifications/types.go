@@ -1,6 +1,7 @@
 // Copyright (c) karl-cardenas-coding
 // SPDX-License-Identifier: Apache-2.0
 
+// Integrate different notification services to send notifications about the application status.
 package notifications
 
 // Ntfy is a struct that contains the configuration for the Ntfy notification service.
