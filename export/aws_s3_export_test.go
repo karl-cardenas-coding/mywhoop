@@ -25,7 +25,7 @@ func TestNewAwsS3Export(t *testing.T) {
 	client := http.DefaultClient
 
 	tests := []struct {
-		id            int
+		description   string
 		serverMode    bool
 		region        string
 		bucket        string
@@ -38,7 +38,7 @@ func TestNewAwsS3Export(t *testing.T) {
 	}{
 		// Happy path
 		{
-			0,
+			"Test case 1: Happy path",
 			false,
 			"us-east-1",
 			"mywhoop",
@@ -53,7 +53,7 @@ func TestNewAwsS3Export(t *testing.T) {
 		},
 		// Happy path with profile ENV variable
 		{
-			0,
+			"Test case 2: Happy path with profile ENV variable",
 			false,
 			"us-east-1",
 			"mywhoop",
@@ -68,7 +68,7 @@ func TestNewAwsS3Export(t *testing.T) {
 		},
 		// Error case: missing region
 		{
-			0,
+			"Test case 3: Error case: missing region",
 			false,
 			"",
 			"mywhoop",
@@ -83,7 +83,7 @@ func TestNewAwsS3Export(t *testing.T) {
 		},
 		// happy path with region ENV variable
 		{
-			0,
+			"Test case 4: Happy path with region ENV variable",
 			false,
 			"",
 			"mywhoop",
@@ -98,7 +98,7 @@ func TestNewAwsS3Export(t *testing.T) {
 		},
 		// Error case: missing bucket
 		{
-			0,
+			"Test case 5: Error case: missing bucket",
 			false,
 			"us-east-1",
 			"",
@@ -113,7 +113,7 @@ func TestNewAwsS3Export(t *testing.T) {
 		},
 		// Happy path: server mode enabled
 		{
-			0,
+			"Test case 6: Happy path: server mode enabled",
 			true,
 			"us-east-1",
 			"mywhoop",
@@ -128,35 +128,39 @@ func TestNewAwsS3Export(t *testing.T) {
 		},
 	}
 
-	for index, tc := range tests {
-		tc.id = index + 1
+	for _, tc := range tests {
 
-		if tc.setProfileEnv {
-			os.Setenv("AWS_PROFILE", "test")
-		}
+		t.Run(tc.description, func(t *testing.T) {
 
-		if tc.setRegionEnv {
-			os.Setenv("AWS_REGION", "us-east-1")
-		}
+			if tc.setProfileEnv {
+				os.Setenv("AWS_PROFILE", "test")
+			}
 
-		result, err := NewAwsS3Export(tc.region, tc.bucket, tc.profile, tc.client, tc.f, tc.serverMode)
-		if err != nil && !tc.expectedError {
-			t.Errorf("Test Case - %d: Unexpected error: %v", tc.id, err)
-		}
+			if tc.setRegionEnv {
+				os.Setenv("AWS_REGION", "us-east-1")
+			}
 
-		if err == nil && tc.expectedError {
-			t.Errorf("Test Case - %d: Expected error, but got no error", tc.id)
-		}
+			result, err := NewAwsS3Export(tc.region, tc.bucket, tc.profile, tc.client, tc.f, tc.serverMode)
+			if err != nil && !tc.expectedError {
+				t.Errorf("%s: Unexpected error: %v", tc.description, err)
+			}
 
-		if err == nil && result.S3Client == nil {
-			t.Errorf("Test Case - %d: S3 client is nil", tc.id)
-		}
+			if err == nil && tc.expectedError {
+				t.Errorf("%s: Expected error, but got no error", tc.description)
+			}
 
-		if err == nil && result.FileConfig.ServerMode != true {
-			t.Errorf("Test Case - %d: Server mode is not set correctly", tc.id)
-		}
+			if err == nil && result.S3Client == nil {
+				t.Errorf("%s: S3 client is nil", tc.description)
+			}
 
-		clearEnvVariables()
+			if err == nil && result.FileConfig.ServerMode != true {
+				t.Errorf("%s: Server mode is not set correctly", tc.description)
+			}
+
+			clearEnvVariables()
+
+		})
+
 	}
 
 }

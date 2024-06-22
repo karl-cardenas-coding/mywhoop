@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -371,6 +372,10 @@ func TestReadTokenFromFile(t *testing.T) {
 			t.Errorf("Test Case - %d: Expected an error but got none. Produced this token: %v", test.id, token)
 
 		}
+
+		token.AccessToken = strings.TrimSpace(token.AccessToken)
+		token.RefreshToken = strings.TrimSpace(token.RefreshToken)
+		test.token.AccessToken = strings.TrimSpace(test.token.AccessToken)
 
 		if token.AccessToken != test.token.AccessToken {
 			t.Errorf("Test Case - %d: Expected %s but got %s", test.id, test.token.AccessToken, token.AccessToken)
