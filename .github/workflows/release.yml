@@ -16,6 +16,7 @@ env:
 
 jobs:
   tag:
+    name: Determine Version
     runs-on: ubuntu-latest
 
     outputs:
@@ -67,6 +68,7 @@ jobs:
            echo "PREV_VERSION=$PREV_VERSION" >> $GITHUB_OUTPUT
 
   goreleaser:
+    name: Release
     needs: [tag]
     if: ${{ needs.tag.outputs.SAME_VERSION == 'false' }}
     runs-on: ubuntu-latest
@@ -94,6 +96,52 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate artifact attestation
-      uses: actions/attest-build-provenance@v1
-      with:
-        subject-path: 'bin/mywhoop'
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path:  'dist/mywhoop_*.zip'
+
+
+  Docker:
+    name: Docker Image Build and Push
+    needs: [tag, goreleaser]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version: "1.22"
+          check-latest: true
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        id: build-and-push
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ needs.tag.outputs.VERSION }}
+          build-args: |
+            VERSION=${{ needs.tag.outputs.VERSION }}
+
+      - name: Generate SBOM attestation
+        uses: actions/attest-sbom@v1
+        with:
+          subject-name: ${{ github.repository }}
+          subject-digest: ${{ steps.build-and-push.outputs.digest }}
+          sbom-path: 'sbom.json'
+          push-to-registry: true

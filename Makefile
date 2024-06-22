@@ -40,8 +40,8 @@ nil: ## Check for nil errors
 
 clean: ## Clean the binary file
 	@echo "Cleaning the binary file"
-	rm -f dist/
-	rm mywhoop mywhoop_linux_amd64 mywhoop_linux_arm64 mywhoop_darwin_amd64 mywhoop_windows_amd64.exe
+	rm -rf dist/
+	rm mywhoop_* || true
 
 
 ## Release
