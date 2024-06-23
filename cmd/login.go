@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"text/template"
+	"time"
 
 	"github.com/karl-cardenas-coding/mywhoop/internal"
 	"github.com/spf13/cobra"
@@ -66,12 +67,36 @@ func login() error {
 
 	}
 
-	redirectHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Redirected"))
+	submitHandler := func(w http.ResponseWriter, r *http.Request) {
+		username := r.FormValue("username")
+		password := r.FormValue("password")
+
+		slog.Info("Username and password received", "username", username, "password", password)
+		rsp, err := w.Write([]byte(`<div class="container">
+		<div class="message">
+			<p>You have successfully authenticated with the Whoop API 🎉.</p>
+			<p>A file was created in the local directory titled <strong>token.json</strong>. Use the button below to close the application.</p> <p> ⚠️ You must manually close this window - Sorry browser security settings 🔐</p>
+		</div>
+		<button hx-post="/close" hx-trigger="click" class="close-button">Close CLI Application</button>
+	</div>`))
+		if err != nil {
+			slog.Error("unable to write response", "error", err)
+		}
+		slog.Info("Response written", "response", rsp)
+
+	}
+
+	closeAppHandler := func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("Closing login application helper")
+		time.Sleep(2 * time.Second)
+		w.Write([]byte("Closing application..."))
+		os.Exit(0)
+
 	}
 
 	http.HandleFunc("/", landingPageHandler)
-	http.HandleFunc("/redirect", redirectHandler)
+	http.HandleFunc("/submit", submitHandler)
+	http.HandleFunc("/close", closeAppHandler)
 
 	slog.Info("Listening on port 8080. Visit http://localhost:8080 to autenticate with the Whoop API and get an access token.")
 	err = http.ListenAndServe(":8080", nil)

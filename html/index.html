@@ -13,7 +13,7 @@
     <link rel="manifest" href="/static/site.webmanifest">
 </head>
 <body>
-    <div class="container" role="main" aria-labelledby="loginTitle">
+    <div class="container" role="main" aria-labelledby="loginTitle" id="main-container">
         <h1 id="loginTitle">Login</h1>
         <form action="/submit" method="POST" aria-describedby="loginDescription">
             <p id="loginDescription">Enter your Whoop username and password to log in.</p>
@@ -25,7 +25,7 @@
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" required aria-required="true">
             </div>
-            <button type="submit">Submit</button>
+            <button type="submit" hx-post="/submit"  hx-trigger="click"  hx-swap="outerHTML"  hx-target="#main-container">Submit</button>
         </form>
     </div>
 </body>

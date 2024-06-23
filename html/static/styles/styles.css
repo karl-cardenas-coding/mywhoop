@@ -25,6 +25,8 @@ body {
     max-width: 600px; /* Increased max-width for the container */
     width: 100%;
     margin: 0 auto; /* Center the container horizontally */
+    display: flex; /* Use flexbox for layout */
+    flex-direction: column; /* Stack children vertically */
 }
 
 /* Heading styles */
@@ -67,6 +69,10 @@ button {
     cursor: pointer;
 }
 
+button.red {
+    background-color: #DC3545; /* Red color for the button */
+}
+
 button:hover {
     background-color: #0056b3;
 }
@@ -81,8 +87,19 @@ button:active {
     background-color: #004494;
 }
 
-
 /* Paragraph styles */
 p {
     margin-bottom: 15px; /* Space after the <p> tag */
+}
+
+/* Additional styling for the message container */
+.message {
+    margin-bottom: 20px;
+    flex: 1; /* Grow to fill available space */
+}
+
+/* Styling for the close button */
+.close-button {
+    align-self: flex-start; /* Align button to the start (left) */
+    width: auto; /* Allow button to size based on content */
 }
