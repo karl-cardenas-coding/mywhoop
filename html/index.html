@@ -14,18 +14,10 @@
 </head>
 <body>
     <div class="container" role="main" aria-labelledby="loginTitle" id="main-container">
-        <h1 id="loginTitle">Login</h1>
-        <form action="/submit" method="POST" aria-describedby="loginDescription">
-            <p id="loginDescription">Enter your Whoop username and password to log in.</p>
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required aria-required="true">
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required aria-required="true">
-            </div>
-            <button type="submit" hx-post="/submit"  hx-trigger="click"  hx-swap="outerHTML"  hx-target="#main-container">Submit</button>
+        <h1 id="loginTitle">Authentication</h1>
+        <form action="{{.AuthURL}}" method="POST" aria-describedby="loginDescription">
+            <p aria-label="Click Login to start the authentication process" id="loginDescription">Click Login to start the authentication process 🔒</p>
+           <button type="submit">Login</button>
         </form>
     </div>
 </body>

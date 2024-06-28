@@ -230,7 +230,7 @@ func TestWriteLocalToken(t *testing.T) {
 
 		filePath := filepath.Join(test.tokenPath, "token.json")
 
-		err := writeLocalToken(filePath, &test.token)
+		err := WriteLocalToken(filePath, &test.token)
 		if !test.errorExpected && err != nil {
 			t.Errorf("Test Case - %d: Failed to write token to file: %v", test.id, err)
 		}
