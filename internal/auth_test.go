@@ -561,3 +561,48 @@ func cleanUp(path string) error {
 
 	return nil
 }
+
+func TestGetAuthURL(t *testing.T) {
+
+	tests := []struct {
+		description string
+		auth        oauth2.Config
+	}{
+		{
+			"Test Case - 1: Valid auth",
+			oauth2.Config{
+				ClientID:     "testClientID",
+				ClientSecret: "testClientSecret",
+				RedirectURL:  "http://localhost:8080/redirect",
+				Scopes: []string{
+					"offline",
+					"read:recovery",
+					"read:cycles",
+					"read:workout",
+					"read:sleep",
+					"read:profile",
+					"read:body_measurement",
+				},
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  DEFAULT_AUTHENTICATION_URL,
+					TokenURL: DEFAULT_ACCESS_TOKEN_URL,
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			authUrl := GetAuthURL(test.auth)
+
+			if authUrl == "" {
+				t.Errorf("%s: Expected a non-empty string but got an empty string", test.description)
+			}
+
+			if !strings.HasPrefix(authUrl, "https://api.prod.whoop.com") {
+				t.Errorf("%s: Expected URL to start with https://api.prod.whoop.com but got %s", test.description, authUrl)
+			}
+
+		})
+	}
+}

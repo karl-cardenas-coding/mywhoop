@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<!--
+ Copyright (c) karl-cardenas-coding
+ SPDX-License-Identifier: Apache-2.0
+-->
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyWhoop Token Helper</title>
+    <script src="/static/dependencies/htmx.min.js"></script>
+    <link rel="stylesheet" href="/static/styles/styles.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="manifest" href="/static/site.webmanifest">
+</head>
+    <body>
+<div class="container">
+        <div class="message">
+            <p>You have successfully authenticated with the Whoop API 🎉.</p>
+            <p>A file was created in the specified credentials file path titled <strong>"{{.CredentialsFilePath}}</strong>. Use the button below to close the application.</p> <p> ⚠️ You must manually close this window - Sorry browser security settings 🔐</p>
+        </div>
+        <button hx-post="/close" hx-trigger="click" class="close-button">Close CLI Application</button>
+    </div>
+</body>
+</html>

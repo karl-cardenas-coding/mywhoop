@@ -28,10 +28,16 @@ var loginCmd = &cobra.Command{
 	},
 }
 
-var noAutoOpenBrowser bool
+var (
+	// noAutoOpenBrowser is a flag to disable the automatic opening of the browser
+	noAutoOpenBrowser bool
+	// redirectURL is the URL to redirect to after authenticating with the Whoop API. Default is http://localhost:8080/redirect.
+	redirectURL string
+)
 
 func init() {
-	loginCmd.PersistentFlags().BoolVarP(&noAutoOpenBrowser, "no-auto", "n", false, "Do not automatically open the browser to authenticate with the Whoop API.")
+	loginCmd.PersistentFlags().BoolVarP(&noAutoOpenBrowser, "no-auto", "n", false, "Do not automatically open the browser to authenticate with the Whoop API. ")
+	loginCmd.PersistentFlags().StringVarP(&redirectURL, "redirect-url", "r", "http://localhost:8080/redirect", "The URL to redirect to after authenticating with the Whoop API. Default is http://localhost:8080/redirect.")
 	rootCmd.AddCommand(loginCmd)
 }
 
@@ -39,6 +45,12 @@ func init() {
 type PageData struct {
 	// AuthURL is the URL to authenticate with the Whoop API
 	AuthURL string
+	// CredentialsFilePath is the path to the file where the access token is stored
+	CredentialsFilePath string
+	// Error is the error message
+	Error string
+	// StatusCode is the HTTP status code
+	StatusCode int
 }
 
 // login authenticates with Whoop API and gets an access token
@@ -57,10 +69,12 @@ func login() error {
 		return errors.New("the required env variables WHOOP_CLIENT_ID and WHOOP_CLIENT_SECRET are not set")
 	}
 
+	slog.Info(redirectURL)
+
 	config := &oauth2.Config{
 		ClientID:     id,
 		ClientSecret: secret,
-		RedirectURL:  "http://localhost:8080/redirect",
+		RedirectURL:  redirectURL,
 		Scopes: []string{
 			"offline",
 			"read:recovery",
@@ -78,12 +92,10 @@ func login() error {
 
 	authUrl := internal.GetAuthURL(*config)
 
-	slog.Info("Starting login application helper")
-	fs := http.FileServer(http.Dir("html/static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	fs := http.FileServer(http.Dir("web/static"))
 
 	landingPageHandler := func(w http.ResponseWriter, r *http.Request) {
-		tmp, err := template.ParseFiles("html/index.html")
+		tmp, err := template.ParseFiles("web/index.html")
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			slog.Error("unable to parse template", "error", err)
@@ -105,53 +117,64 @@ func login() error {
 		code := r.URL.Query().Get("code")
 		slog.Debug("Code received", "code", code)
 
+		if code == "" {
+			slog.Error("no code received.", "Error response status: ", r.Response.StatusCode)
+		}
+
 		// Exchange response code for token
 		accessToken, err := internal.GetAccessToken(*config, code)
 		if err != nil {
 			slog.Error("unable to get access token", "error", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			pg := PageData{
+				Error:      err.Error(),
+				StatusCode: http.StatusInternalServerError,
+			}
+			errorTmp, err := getErrorTemplate("web/error.html")
+			if errorTmp != nil {
+				err = errorTmp.Execute(w, pg)
+				if err != nil {
+					slog.Error("unable to execute error template", "error", err)
+				}
+			}
+			if err != nil {
+				slog.Error("unable to get error template", "error", err)
+			}
 		}
 
-		err = internal.WriteLocalToken(cliCfg.Credentials.CredentialsFile, accessToken)
-		if err != nil {
-			slog.Error("unable to write token to file", "error", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		if err == nil {
+
+			err = internal.WriteLocalToken(cliCfg.Credentials.CredentialsFile, accessToken)
+			if err != nil {
+				slog.Error("unable to write token to file", "error", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			}
+
+			data := PageData{
+				CredentialsFilePath: cliCfg.Credentials.CredentialsFile,
+			}
+
+			tmp, err := template.ParseFiles("web/redirect.html")
+			if err != nil {
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				slog.Error("unable to parse template", "error", err)
+			}
+
+			tmpl := template.Must(tmp, err)
+			err = tmpl.Execute(w, data)
+			if err != nil {
+				slog.Error("unable to execute redirect template", "error", err)
+			}
+
 		}
 
-		_, err = w.Write([]byte(`
-			<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
-				<meta http-equiv="X-UA-Compatible" content="IE=edge">
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<title>MyWhoop Token Helper</title>
-				<script src="/static/dependencies/htmx.min.js"></script>
-				<link rel="stylesheet" href="/static/styles/styles.css">
-				<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
-				<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-				<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-				<link rel="manifest" href="/static/site.webmanifest">
-			</head>
-				<body>
-			<div class="container">
-					<div class="message">
-						<p>You have successfully authenticated with the Whoop API 🎉.</p>
-						<p>A file was created in the specified credentials file path titled <strong>token.json</strong>. Use the button below to close the application.</p> <p> ⚠️ You must manually close this window - Sorry browser security settings 🔐</p>
-					</div>
-					<button hx-post="/close" hx-trigger="click" class="close-button">Close CLI Application</button>
-				</div>
-			</body>
-			</html>`))
-		if err != nil {
-			slog.Error("unable to write response", "error", err)
-		}
 	}
 
 	closeAppHandler := func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("Closing login application helper")
 		time.Sleep(2 * time.Second)
-		w.Write([]byte("Closing application..."))
+		_, err = w.Write([]byte("Closing application..."))
+		if err != nil {
+			slog.Error("unable to write response", "error", err)
+		}
 		os.Exit(0)
 
 	}
@@ -159,6 +182,7 @@ func login() error {
 	http.HandleFunc("/", landingPageHandler)
 	http.HandleFunc("/close", closeAppHandler)
 	http.HandleFunc("/redirect", redirectHandler)
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	slog.Info("Listening on port 8080. Visit http://localhost:8080 to autenticate with the Whoop API and get an access token.")
 	err = openBrowser("http://localhost:8080", noAutoOpenBrowser)
@@ -195,5 +219,28 @@ func openBrowser(url string, disableCmd bool) error {
 		return fmt.Errorf("unsupported platform")
 	}
 
-	return exec.Command(cmd, args...).Start()
+	c := exec.Command(cmd, args...)
+	err := c.Start()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// getErrorTemplate returns an HTML template from a file
+func getErrorTemplate(file string) (*template.Template, error) {
+
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return nil, err
+	}
+
+	t, err := template.ParseFiles(file)
+	if err != nil {
+		return nil, err
+	}
+
+	tmpl := template.Must(t, err)
+	return tmpl, nil
+
 }

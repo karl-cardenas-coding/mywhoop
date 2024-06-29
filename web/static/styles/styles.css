@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) karl-cardenas-coding
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /* Reset default margin and padding for all elements */
 * {
     margin: 0;
@@ -59,7 +64,6 @@ input[type="password"] {
     border-radius: 5px; /* Rounded corners for the input fields */
 }
 
-
 /* Button styles */
 button {
     padding: 10px 20px;
@@ -103,4 +107,64 @@ p {
 .close-button {
     align-self: flex-start; /* Align button to the start (left) */
     width: auto; /* Allow button to size based on content */
+}
+
+/* Error container styles */
+.error-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px; /* Rounded corners for the container */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-width: 600px; /* Increased max-width for the container */
+    width: 100%;
+    margin: 0 auto; /* Center the container horizontally */
+    text-align: center;
+    display: flex;
+    flex-direction: column; /* Stack children vertically */
+}
+
+/* Error title styles */
+.error-title {
+    color: #DC3545; /* Red color for error heading */
+    margin-bottom: 20px;
+}
+
+/* Error message styles */
+.error-message {
+    margin-bottom: 20px; /* Space after the <p> tag */
+    color: #333;
+}
+
+/* Error details styles */
+.error-details {
+    background-color: #f8f9fa; /* Light grey background for the details */
+    border: 1px solid #ddd; /* Light border */
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+/* Error retry button styles */
+.error-retry-button {
+    padding: 10px 20px;
+    background-color: #DC3545; /* Red color for the button */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    align-self: center; /* Center the button */
+}
+
+.error-retry-button:hover {
+    background-color: #b02a37;
+}
+
+.error-retry-button:focus {
+    outline: 3px solid #b02a37;
+    outline-offset: 2px;
+}
+
+.error-retry-button:active {
+    background-color: #7f1d26;
 }
