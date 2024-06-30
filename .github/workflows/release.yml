@@ -94,9 +94,9 @@ jobs:
         run: |
             URL="https://github.com/upx/upx/releases/download/v${UPX_VERSION}/upx-${UPX_VERSION}-amd64_linux.tar.xz"
             wget --quiet $URL --output-document upx.tar.xz
-            tar -xJf upx.tar.xz
-            chmod +x upx
-            sudo mv upx /usr/local/bin/
+            tar -xf upx.tar.xz
+            chmod +x upx-${UPX_VERSION}-amd64_linux/upx
+            sudo mv upx-${UPX_VERSION}-amd64_linux/upx /usr/local/bin/
             upx --version
       
       - uses: goreleaser/goreleaser-action@v6
