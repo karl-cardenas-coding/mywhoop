@@ -8,7 +8,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyWhoop Token Helper - Error</title>
+    <title>MyWhoop Login Helper - Error</title>
     <script src="/static/dependencies/htmx.min.js"></script>
     <link rel="stylesheet" href="/static/styles/styles.css">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
@@ -18,14 +18,14 @@
 </head>
 <body>
     <div class="container" role="main" aria-labelledby="errorTitle" id="main-container">
-        <h1 id="errorTitle" class="error-title">An Error Occurred</h1>
+        <h1 id="errorTitle" class="error-title">Whoops...</h1>
         <p class="error-message">An error was encountered while processing your request. Please try again.</p>
         <div class="error-details">
             <p>Status Code: {{.StatusCode}}</p>
             <h5>Technical Error</h5>
             <p>{{.Error}}</p>
         </div>
-        <button hx-trigger="click" hx-swap="outerHTML" hx-target="#main-container" hx-replace-url="true" hx-get="/" class="error-retry-button">Go Back</button>
+        <button hx-trigger="click" hx-swap="outerHTML" hx-target="#main-container" hx-replace-url="true" hx-get="/">Go Back</button>
     </div>
 </body>
 </html>

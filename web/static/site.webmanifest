@@ -1,6 +1,6 @@
 {
-    "name": "MyWhoop Token Helper",
-    "short_name": "WhoopHelper",
+    "name": "MyWhoop Login Helper",
+    "short_name": "MyWhoop",
     "icons": [
       {
         "src": "/favicon-32x32.png",
