@@ -4,8 +4,10 @@
 package cmd
 
 import (
+	"embed"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
@@ -72,6 +74,11 @@ func login() error {
 		return errors.New("the required env variables WHOOP_CLIENT_ID and WHOOP_CLIENT_SECRET are not set")
 	}
 
+	staticAssets, err := getStaticAssets(GlobalStaticAssets, "web/static")
+	if err != nil {
+		return err
+	}
+
 	config := &oauth2.Config{
 		ClientID:     id,
 		ClientSecret: secret,
@@ -91,21 +98,24 @@ func login() error {
 		},
 	}
 	slog.Info("Redirect Config", "URL:", "http://localhost:"+port+redirectURL)
-
 	authUrl := internal.GetAuthURL(*config)
 
-	http.HandleFunc("/", landingPageHandler("web/index.html", authUrl))
-	http.HandleFunc("/close", closeHandler)
-	http.HandleFunc("/redirect", redirectHandler(config, cliCfg.Credentials.CredentialsFile))
+	if authUrl == "" {
+		return errors.New("unable to get authentication URL. Please check the client ID and client secret are correct")
+	}
+
 	// Serve static files from the web/static directory at /static/
-	fs := http.FileServer(http.Dir("web/static"))
+	fs := http.FileServer(http.FS(staticAssets))
 	// Strip the /static/ prefix from the URL path so that the files are served from / instead of /static/
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	http.HandleFunc("/", landingPageHandler(GlobalStaticAssets, "web/index.html", authUrl))
+	http.HandleFunc("/close", closeHandler)
+	http.HandleFunc("/redirect", redirectHandler(GlobalStaticAssets, "web/redirect.html", "web/error.html", config, cliCfg.Credentials.CredentialsFile))
 
 	slog.Info("Listening on port 8080. Visit http://localhost:8080 to autenticate with the Whoop API and get an access token.")
 	err = openBrowser("http://localhost:"+port, noAutoOpenBrowser)
 	if err != nil {
-		return err
+		slog.Error("unable to open web browser automaticaly", "error", err)
 	}
 	err = http.ListenAndServe(":"+port, nil)
 	if err != nil {
@@ -116,9 +126,9 @@ func login() error {
 }
 
 // landingPageHandler handles the landing page and writes the authentication URL to the page
-func landingPageHandler(indexFile string, authUrl string) http.HandlerFunc {
+func landingPageHandler(assets fs.FS, indexFile string, authUrl string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tmp, err := template.ParseFiles(indexFile)
+		tmp, err := template.ParseFS(assets, indexFile)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			slog.Error("unable to parse template", "error", err)
@@ -139,7 +149,7 @@ func landingPageHandler(indexFile string, authUrl string) http.HandlerFunc {
 
 // redirectHandler handles the redirect URL after authenticating with the Whoop API
 // and writes the access token to a file
-func redirectHandler(authConf *oauth2.Config, credentialsFilePath string) http.HandlerFunc {
+func redirectHandler(assets fs.FS, page, errorPage string, authConf *oauth2.Config, credentialsFilePath string) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		code := r.URL.Query().Get("code")
@@ -147,7 +157,7 @@ func redirectHandler(authConf *oauth2.Config, credentialsFilePath string) http.H
 
 		if code == "" {
 			// slog.Info("no code received.", "Error response status: ", r.Response.StatusCode)
-			err := sendErrorTemplate(w, "No authorization code returned by the Whoop authorization server.", http.StatusInternalServerError, "web/error.html")
+			err := sendErrorTemplate(w, "No authorization code returned by the Whoop authorization server.", http.StatusInternalServerError, errorPage, assets)
 			if err != nil {
 				slog.Error("unable to send error template", "error", err)
 			}
@@ -158,7 +168,7 @@ func redirectHandler(authConf *oauth2.Config, credentialsFilePath string) http.H
 		accessToken, err := internal.GetAccessToken(*authConf, code)
 		if err != nil {
 			slog.Info("unable to get access token", "error", err)
-			err := sendErrorTemplate(w, err.Error(), http.StatusInternalServerError, "web/error.html")
+			err := sendErrorTemplate(w, err.Error(), http.StatusInternalServerError, errorPage, assets)
 			if err != nil {
 				slog.Error("unable to send error template", "error", err)
 			}
@@ -168,7 +178,7 @@ func redirectHandler(authConf *oauth2.Config, credentialsFilePath string) http.H
 		err = internal.WriteLocalToken(credentialsFilePath, accessToken)
 		if err != nil {
 			slog.Error("unable to write token to file", "error", err)
-			err := sendErrorTemplate(w, err.Error(), http.StatusInternalServerError, "web/error.html")
+			err := sendErrorTemplate(w, err.Error(), http.StatusInternalServerError, errorPage, assets)
 			if err != nil {
 				slog.Error("unable to send error template", "error", err)
 			}
@@ -179,7 +189,7 @@ func redirectHandler(authConf *oauth2.Config, credentialsFilePath string) http.H
 			CredentialsFilePath: credentialsFilePath,
 		}
 
-		tmp, err := template.ParseFiles("web/redirect.html")
+		tmp, err := template.ParseFS(assets, page)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			slog.Error("unable to parse template", "error", err)
@@ -194,6 +204,11 @@ func redirectHandler(authConf *oauth2.Config, credentialsFilePath string) http.H
 
 	}
 
+}
+
+// getStaticAssets returns the static assets from the embed.FS
+func getStaticAssets(f embed.FS, filePath string) (fs.FS, error) {
+	return fs.Sub(f, filePath)
 }
 
 // closeHandler closes the application after 2 seconds
@@ -239,13 +254,13 @@ func openBrowser(url string, disableCmd bool) error {
 }
 
 // getErrorTemplate returns an HTML template from a file
-func getErrorTemplate(file string) (*template.Template, error) {
+func getErrorTemplate(assets fs.FS, file string) (*template.Template, error) {
 
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return nil, err
 	}
 
-	t, err := template.ParseFiles(file)
+	t, err := template.ParseFS(assets, file)
 	if err != nil {
 		return nil, err
 	}
@@ -256,9 +271,9 @@ func getErrorTemplate(file string) (*template.Template, error) {
 }
 
 // sendErrorTemplate sends an error message to a response writer
-func sendErrorTemplate(w http.ResponseWriter, msg string, statusCode int, file string) error {
+func sendErrorTemplate(w http.ResponseWriter, msg string, statusCode int, file string, assets fs.FS) error {
 
-	tmp, err := getErrorTemplate(file)
+	tmp, err := getErrorTemplate(assets, file)
 	if err != nil {
 		return err
 	}
