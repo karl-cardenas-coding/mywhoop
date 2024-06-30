@@ -14,6 +14,7 @@ permissions:
 env: 
   SVU_VERSION: "2.0.1"
   GO_VERSION: "1.22"
+  UPX_VERSION: "4.2.4"
 
 jobs:
   tag:
@@ -41,6 +42,7 @@ jobs:
          tar -xzf svu.tar.gz
          chmod +x svu
          sudo mv svu /usr/local/bin/
+         svu --version
 
      - id: tag
        run: |
@@ -87,6 +89,15 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           check-latest: true
+
+      - name: Get UPX
+        run: |
+            URL="https://github.com/upx/upx/releases/download/v${UPX_VERSION}/upx-${UPX_VERSION}-amd64_linux.tar.xz"
+            wget --quiet $URL --output-document upx.tar.xz
+            tar -xJf upx.tar.xz
+            chmod +x upx
+            sudo mv upx /usr/local/bin/
+            upx --version
       
       - uses: goreleaser/goreleaser-action@v6
         with:

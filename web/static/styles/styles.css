@@ -1,0 +1,170 @@
+/**
+ * Copyright (c) karl-cardenas-coding
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Reset default margin and padding for all elements */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body styles */
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+}
+
+/* Container styles */
+.container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px; /* Rounded corners for the container */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-width: 600px; /* Increased max-width for the container */
+    width: 100%;
+    margin: 0 auto; /* Center the container horizontally */
+    display: flex; /* Use flexbox for layout */
+    flex-direction: column; /* Stack children vertically */
+}
+
+/* Heading styles */
+h1 {
+    margin-bottom: 20px;
+}
+
+/* Form styles */
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Form group styles */
+.form-group {
+    margin-bottom: 15px;
+}
+
+/* Label styles */
+label {
+    margin-bottom: 5px;
+}
+
+/* Input styles */
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    padding: 10px; /* Increased padding */
+    border: 1px solid #ccc;
+    border-radius: 5px; /* Rounded corners for the input fields */
+}
+
+/* Button styles */
+button {
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+button.red {
+    background-color: #DC3545; /* Red color for the button */
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button:focus,
+input:focus {
+    outline: 3px solid #0056b3;
+    outline-offset: 2px;
+}
+
+button:active {
+    background-color: #004494;
+}
+
+/* Paragraph styles */
+p {
+    margin-bottom: 15px; /* Space after the <p> tag */
+}
+
+/* Additional styling for the message container */
+.message {
+    margin-bottom: 20px;
+    flex: 1; /* Grow to fill available space */
+}
+
+/* Styling for the close button */
+.close-button {
+    align-self: flex-start; /* Align button to the start (left) */
+    width: auto; /* Allow button to size based on content */
+}
+
+/* Error container styles */
+.error-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px; /* Rounded corners for the container */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-width: 600px; /* Increased max-width for the container */
+    width: 100%;
+    margin: 0 auto; /* Center the container horizontally */
+    text-align: center;
+    display: flex;
+    flex-direction: column; /* Stack children vertically */
+}
+
+/* Error title styles */
+.error-title {
+    color: #DC3545; /* Red color for error heading */
+    margin-bottom: 20px;
+}
+
+/* Error message styles */
+.error-message {
+    margin-bottom: 20px; /* Space after the <p> tag */
+    color: #333;
+}
+
+/* Error details styles */
+.error-details {
+    background-color: #f8f9fa; /* Light grey background for the details */
+    border: 1px solid #ddd; /* Light border */
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+/* Error retry button styles */
+.error-retry-button {
+    padding: 10px 20px;
+    background-color: #DC3545; /* Red color for the button */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    align-self: center; /* Center the button */
+}
+
+.error-retry-button:hover {
+    background-color: #b02a37;
+}
+
+.error-retry-button:focus {
+    outline: 3px solid #b02a37;
+    outline-offset: 2px;
+}
+
+.error-retry-button:active {
+    background-color: #7f1d26;
+}

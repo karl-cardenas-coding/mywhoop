@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"log/slog"
 	"os"
@@ -28,6 +29,8 @@ var (
 	VerbosityLevel string
 	// VersionString is the version of the CLI
 	VersionString string = "0.0.0"
+	// StaticAssets is the embedded static assets
+	GlobalStaticAssets embed.FS
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -48,7 +51,9 @@ var rootCmd = &cobra.Command{
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
-func Execute(ctx context.Context, args []string, stdout, stderr *os.File) error {
+func Execute(ctx context.Context, args []string, stdout, stderr *os.File, staticAssets embed.FS) error {
+
+	GlobalStaticAssets = staticAssets
 
 	err := rootCmd.Execute()
 	if err != nil {

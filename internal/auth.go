@@ -26,6 +26,17 @@ func getEndpoint() oauth2.Endpoint {
 	}
 }
 
+// GetAuthURL returns the URL to authenticate with the Whoop API
+func GetAuthURL(auth oauth2.Config) string {
+
+	return auth.AuthCodeURL("stateidentifier", oauth2.AccessTypeOffline)
+}
+
+// GetAccessToken exchanges the access code returned from the authorization flow for an access token
+func GetAccessToken(auth oauth2.Config, code string) (*oauth2.Token, error) {
+	return auth.Exchange(context.Background(), code)
+}
+
 // RefreshToken refreshes the access token
 func RefreshToken(ctx context.Context, auth AuthRequest) (oauth2.Token, error) {
 
@@ -83,7 +94,7 @@ func RefreshToken(ctx context.Context, auth AuthRequest) (oauth2.Token, error) {
 }
 
 // writeLocalToken creates file containing the Whoop authentication token
-func writeLocalToken(filePath string, token *oauth2.Token) error {
+func WriteLocalToken(filePath string, token *oauth2.Token) error {
 
 	f, err := os.Create(filePath)
 	if err != nil {

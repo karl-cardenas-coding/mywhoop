@@ -5,10 +5,14 @@ package main
 
 import (
 	"context"
+	"embed"
 	"os"
 
 	"github.com/karl-cardenas-coding/mywhoop/cmd"
 )
+
+//go:embed all:web/*
+var staticAssets embed.FS
 
 // run is the entry point for the program.
 func run(
@@ -17,7 +21,8 @@ func run(
 	stdout,
 	stderr *os.File,
 ) error {
-	return cmd.Execute(ctx, args, stdout, stderr)
+
+	return cmd.Execute(ctx, args, stdout, stderr, staticAssets)
 }
 
 func main() {
