@@ -97,7 +97,7 @@ func login() error {
 			TokenURL: internal.DEFAULT_ACCESS_TOKEN_URL,
 		},
 	}
-	slog.Info("Redirect Config", "URL:", "http://localhost:"+port+redirectURL)
+	slog.Debug("Redirect Config", "URL:", "http://localhost:"+port+redirectURL)
 	authUrl := internal.GetAuthURL(*config)
 
 	if authUrl == "" {
@@ -218,7 +218,7 @@ func closeHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error("unable to write response", "error", err)
 	}
-	os.Exit(0)
+	defer os.Exit(0)
 }
 
 // openBrowser opens a browser to the specified URL
