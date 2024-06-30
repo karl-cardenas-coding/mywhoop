@@ -97,6 +97,7 @@ jobs:
             tar -xf upx.tar.xz
             chmod +x upx-${UPX_VERSION}-amd64_linux/upx
             sudo mv upx-${UPX_VERSION}-amd64_linux/upx /usr/local/bin/
+            rm -rf upx.tar.xz upx-${UPX_VERSION}-amd64_linux
             upx --version
       
       - uses: goreleaser/goreleaser-action@v6
