@@ -177,6 +177,7 @@ func redirectHandler(assets fs.FS, page, errorPage string, authConf *oauth2.Conf
 
 		err = internal.WriteLocalToken(credentialsFilePath, accessToken)
 		if err != nil {
+			slog.Debug("Credentials file path", "path", credentialsFilePath)
 			slog.Error("unable to write token to file", "error", err)
 			err := sendErrorTemplate(w, err.Error(), http.StatusInternalServerError, errorPage, assets)
 			if err != nil {
@@ -255,10 +256,6 @@ func openBrowser(url string, disableCmd bool) error {
 
 // getErrorTemplate returns an HTML template from a file
 func getErrorTemplate(assets fs.FS, file string) (*template.Template, error) {
-
-	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return nil, err
-	}
 
 	t, err := template.ParseFS(assets, file)
 	if err != nil {

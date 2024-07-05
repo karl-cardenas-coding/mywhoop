@@ -98,6 +98,7 @@ func InitLogger(cfg *internal.ConfigurationData) error {
 	// Prioritize CLI flags
 
 	if CredentialsFile != "" {
+		slog.Info("User provided credentials file path", "path", CredentialsFile)
 		cfg.Credentials.CredentialsFile = CredentialsFile
 	}
 
@@ -112,8 +113,10 @@ func InitLogger(cfg *internal.ConfigurationData) error {
 	)
 
 	if cfg.Credentials.CredentialsFile == "" {
+		slog.Info("No credentials file provided. Using default credentials file")
 		cfg.Credentials.CredentialsFile = internal.DEFAULT_CREDENTIALS_FILE
 	}
+	slog.Debug("Configuration", "Config", cfg)
 
 	return nil
 

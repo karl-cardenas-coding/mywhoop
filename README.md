@@ -9,18 +9,29 @@ A tool for gathering and retaining your own Whoop data.
   <img src="/static/images/logo.webp" alt="drawing" width="600"/>
 </p>
 
+## Overview
 
+MyWhoop is a tool intended to help you take ownership of your Whoop data. You can use MyWhoop to interfact with your own data in different ways than what Whoop may offer or intend.  MyWhoop is designed to be a simple and easy to use tool that can be run on your own machine or server. It supports the following features:
 
-## Get Started
+- 🔐 **Login**: A simple interface to login into Whoop and save your authentication token locally. The token is required for interacting with the Whoop API.
+- 🗄️ **Server**: Automatically download your Whoop data daily and save it to a local file or export it to a remote location.
+- 📬 **Notifications**: Receive notifications when new data is available or when an error occurs.
+- 💾 **Data Export**: Export your Whoop data to a remote location such as an S3 bucket.
+
+## Get Started 🚀
+
+Please check out the [Getting Started](/docs/get-started.md) guide to get started with MyWhoop.
 
 
 ```shell
-nohup ./mywhoop server -d DEBUG > output.log 2>&1 &
+export WHOOP_CLIENT_ID=<your client id>
+export WHOOP_CLIENT_SECRET=<your client
+docker run -p 8080:8080 \
+-e WHOOP_CLIENT_ID=$WHOOP_CLIENT_ID -e WHOOP_CLIENT_SECRET=$WHOOP_CLIENT_SECRET \
+ghcr.io/karl-cardenas-coding/mywhoop:v1.0.0 login -n
 ```
 
-## Overview
 
-MyWhoop was created to help faciliate ownership of your data and allow you to interfact with your own data in different ways than what Whoop may offer. 
 
 
 ## Environment Variables
