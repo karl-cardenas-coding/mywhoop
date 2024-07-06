@@ -40,8 +40,8 @@ The following steps will guide you through the process of setting up MyWhoop on 
     | Scopes | The scopes required for your application. | Yes | `read:recovery, read:cycles,read:sleep, read:workout, read:profile, read:body_measurement` |
     | Webhook URL| The URL for the webhook endpoint. | No | - |
 
-    > [!NOTE]
-    > The redirect URIs are required for the Whoop authentication flow.  Use the values `http://localhost:8080/redirect, https://localhost:8080/` as the redirect UTLs. You can change the port number if you are using a different port.
+> [!NOTE]
+> The redirect URIs are required for the Whoop authentication flow.  Use the values `http://localhost:8080/redirect, https://localhost:8080/` as the redirect UTLs. You can change the port number if you are using a different port.
 
     ![A view of the application create page](../static/images/tutorial_1.png)
 

@@ -40,7 +40,7 @@ var (
 )
 
 func init() {
-	loginCmd.PersistentFlags().BoolVarP(&noAutoOpenBrowser, "no-auto", "n", false, "Do not automatically open the browser to authenticate with the Whoop API. ")
+	loginCmd.PersistentFlags().BoolVarP(&noAutoOpenBrowser, "no-auto-open", "n", false, "Do not automatically open the browser to authenticate with the Whoop API. ")
 	loginCmd.PersistentFlags().StringVarP(&redirectURL, "redirect-url", "r", "/redirect", "The URL path to redirect to after authenticating with the Whoop API. Default is path is /redirect.")
 	loginCmd.PersistentFlags().StringVarP(&port, "port", "p", "8080", "The port to listen on. Default is 8080.")
 	rootCmd.AddCommand(loginCmd)
