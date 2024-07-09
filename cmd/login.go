@@ -219,6 +219,7 @@ func closeHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error("unable to write response", "error", err)
 	}
+
 	defer os.Exit(0)
 }
 
