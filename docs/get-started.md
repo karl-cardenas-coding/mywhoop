@@ -81,8 +81,11 @@ The following steps will guide you through the process of setting up MyWhoop on 
     ```shell
     docker run --publish 8080:8080 \
     --volume $PWD:/data  \
-    -e WHOOP_CLIENT_ID=$WHOOP_CLIENT_ID -e WHOOP_CLIENT_SECRET=$WHOOP_CLIENT_SECRET  \
-    ghcr.io/karl-cardenas-coding/mywhoop:v1.0.0 login -n --credentials /app/token.json
+    -e WHOOP_CLIENT_ID=$WHOOP_CLIENT_ID \
+    -e WHOOP_CLIENT_SECRET=$WHOOP_CLIENT_SECRET  \
+    ghcr.io/karl-cardenas-coding/mywhoop:v1.0.0 login \
+    --no-auto-open \
+    --credentials /app/token.json
     ```
 
     ```
@@ -106,7 +109,12 @@ The following steps will guide you through the process of setting up MyWhoop on 
 13. Issue the MyWhoop `dump` command to download all your Whoop data and save it to a local file. The `--location` flag is used to specify the location to save the Whoop data file. 
 
     ```shell
-    docker run --publish 8080:8080 --volume $PWD:/app -e WHOOP_CLIENT_ID=$WHOOP_CLIENT_ID -e WHOOP_CLIENT_SECRET=$WHOOP_CLIENT_SECRET ghcr.io/karl-cardenas-coding/mywhoop:v1.0.0 dump --credentials /app/token.json --location /app
+    docker run --publish 8080:8080 --volume $PWD:/app \
+    -e WHOOP_CLIENT_ID=$WHOOP_CLIENT_ID \
+    -e WHOOP_CLIENT_SECRET=$WHOOP_CLIENT_SECRET \
+    ghcr.io/karl-cardenas-coding/mywhoop:v1.0.0 dump \
+    --credentials /app/token.json \
+    --location /app
     ```
 
     Upon successful download, the Whoop data will be saved in the `~/mywhoop/data/` directory. The final output will look similar to the following:

@@ -35,11 +35,11 @@ MyWhoop supports the following commands and global flags:
 
 #### Global Flags
 
-| Flag | Description | Required | Default |
-|---|----|---|---|
-| `--config` | The file path to the MyWhoop [configuration file](./docs/configuration_reference.md). | No | `~/.mywhoop.yaml` |
-| `--credentials` | The file path to the Whoop credentials file that contains a valid Whoop authentication token. | No | `token.json` |
-| `--debug` | Enable debug logging. | No | False |
+| Long Flag | Short Flag |Description | Required | Default |
+|---|--|---|---|---|
+| `--config` | - |The file path to the MyWhoop [configuration file](./docs/configuration_reference.md). | No | `~/.mywhoop.yaml` |
+| `--credentials` | - |The file path to the Whoop credentials file that contains a valid Whoop authentication token. | No | `token.json` |
+| `--debug` | `-d` | Modify the output logging level. | No | `INFO` |
 
 
 > [!IMPORTANT]
@@ -55,9 +55,13 @@ The dump command downloads **all your Whoop data** and saves it to a local file.
 mywhoop dump
 ```
 
-| Flag | Description | Required | Default |
-|---|----|---|---|
-| `--location` | The location to save the Whoop data file. | No | `./data/` |
+| Long Flag | Short Flag | Description | Required | Default |
+|---|---|---|---|---|
+| `--location` | `-l` |The location to save the Whoop data file. | No | `./data/` |
+
+
+> [!IMPORTANT]
+> MyWhoop has exponential backoff and retries logic built in for the Whoop API. If the API is down or the request fails, the MyWhoop will retry the request. Whoop has an [API rate limit of 100 requests per minute](https://developer.whoop.com/docs/developing/rate-limiting). If the rate limit is exceeded, MyWhoop will attempt to retry the request after a delay for up to a maximum of 5 minutes. If the request fails after 5 minutes, the application will exit with an error. If the Whoop API rejects the authentication token, the application will exit with an error.
 
 
 ### Login
@@ -68,11 +72,11 @@ The login command is used to authenticate with the Whoop API and save the authen
 mywhoop login
 ```
 
-| Flag | Description | Required | Default |
-|---|----|---|---|
-| `--no-auto-open` | By default, the login command will automatically open a browser window to the Whoop login page. Use this flag to disable this behavior. | No | False |
-| `--port` | The port to use for the local HTTP server. | No | `8080` |
-| `--redirect-url` | The redirect URL to use for the OAuth2 handshake. | No | `http://localhost:8080/redirect`. |
+| Long Flag | Short Flag |Description | Required | Default |
+|---|--|--|---|---|
+| `--no-auto-open` | `-n` |By default, the login command will automatically open a browser window to the Whoop login page. Use this flag to disable this behavior. | No | False |
+| `--port` | `-p` | The port to use for the local HTTP server. | No | `8080` |
+| `--redirect-url` | `-r` |The redirect URL to use for the OAuth2 handshake. | No | `http://localhost:8080/redirect`. |
 
 
 
@@ -83,9 +87,9 @@ The server command automatically downloads your Whoop data daily. If specified, 
 Use a MyWhoop configuration file for more advanced configurations. For more information, refer to the [Configuration Reference](./docs/configuration_reference.md) section.
 
 
-| Flag | Description | Required | Default |
-|---|----|---|---|
-| `--first-run-download` | Download all the available Whoop data on the first run. | No | False |
+| Long Flag | Short Flag |Description | Required | Default |
+|---|--|--|---|---|
+| `--first-run-download` | - |Download all the available Whoop data on the first run. | No | False |
 
 
 ```bash
