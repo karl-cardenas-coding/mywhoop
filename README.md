@@ -61,7 +61,7 @@ mywhoop dump
 
 
 > [!IMPORTANT]
-> MyWhoop has exponential backoff and retries logic built in for the Whoop API. If the API is down or the request fails, the MyWhoop will retry the request. Whoop has an [API rate limit of 100 requests per minute](https://developer.whoop.com/docs/developing/rate-limiting). If the rate limit is exceeded, MyWhoop will attempt to retry the request after a delay for up to a maximum of 5 minutes. If the request fails after 5 minutes, the application will exit with an error. If the Whoop API rejects the authentication token, the application will exit with an error.
+> MyWhoop has exponential backoff and retries logic built in for the Whoop API. If the API is down or the request fails, MyWhoop will retry the request. Whoop has an [API rate limit of 100 requests per minute](https://developer.whoop.com/docs/developing/rate-limiting). If the rate limit is exceeded, MyWhoop will attempt to retry the request after a delay for up to a maximum of 5 minutes. If the request fails after 5 minutes, the application will exit with an error. If the Whoop API rejects the authentication token, the application will exit with an error.
 
 
 ### Login
