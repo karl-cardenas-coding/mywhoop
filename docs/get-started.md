@@ -1,4 +1,4 @@
-# Get Starrted
+# Get Started
 
 MyWhoop requires a few one-time setup steps to get started. The primary steps include setting up a Whoop application in the Whoop Developer Portal and setting up MyWhoop on your local machine or server. Once you have completed these steps, you can start using MyWhoop to interact with your Whoop data as you see fit.
 
@@ -98,3 +98,47 @@ The following steps will guide you through the process of setting up MyWhoop on 
     ![A view of the MyWhoop login page](../static/images/tutorial_4.png)
     
 12. Click on **Close Application** and close the browser tab. 
+
+    > [!NOTE]
+    > The authentication token is valid for 1 hour. If the token expires, you will need to re-authenticate with the Whoop API. You can use the `login` command to create a new token. 
+
+
+13. Issue the MyWhoop `dump` command to download all your Whoop data and save it to a local file. The `--location` flag is used to specify the location to save the Whoop data file. 
+
+    ```shell
+    docker run --publish 8080:8080 --volume $PWD:/app -e WHOOP_CLIENT_ID=$WHOOP_CLIENT_ID -e WHOOP_CLIENT_SECRET=$WHOOP_CLIENT_SECRET ghcr.io/karl-cardenas-coding/mywhoop:v1.0.0 dump --credentials /app/token.json --location /app
+    ```
+
+    Upon successful download, the Whoop data will be saved in the `~/mywhoop/data/` directory. The final output will look similar to the following:
+
+    ```
+    time="2024/07/09 23:51:52" level=INFO msg="data written to file" file=/app/user.json
+    time="2024/07/09 23:51:52" level=INFO msg="All Whoop data downloaded successfully"
+    ```
+
+14. To review the downloaded data, navigate to the `~/mywhoop/data` directory and open the `user.json` file. The file contains all the Whoop data downloaded from the Whoop API.
+
+    ```shell
+    cat ~/mywhoop/data/user.json | jq
+    ```
+
+    ```json
+    {
+    "user_data": {
+        "user_id": 11111111,
+        "email": "example@example.com",
+        "first_name": "John",
+        "last_name": "Doe "
+    },
+    "user_mesaurements": {
+        "height_meter": 1.48,
+        "weight_kilogram": 66.678085,
+        "max_heart_rate": 198
+    },
+    ...// Additional data follows
+    }
+    ```
+
+
+
+15. You have successfully set up MyWhoop on your local machine or server. You can now use MyWhoop to interact with your Whoop data as needed. For more information on the available commands and options, refer to the [Commands Reference](./commands_reference.md) section. 

@@ -16,8 +16,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// meCmd represents the me command
-var meCmd = &cobra.Command{
+var dataLocation string
+
+var dumpCmd = &cobra.Command{
 	Use:   "dump",
 	Short: "Dump all your Whoop data to a file or another form of export.",
 	Long:  "Dump all your Whoop data to a file or another form of export.",
@@ -29,7 +30,8 @@ var meCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(meCmd)
+	dumpCmd.PersistentFlags().StringVarP(&dataLocation, "location", "l", "", "The location to dump the data to. Default is the current directory's data/ folder.")
+	rootCmd.AddCommand(dumpCmd)
 }
 
 func dump(ctx context.Context) error {
@@ -161,10 +163,18 @@ func dump(ctx context.Context) error {
 		}
 		return err
 	}
+	var filePath string
 
 	switch cfg.Export.Method {
 	case "file":
-		fileExp := export.NewFileExport(Configuration.Export.FileExport.FilePath,
+
+		if dataLocation == "" {
+			filePath = Configuration.Export.FileExport.FilePath
+		} else {
+			filePath = dataLocation
+		}
+
+		fileExp := export.NewFileExport(filePath,
 			Configuration.Export.FileExport.FileType,
 			Configuration.Export.FileExport.FileName,
 			Configuration.Export.FileExport.FileNamePrefix,
@@ -180,6 +190,11 @@ func dump(ctx context.Context) error {
 		}
 		slog.Info("Data exported successfully", "file", fileExp.FileName)
 	case "s3":
+
+		if dataLocation != "" {
+			cfg.Export.AWSS3.FileConfig.FilePath = dataLocation
+		}
+
 		awsS3, err := export.NewAwsS3Export(cfg.Export.AWSS3.Region,
 			cfg.Export.AWSS3.Bucket,
 			cfg.Export.AWSS3.Profile,
@@ -200,8 +215,15 @@ func dump(ctx context.Context) error {
 		}
 
 	default:
+
+		if dataLocation == "" {
+			filePath = Configuration.Export.FileExport.FilePath
+		} else {
+			filePath = dataLocation
+		}
+
 		slog.Info("no export method specified. Defaulting to file.")
-		fileExp := export.NewFileExport(Configuration.Export.FileExport.FilePath,
+		fileExp := export.NewFileExport(filePath,
 			Configuration.Export.FileExport.FileType,
 			Configuration.Export.FileExport.FileName,
 			Configuration.Export.FileExport.FileNamePrefix,

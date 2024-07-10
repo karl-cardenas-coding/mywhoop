@@ -55,6 +55,10 @@ The dump command downloads **all your Whoop data** and saves it to a local file.
 mywhoop dump
 ```
 
+| Flag | Description | Required | Default |
+|---|----|---|---|
+| `--location` | The location to save the Whoop data file. | No | `./data/` |
+
 
 ### Login
 
