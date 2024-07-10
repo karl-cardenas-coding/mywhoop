@@ -40,7 +40,7 @@ var (
 )
 
 func init() {
-	loginCmd.PersistentFlags().BoolVarP(&noAutoOpenBrowser, "no-auto", "n", false, "Do not automatically open the browser to authenticate with the Whoop API. ")
+	loginCmd.PersistentFlags().BoolVarP(&noAutoOpenBrowser, "no-auto-open", "n", false, "Do not automatically open the browser to authenticate with the Whoop API. ")
 	loginCmd.PersistentFlags().StringVarP(&redirectURL, "redirect-url", "r", "/redirect", "The URL path to redirect to after authenticating with the Whoop API. Default is path is /redirect.")
 	loginCmd.PersistentFlags().StringVarP(&port, "port", "p", "8080", "The port to listen on. Default is 8080.")
 	rootCmd.AddCommand(loginCmd)
@@ -177,6 +177,7 @@ func redirectHandler(assets fs.FS, page, errorPage string, authConf *oauth2.Conf
 
 		err = internal.WriteLocalToken(credentialsFilePath, accessToken)
 		if err != nil {
+			slog.Debug("Credentials file path", "path", credentialsFilePath)
 			slog.Error("unable to write token to file", "error", err)
 			err := sendErrorTemplate(w, err.Error(), http.StatusInternalServerError, errorPage, assets)
 			if err != nil {
@@ -218,6 +219,7 @@ func closeHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error("unable to write response", "error", err)
 	}
+
 	defer os.Exit(0)
 }
 
@@ -255,10 +257,6 @@ func openBrowser(url string, disableCmd bool) error {
 
 // getErrorTemplate returns an HTML template from a file
 func getErrorTemplate(assets fs.FS, file string) (*template.Template, error) {
-
-	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return nil, err
-	}
 
 	t, err := template.ParseFS(assets, file)
 	if err != nil {

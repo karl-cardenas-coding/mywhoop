@@ -20,12 +20,12 @@
     <body>
 <div class="container">
         <h1 id="successTitle" class="success-title">Noice</h1>
-        <div class="message">
+        <div class="message" id="successMessage">
             <p>You have successfully authenticated with the Whoop API 🎉.</p>
-            <p>A file was created in the specified credentials file path titled <strong>"{{.CredentialsFilePath}}</strong>. Use the button below to close the application.</p> 
+            <p>A file was created in the specified credentials file path titled <strong>{{.CredentialsFilePath}}</strong>. Use the button below to close the application.</p> 
             <p> ⚠️ You must manually close this window - Sorry browser security settings 🔐</p>
         </div>
-        <button hx-post="/close" hx-trigger="click" class="close-button">Close Application</button>
+        <button id="closeAppBtn" hx-post="/close" hx-trigger="click" class="close-button">Close Application</button>
     </div>
 </body>
 </html>

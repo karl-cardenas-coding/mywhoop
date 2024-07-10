@@ -21,11 +21,11 @@
         <h1 id="errorTitle" class="error-title">Whoops...</h1>
         <p class="error-message">An error was encountered while processing your request. Please try again.</p>
         <div class="error-details">
-            <p>Status Code: {{.StatusCode}}</p>
+            <p id="statusCode">Status Code: {{.StatusCode}}</p>
             <h5>Technical Error</h5>
-            <p>{{.Error}}</p>
+            <p id=""errorMessage>{{.Error}}</p>
         </div>
-        <button hx-trigger="click" hx-swap="outerHTML" hx-target="#main-container" hx-replace-url="true" hx-get="/">Go Back</button>
+        <button id="backBtn" hx-trigger="click" hx-swap="outerHTML" hx-target="#main-container" hx-replace-url="true" hx-get="/">Go Back</button>
     </div>
 </body>
 </html>
