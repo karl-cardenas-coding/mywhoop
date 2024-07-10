@@ -50,8 +50,8 @@ The following steps will guide you through the process of setting up MyWhoop on 
 
 5. Copy the `Client ID` and `Client Secret` from the application details page. You will use these values to authenticate with the Whoop API. 
 
-    > [!WARNING]
-    > These values are sensitive and should be kept secret. Do not share these values with anyone. I recommend storing these values in a secure location such as a password manager.
+> [!WARNING]
+> These values are sensitive and should be kept secret. Do not share these values with anyone. I recommend storing these values in a secure location such as a password manager.
 
 
     ![A view of an application with the Whoop App clientID and secretId highlighted](../static/images/tutorial_2.png)
@@ -99,8 +99,8 @@ The following steps will guide you through the process of setting up MyWhoop on 
     
 12. Click on **Close Application** and close the browser tab. 
 
-    > [!NOTE]
-    > The authentication token is valid for 1 hour. If the token expires, you will need to re-authenticate with the Whoop API. You can use the `login` command to create a new token. 
+> [!NOTE]
+> The authentication token is valid for 1 hour. If the token expires, you will need to re-authenticate with the Whoop API. You can use the `login` command to create a new token. 
 
 
 13. Issue the MyWhoop `dump` command to download all your Whoop data and save it to a local file. The `--location` flag is used to specify the location to save the Whoop data file. 
