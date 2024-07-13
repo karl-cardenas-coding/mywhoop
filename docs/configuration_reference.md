@@ -133,12 +133,13 @@ The server section of the configuration file is used to configure the server fea
 | Field | Description | Required | Default |
 |---|----|---|---|
 | `enabled` | Enable the server feature. | No | `false` |
+| `crontab` | The crontab schedule to use for the server. By default, the server is configured to download your Whoop data daily at 1pm (13:00). Your local time zone is used. Different Operating System implement local time zone differently. Refer to the Go [time.Location](https://pkg.go.dev/time#Local) for additional details on expected behavior. | No | `0 13 * * *` |
 
 
 ```yaml
 server:
   enabled: true
-  firstRunDownload: false
+  crontab: "*/55 * * * *" 
 ```
 
 

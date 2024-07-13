@@ -26,7 +26,7 @@ func TestEvaluateConfigOptions(t *testing.T) {
 
 	expectedExporter := "file"
 
-	err := evaluateConfigOptions(true, dt)
+	err := evaluateConfigOptions(dt)
 	if err != nil {
 		t.Errorf("Expected nil error, got: %v", err)
 	}
@@ -38,7 +38,7 @@ func TestEvaluateConfigOptions(t *testing.T) {
 	// Second test
 	dt.Export.Method = ""
 
-	err = evaluateConfigOptions(false, dt)
+	err = evaluateConfigOptions(dt)
 	if err != nil {
 		t.Errorf("Expected nil error, got: %v", err)
 	}
@@ -50,7 +50,7 @@ func TestEvaluateConfigOptions(t *testing.T) {
 	// Third test
 
 	dt = &internal.ConfigurationData{}
-	err = evaluateConfigOptions(true, dt)
+	err = evaluateConfigOptions(dt)
 	if err != nil {
 		t.Errorf("Expected nil error, got: %v", err)
 	}
@@ -65,7 +65,7 @@ func TestEvaluateConfigOptions(t *testing.T) {
 			Enabled: true,
 		},
 	}
-	err = evaluateConfigOptions(false, dt)
+	err = evaluateConfigOptions(dt)
 	if err != nil {
 		t.Errorf("Expected nil error, got: %v", err)
 	}

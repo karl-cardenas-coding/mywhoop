@@ -224,6 +224,8 @@ type NotificationConfig struct {
 type Server struct {
 	// Set to true to enable server mode. Default is false.
 	Enabled bool `yaml:"enabled"`
+	// A cron tab string to schedule the server to run at specific times. Default is every 24 hours at 1300 hours -  0 13 * * *.
+	Crontab string `yaml:"crontab"`
 }
 
 type Credentials struct {
