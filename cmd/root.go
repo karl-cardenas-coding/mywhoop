@@ -65,7 +65,7 @@ func Execute(ctx context.Context, args []string, stdout, stderr *os.File, static
 func init() {
 
 	// Global Flag - Config File
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "myWhoop config file - default is $HOME/.mywhoop.yaml")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "MyWhoop config file - default is $HOME/.mywhoop.yaml")
 	rootCmd.PersistentFlags().StringVarP(&VerbosityLevel, "debug", "d", "", "Enable debug output. Use the values DEBUG, INFO, WARN, ERROR, Default is INFO.")
 	rootCmd.PersistentFlags().StringVar(&CredentialsFile, "credentials", "", "File path to the Whoop credentials file that contains a valid authentication token.")
 
@@ -83,7 +83,7 @@ func InitLogger(cfg *internal.ConfigurationData) error {
 
 	ok, configFilePath := internal.CheckConfigFile(cfgFile)
 	if ok {
-		slog.Info("config file found", "config", configFilePath)
+		slog.Info("config file specified", "config", configFilePath)
 		config, err := internal.GenerateConfigStruct(configFilePath)
 		if err != nil {
 			slog.Error("unable to generate configuration struct", "error", err)
@@ -126,7 +126,7 @@ func InitLogger(cfg *internal.ConfigurationData) error {
 func changeTimeFormat(groups []string, a slog.Attr) slog.Attr {
 
 	if a.Key == slog.TimeKey {
-		a.Value = slog.StringValue(time.Now().Format("2006/01/02 15:04:05"))
+		a.Value = slog.StringValue(time.Now().Local().Format("2006/01/02 15:04:05"))
 	}
 	return a
 

@@ -11,16 +11,23 @@ ExecStartPre=-/usr/bin/docker stop mywhoop
 ExecStartPre=-/usr/bin/docker rm mywhoop
 ExecStartPre=/usr/bin/docker pull ghcr.io/karl-cardenas-coding/mywhoop:v1.0.0
 ExecStart=/usr/bin/docker run --name mywhoop \
-    -e WHOOP_CLIENT_ID=************* \
-    -e WHOOP_CLIENT_SECRET=************* \
-    -e NOTIFICATION_NTFY_AUTH_TOKEN=************* \
-    -e WHOOP_CREDENTIALS_FILE=/home/ubuntu/token.json \
+    -e WHOOP_CLIENT_ID=$WHOOP_CLIENT_ID \
+    -e WHOOP_CLIENT_SECRET=$WHOOP_CLIENT_SECRET \
+    -e NOTIFICATION_NTFY_AUTH_TOKEN=$NOTIFICATION_NTFY_AUTH_TOKEN \
     -v /home/ubuntu/mywhoop/:app \
-    ghcr.io/karl-cardenas-coding/mywhoop:v1.0.0
+    ghcr.io/karl-cardenas-coding/mywhoop:v1.0.0 server \
+    --config /app/.mywhoop.yaml \
+    --credentials /app/token.json
 Restart=on-failure
 User=ubuntu
 Group=ubuntu
 WorkingDirectory=/home/ubuntu/mywhoop/
+Environment="WHOOP_CLIENT_ID=*************"
+Environment="WHOOP_CLIENT_SECRET==*************"
+Environment="NOTIFICATION_NTFY_AUTH_TOKEN=*************"
+Environment="AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID"
+Environment="AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY"
+Environment="AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION"
 
 [Install]
 WantedBy=multi-user.target

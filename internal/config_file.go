@@ -77,13 +77,14 @@ func GenerateConfigStruct(filePath string) (ConfigurationData, error) {
 func readConfigFileYaml(file string) (ConfigurationData, error) {
 
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		slog.Error("unable to read the input file", "error", err)
+		slog.Error("file not found", "file", file)
 		return ConfigurationData{}, errors.New("unable to read the input file")
 	}
 
 	fileContent, err := os.ReadFile(file)
 	if err != nil {
-		return ConfigurationData{}, errors.New("unable to read the input file")
+		slog.Error("unable to read the content of the file", "file", file)
+		return ConfigurationData{}, err
 	}
 
 	config := ConfigurationData{}
@@ -103,29 +104,22 @@ func readConfigFileYaml(file string) (ConfigurationData, error) {
 }
 
 // determineFileType validates the existence of an input file and ensures its prefix is json | yaml | yml
+// If the file prefix is yml then it is converted to yaml.
 func determineFileType(file string) (string, error) {
-	f, err := os.Stat(file)
-	if err != nil {
-		return "none", errors.New("unable to read the input file")
-	}
-	var fileType string
 
 	switch {
-	case strings.HasSuffix(f.Name(), "yaml"):
-		fileType = "yaml"
+	case strings.HasSuffix(file, "yaml"):
+		return "yaml", nil
 
-	case strings.HasSuffix(f.Name(), "json"):
-		fileType = "json"
+	case strings.HasSuffix(file, "json"):
+		return "json", nil
 
-	case strings.HasSuffix(f.Name(), "yml"):
-		fileType = "yaml"
+	case strings.HasSuffix(file, "yml"):
+		return "yaml", nil
 
 	default:
-		fileType = "none"
-		err = errors.New("invalid file type provided. Must be of type json, yaml or yml")
+		return "", errors.New("invalid file type provided. Must be of type json, yaml or yml")
 	}
-
-	return fileType, err
 }
 
 // validateConfiguration is a function that validates the configuration data
