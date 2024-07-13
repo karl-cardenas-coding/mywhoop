@@ -1,0 +1,26 @@
+[Unit]
+Description=MyWhoop
+Documentation=https://github.com/karl-cardenas-coding/mywhoop
+After=network.target docker.service
+BindsTo=docker.service
+ReloadPropagatedFrom=docker.service
+
+[Service]
+Type=simple
+ExecStartPre=-/usr/bin/docker stop mywhoop
+ExecStartPre=-/usr/bin/docker rm mywhoop
+ExecStartPre=/usr/bin/docker pull ghcr.io/karl-cardenas-coding/mywhoop:v1.0.0
+ExecStart=/usr/bin/docker run --name mywhoop \
+    -e WHOOP_CLIENT_ID=************* \
+    -e WHOOP_CLIENT_SECRET=************* \
+    -e NOTIFICATION_NTFY_AUTH_TOKEN=************* \
+    -e WHOOP_CREDENTIALS_FILE=/home/ubuntu/token.json \
+    -v /home/ubuntu/mywhoop/:app \
+    ghcr.io/karl-cardenas-coding/mywhoop:v1.0.0
+Restart=on-failure
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/mywhoop/
+
+[Install]
+WantedBy=multi-user.target

@@ -87,11 +87,6 @@ The server command automatically downloads your Whoop data daily. If specified, 
 Use a MyWhoop configuration file for more advanced configurations. For more information, refer to the [Configuration Reference](./docs/configuration_reference.md) section.
 
 
-| Long Flag | Short Flag |Description | Required | Default |
-|---|--|--|---|---|
-| `--first-run-download` | - |Download all the available Whoop data on the first run. | No | False |
-
-
 ```bash
 mywhoop server
 ```

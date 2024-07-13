@@ -224,8 +224,8 @@ type NotificationConfig struct {
 type Server struct {
 	// Set to true to enable server mode. Default is false.
 	Enabled bool `yaml:"enabled"`
-	// Download all available Whoop data on initial server start. Default is false.
-	FirstRunDownload bool `yaml:"firstRunDownload"`
+	// A cron tab string to schedule the server to run at specific times. Default is every 24 hours at 1300 hours -  0 13 * * *.
+	Crontab string `yaml:"crontab"`
 }
 
 type Credentials struct {
