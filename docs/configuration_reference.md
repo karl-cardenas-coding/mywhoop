@@ -133,7 +133,6 @@ The server section of the configuration file is used to configure the server fea
 | Field | Description | Required | Default |
 |---|----|---|---|
 | `enabled` | Enable the server feature. | No | `false` |
-| `firstRunDownload` | Download the data on the first run. This is not a recommended flag for server mode as it will re-download all the Whoop data on a server or machine reboot. | No | `false` |
 
 
 ```yaml

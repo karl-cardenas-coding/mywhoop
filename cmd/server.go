@@ -52,11 +52,6 @@ func evaluateConfigOptions(firstRun bool, cfg *internal.ConfigurationData) error
 		cfg.Export.Method = "file"
 	}
 
-	if firstRun {
-		slog.Info("First run download enabled")
-		cfg.Server.FirstRunDownload = true
-	}
-
 	return nil
 
 }
@@ -148,7 +143,7 @@ func server(ctx context.Context) error {
 
 	g, ctx := errgroup.WithContext(ctx)
 
-	// Download the latest data for the past 24 hrs and if FirstRunDownload is enabled, all of the data.
+	// Download the latest data for the past 24 hrs all of the data.
 	g.Go(func() error {
 
 		ok, _, err := internal.VerfyToken(cfg.Credentials.CredentialsFile)
@@ -171,7 +166,7 @@ func server(ctx context.Context) error {
 
 		var user internal.User
 
-		finalDataRaw, err := getData(ctx, user, client, token, &cfg.Server.FirstRunDownload, ua)
+		finalDataRaw, err := getData(ctx, user, client, token, ua)
 		if err != nil {
 			slog.Error("unable to get data", "error", err)
 			return err
@@ -364,7 +359,7 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 
 			var user internal.User
 
-			finalDataRaw, err := getData(ctx, user, client, token, &config.Server.FirstRunDownload, ua)
+			finalDataRaw, err := getData(ctx, user, client, token, ua)
 			if err != nil {
 				slog.Error("unable to get data", "error", err)
 				notifyErr := notify.Publish(client, []byte(fmt.Sprintf("Failed to get data from the Whoop API. Additional context below: \n %s", err)), internal.EventErrors.String())
@@ -408,113 +403,48 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 }
 
 // getData queries the Whoop API and gets the user data
-func getData(ctx context.Context, user internal.User, client *http.Client, token oauth2.Token, firstDownload *bool, ua string) ([]byte, error) {
+func getData(ctx context.Context, user internal.User, client *http.Client, token oauth2.Token, ua string) ([]byte, error) {
 
-	if firstDownload == nil {
-		slog.Debug("firstDownload is nil. Unable to determine if this is the first download")
-		firstDownload = new(bool)
-		*firstDownload = false
+	startTime, endTime := internal.GenerateLast24HoursString()
+	filterString := fmt.Sprintf("start=%s&end=%s", startTime, endTime)
+
+	slog.Debug("Filter string", "filter", filterString)
+
+	sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, filterString, ua)
+	if err != nil {
+		internal.LogError(err)
+		return []byte{}, err
 	}
 
-	if !*firstDownload {
-		startTime, endTime := internal.GenerateLast24HoursString()
-		filterString := fmt.Sprintf("start=%s&end=%s", startTime, endTime)
+	sleep.NextToken = ""
+	user.SleepCollection = *sleep
 
-		slog.Debug("Filter string", "filter", filterString)
-
-		sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, filterString, ua)
-		if err != nil {
-			internal.LogError(err)
-			return []byte{}, err
-		}
-
-		sleep.NextToken = ""
-		user.SleepCollection = *sleep
-
-		recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, filterString, ua)
-		if err != nil {
-			internal.LogError(err)
-			return []byte{}, err
-		}
-
-		recovery.NextToken = ""
-		user.RecoveryCollection = *recovery
-
-		workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, filterString, ua)
-		if err != nil {
-			internal.LogError(err)
-			return []byte{}, err
-		}
-
-		workout.NextToken = ""
-		user.WorkoutCollection = *workout
-
-		cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, filterString, ua)
-		if err != nil {
-			internal.LogError(err)
-			return []byte{}, err
-		}
-
-		cycle.NextToken = ""
-		user.CycleCollection = *cycle
+	recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, filterString, ua)
+	if err != nil {
+		internal.LogError(err)
+		return []byte{}, err
 	}
 
-	if *firstDownload {
+	recovery.NextToken = ""
+	user.RecoveryCollection = *recovery
 
-		data, err := user.GetUserProfileData(ctx, client, internal.DEFAULT_WHOOP_API_USER_DATA_URL, token.AccessToken, ua)
-		if err != nil {
-			internal.LogError(err)
-			return []byte{}, err
-		}
-
-		user.UserData = *data
-
-		measurements, err := user.GetUserMeasurements(ctx, client, internal.DEFAULT_WHOOP_API_USER_MEASUREMENT_DATA_URL, token.AccessToken, ua)
-		if err != nil {
-			internal.LogError(err)
-			return []byte{}, err
-		}
-
-		user.UserMesaurements = *measurements
-
-		sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, "", ua)
-		if err != nil {
-			internal.LogError(err)
-			return []byte{}, err
-		}
-
-		sleep.NextToken = ""
-		user.SleepCollection = *sleep
-
-		recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, "", ua)
-		if err != nil {
-			internal.LogError(err)
-			return []byte{}, err
-		}
-
-		recovery.NextToken = ""
-		user.RecoveryCollection = *recovery
-
-		workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, "", ua)
-		if err != nil {
-			internal.LogError(err)
-			return []byte{}, err
-		}
-
-		user.WorkoutCollection = *workout
-
-		cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, "", ua)
-		if err != nil {
-			internal.LogError(err)
-			return []byte{}, err
-		}
-
-		cycle.NextToken = ""
-		user.CycleCollection = *cycle
-
-		// Set to false so that the entire data is not downloaded again
-		*firstDownload = false
+	workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, filterString, ua)
+	if err != nil {
+		internal.LogError(err)
+		return []byte{}, err
 	}
+
+	workout.NextToken = ""
+	user.WorkoutCollection = *workout
+
+	cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, filterString, ua)
+	if err != nil {
+		internal.LogError(err)
+		return []byte{}, err
+	}
+
+	cycle.NextToken = ""
+	user.CycleCollection = *cycle
 
 	finalDataRaw, err := json.MarshalIndent(user, "", "  ")
 	if err != nil {

@@ -224,8 +224,6 @@ type NotificationConfig struct {
 type Server struct {
 	// Set to true to enable server mode. Default is false.
 	Enabled bool `yaml:"enabled"`
-	// Download all available Whoop data on initial server start. Default is false.
-	FirstRunDownload bool `yaml:"firstRunDownload"`
 }
 
 type Credentials struct {

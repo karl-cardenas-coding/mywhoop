@@ -20,21 +20,15 @@ func TestEvaluateConfigOptions(t *testing.T) {
 			},
 		},
 		Server: internal.Server{
-			FirstRunDownload: true,
-			Enabled:          true,
+			Enabled: true,
 		},
 	}
 
-	expectedFirstRunDownload := true
 	expectedExporter := "file"
 
 	err := evaluateConfigOptions(true, dt)
 	if err != nil {
 		t.Errorf("Expected nil error, got: %v", err)
-	}
-
-	if dt.Server.FirstRunDownload != expectedFirstRunDownload {
-		t.Errorf("Expected %v, got: %v", expectedFirstRunDownload, dt.Server.FirstRunDownload)
 	}
 
 	if dt.Export.Method != expectedExporter {
@@ -43,16 +37,10 @@ func TestEvaluateConfigOptions(t *testing.T) {
 
 	// Second test
 	dt.Export.Method = ""
-	dt.Server.FirstRunDownload = false
-	expectedFirstRunDownload = false
 
 	err = evaluateConfigOptions(false, dt)
 	if err != nil {
 		t.Errorf("Expected nil error, got: %v", err)
-	}
-
-	if dt.Server.FirstRunDownload != expectedFirstRunDownload {
-		t.Errorf("Expected %v, got: %v", expectedFirstRunDownload, dt.Server.FirstRunDownload)
 	}
 
 	if dt.Export.Method != expectedExporter {
@@ -62,14 +50,9 @@ func TestEvaluateConfigOptions(t *testing.T) {
 	// Third test
 
 	dt = &internal.ConfigurationData{}
-	expectedFirstRunDownload = true
 	err = evaluateConfigOptions(true, dt)
 	if err != nil {
 		t.Errorf("Expected nil error, got: %v", err)
-	}
-
-	if dt.Server.FirstRunDownload != expectedFirstRunDownload {
-		t.Errorf("Expected %v, got: %v", expectedFirstRunDownload, dt.Server.FirstRunDownload)
 	}
 
 	if dt.Export.Method != expectedExporter {
@@ -79,17 +62,12 @@ func TestEvaluateConfigOptions(t *testing.T) {
 	// Fourth test
 	dt = &internal.ConfigurationData{
 		Server: internal.Server{
-			FirstRunDownload: true,
+			Enabled: true,
 		},
 	}
-	expectedFirstRunDownload = true
 	err = evaluateConfigOptions(false, dt)
 	if err != nil {
 		t.Errorf("Expected nil error, got: %v", err)
-	}
-
-	if dt.Server.FirstRunDownload != expectedFirstRunDownload {
-		t.Errorf("Expected %v, got: %v", expectedFirstRunDownload, dt.Server.FirstRunDownload)
 	}
 
 	if dt.Export.Method != expectedExporter {
