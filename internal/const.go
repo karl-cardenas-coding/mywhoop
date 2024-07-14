@@ -37,6 +37,6 @@ const (
 	DEFAULT_WHOOP_API_CYCLE_DATA_URL = "https://api.prod.whoop.com/developer/v1/cycle?"
 	// DEFAULT_SERVER_CRON_SCHEDULE is the default cron schedule for the server. Everyday at 1:00 PM OR 1300 hours.
 	DEFAULT_SERVER_CRON_SCHEDULE string = "0 13 * * *"
-	// DEFAULT_SERVER_TOKEN_REFRESH_CRON_SCHEDULE is the default cron schedule for the token refresh. Every 55 minutes.
-	DEFAULT_SERVER_TOKEN_REFRESH_CRON_SCHEDULE string = "*/55 * * * *"
+	// DEFAULT_SERVER_TOKEN_REFRESH_CRON_SCHEDULE is the default cron schedule for the token refresh. Every 45 minutes.
+	DEFAULT_SERVER_TOKEN_REFRESH_CRON_SCHEDULE time.Duration = 45 * time.Minute
 )

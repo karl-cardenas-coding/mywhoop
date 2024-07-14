@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -137,6 +138,9 @@ func server(ctx context.Context) error {
 
 	sch, err := gocron.NewScheduler(
 		gocron.WithLocation(time.Local),
+		gocron.WithLogger(
+			gocron.NewLogger(loggerConverter(cfg.Debug)),
+		),
 	)
 	if err != nil {
 		slog.Error("unable to create scheduler", "error", err)
@@ -150,55 +154,50 @@ func server(ctx context.Context) error {
 		os.Exit(1)
 	}()
 
+	// This job is to refresh the token immediately upon startup
+	// This is to ensure that the token is valid. If the token is invalid, the server will exit and the user will be notified immediately upon startup.
 	_, err = sch.NewJob(
-		gocron.CronJob(internal.DEFAULT_SERVER_TOKEN_REFRESH_CRON_SCHEDULE, false),
+		gocron.OneTimeJob(
+			gocron.OneTimeJobStartImmediately(),
+		),
 		gocron.NewTask(func() error {
-
 			slog.Info("Refreshing auth token token")
-			currentToken, err := internal.ReadTokenFromFile(cfg.Credentials.CredentialsFile)
-			if err != nil {
-				return err
-			}
-
-			auth := internal.AuthRequest{
-				AuthToken:        currentToken.AccessToken,
-				RefreshToken:     currentToken.RefreshToken,
-				Client:           client,
-				ClientID:         os.Getenv("WHOOP_CLIENT_ID"),
-				ClientSecret:     os.Getenv("WHOOP_CLIENT_SECRET"),
-				TokenURL:         internal.DEFAULT_ACCESS_TOKEN_URL,
-				AuthorizationURL: internal.DEFAULT_AUTHENTICATION_URL,
-			}
-
-			token, err := internal.RefreshToken(ctx, auth)
-			if err != nil {
-				return err
-			}
-
-			if len(token.AccessToken) < 1 {
-				return errors.New("no access token")
-			}
-
-			slog.Debug("New token generated:", token.AccessToken[0:4], "....")
-
-			data, err := json.MarshalIndent(token, "", " ")
-			if err != nil {
-				return err
-			}
-
-			err = os.WriteFile(cfg.Credentials.CredentialsFile, data, 0755)
-			if err != nil {
-				return err
-			}
-
-			return nil
-
+			return refreshJWT(ctx, client, cfg.Credentials.CredentialsFile)
 		}),
-		gocron.WithName("mywhoop_token_refresh_job"),
+		gocron.WithName("mywhoop_startup_token_refresh_job"),
+		gocron.WithSingletonMode(gocron.LimitModeReschedule),
 		gocron.WithEventListeners(
 			gocron.AfterJobRunsWithError(
 				func(jobID uuid.UUID, jobName string, err error) {
-					slog.Error("error running token refresh job", "error", err)
+					slog.Error("error comleting the startup token refresh job", "error", err)
+					notifyErr := notificationMethod.Publish(client, []byte(fmt.Sprintf("Error running the token refresh job. Additional context below: \n %s", err)), internal.EventErrors.String())
+					if notifyErr != nil {
+						slog.Error("unable to send notification", "error", notifyErr)
+					}
+					os.Exit(1)
+				},
+			),
+		),
+	)
+	if err != nil {
+		slog.Error("unable to create the immediate one-time JWT refresh upon startup", "error", err)
+		return err
+	}
+
+	_, err = sch.NewJob(
+		gocron.DurationJob(
+			jwtRefreshDurationValidator(cfg.Server.JWTRefreshDuration),
+		),
+		gocron.NewTask(func() error {
+			slog.Info("Refreshing auth token token")
+			return refreshJWT(ctx, client, cfg.Credentials.CredentialsFile)
+		}),
+		gocron.WithName("mywhoop_token_refresh_job"),
+		gocron.WithSingletonMode(gocron.LimitModeReschedule),
+		gocron.WithEventListeners(
+			gocron.AfterJobRunsWithError(
+				func(jobID uuid.UUID, jobName string, err error) {
+					slog.Error("error completing the token refresh job", "error", err)
 					notifyErr := notificationMethod.Publish(client, []byte(fmt.Sprintf("Error running the token refresh job. Additional context below: \n %s", err)), internal.EventErrors.String())
 					if notifyErr != nil {
 						slog.Error("unable to send notification", "error", notifyErr)
@@ -223,13 +222,14 @@ func server(ctx context.Context) error {
 
 	_, err = sch.NewJob(
 		gocron.CronJob(cronValue, false),
-		gocron.NewTask(StartServer,
+		gocron.NewTask(downloadWhoopData,
 			ctx,
 			cfg,
 			client,
 			exportSelected,
 			notificationMethod),
 		gocron.WithName("mywhoop_data_collection_job"),
+		gocron.WithSingletonMode(gocron.LimitModeReschedule),
 		gocron.WithEventListeners(
 			gocron.AfterJobRunsWithError(
 				func(jobID uuid.UUID, jobName string, err error) {
@@ -285,8 +285,8 @@ func server(ctx context.Context) error {
 	return nil
 }
 
-// StartServer starts the long running server.
-func StartServer(ctx context.Context, config internal.ConfigurationData, client *http.Client, exp internal.Export, notify internal.Notification) error {
+// downloadWhoopData orchestrates the download of Whoop data and ensures the data is exported.
+func downloadWhoopData(ctx context.Context, config internal.ConfigurationData, client *http.Client, exp internal.Export, notify internal.Notification) error {
 
 	ok, _, err := internal.VerfyToken(config.Credentials.CredentialsFile)
 	if err != nil {
@@ -361,6 +361,47 @@ func StartServer(ctx context.Context, config internal.ConfigurationData, client 
 	return nil
 }
 
+// refreshJWT refreshes the Whoop API JWT token.
+func refreshJWT(ctx context.Context, client *http.Client, credentialsFilePath string) error {
+	currentToken, err := internal.ReadTokenFromFile(credentialsFilePath)
+	if err != nil {
+		return err
+	}
+
+	auth := internal.AuthRequest{
+		AuthToken:        currentToken.AccessToken,
+		RefreshToken:     currentToken.RefreshToken,
+		Client:           client,
+		ClientID:         os.Getenv("WHOOP_CLIENT_ID"),
+		ClientSecret:     os.Getenv("WHOOP_CLIENT_SECRET"),
+		TokenURL:         internal.DEFAULT_ACCESS_TOKEN_URL,
+		AuthorizationURL: internal.DEFAULT_AUTHENTICATION_URL,
+	}
+
+	token, err := internal.RefreshToken(ctx, auth)
+	if err != nil {
+		return err
+	}
+
+	if len(token.AccessToken) < 1 {
+		return errors.New("no access token")
+	}
+
+	slog.Info("New token generated:", token.AccessToken[0:4], "....")
+
+	data, err := json.MarshalIndent(token, "", " ")
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(credentialsFilePath, data, 0755)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // getData queries the Whoop API and gets the user data
 func getData(ctx context.Context, user internal.User, client *http.Client, token oauth2.Token, ua string) ([]byte, error) {
 
@@ -412,5 +453,36 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 	}
 
 	return finalDataRaw, nil
+
+}
+
+// loggerConverter converts the string log level to the gocron log level
+func loggerConverter(lvl string) gocron.LogLevel {
+	switch strings.ToLower(lvl) {
+	case "debug":
+		return gocron.LogLevelDebug
+	case "info":
+		return gocron.LogLevelInfo
+	case "warn":
+		return gocron.LogLevelWarn
+	case "error":
+		return gocron.LogLevelError
+	default:
+		return gocron.LogLevelInfo
+	}
+}
+
+// jwtRefreshDurationValidator validates the JWT refresh duration.
+// If the duration is greater than 59 minutes or less than 0, the default DEFAULT_SERVER_TOKEN_REFRESH_CRON_SCHEDULE is used.
+func jwtRefreshDurationValidator(incoming int) time.Duration {
+
+	parsedValue := time.Duration(incoming) * time.Minute
+
+	if parsedValue > 59*time.Minute || parsedValue <= 0*time.Minute {
+		return internal.DEFAULT_SERVER_TOKEN_REFRESH_CRON_SCHEDULE
+	}
+
+	slog.Debug("JWT Refresh Duration", "duration", parsedValue)
+	return parsedValue
 
 }

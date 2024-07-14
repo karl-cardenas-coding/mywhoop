@@ -66,7 +66,7 @@ mywhoop dump
 
 ### Login
 
-The login command is used to authenticate with the Whoop API and save the authentication token locally. The command will set up a local HTTP server to handle the OAuth2 handshake with the Whoop API and save the token to a local file.
+The login command is used to authenticate with the Whoop API and save the authentication token locally. The command will set up a local static HTTP server hosting a simple website to handle the OAuth2 handshake with the Whoop API and save the token to a local file.
 
 ```bash
 mywhoop login
@@ -82,7 +82,7 @@ mywhoop login
 
 ## Server
 
-The server command automatically downloads your Whoop data daily. If specified, it saves or exports the data to a local file or a remote location. It is designed to be started as a background process and will automatically download your Whoop data daily. The command will refresh the Whoop authentication token every 55 minutes and update the local token file. The Whoop API is queried precisely every 24 hours from when the server is started.   
+The server command automatically downloads your Whoop data daily. If specified, it saves or exports the data to a local file or a remote location. It is designed to be started as a background process and will automatically download your Whoop data daily. The command will refresh the Whoop authentication token every 45 minutes and update the local token file. The Whoop API is queried precisely every 24 hours from when the server is started.   
 
 Use a MyWhoop configuration file for more advanced configurations. For more information, refer to the [Configuration Reference](./docs/configuration_reference.md) section.
 
