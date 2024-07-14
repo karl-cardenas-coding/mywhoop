@@ -11,7 +11,7 @@ A tool for gathering and retaining your own Whoop data.
 
 ## Overview
 
-MyWhoop is a tool intended to help you take ownership of your Whoop data. You can use MyWhoop to interface with your own data in ways that are different from what Whoop may offer or intend.  MyWhoop is designed to be simple and easy to use and designed to be deployed on your own machine or server. MyWhoop supports the following features:
+MyWhoop is a tool intended to help you take ownership of your Whoop data. You can use MyWhoop to interact with your own Whoop data in ways that are different from what Whoop may offer or intend.  MyWhoop is designed to be deployed on your own machine or server. MyWhoop supports the following features:
 
 - 🔐 **Login**: A simple interface to log into the Whoop developer portal and save an authentication token locally. The token is required to interact with the Whoop API.
 - 🗄️ **Server**: Automatically download your Whoop data daily and save it to a local file or export it to a remote location.
@@ -85,15 +85,19 @@ mywhoop login
 The server command automatically downloads your Whoop data daily. If specified through a configuration file, the server saves or exports the data to a local file or a remote location. The server is designed to be started as a background process and will automatically download your Whoop data daily. The command will refresh the Whoop authentication token every 45 minutes and update the local token file. The Whoop API is queried precisely every 24 hours from when the server is started.
 
 > [!IMPORTANT]
-> The provided Whoop authentication token is required to use the server command. The server will attempt to refresh the token immediately upon to startup. If the token is invalid or expired, the server will exit with an error. Use the login command to authenticate with the Whoop API and save the token locally. The reason for the immediate refresh is to support use cases where the server is started and stopped, such as system reboots or server restarts. 
-
-
-Use a MyWhoop configuration file for more advanced configurations. For more information, refer to the [Configuration Reference](./docs/configuration_reference.md) section.
+> A Whoop authentication token is required to use the server command. The server will attempt to refresh the token immediately upon to startup. If the token is invalid or expired, the server will exit with an error. Use the [`login`](#login) command to authenticate with the Whoop API and save the token locally. The reason for the immediate refresh is to support use cases where the server is started and stopped, such as system reboots or server restarts.
 
 
 ```bash
-mywhoop server --config /path/to/.mywhoop.yaml
+mywhoop server 
 ```
+
+Use a MyWhoop configuration file for more advanced configurations. For more information, refer to the [Configuration Reference](./docs/configuration_reference.md) section.
+
+```bash
+mywhoop server --config /opt/mywhoop/config.yaml
+```
+
 
 
 ## Version

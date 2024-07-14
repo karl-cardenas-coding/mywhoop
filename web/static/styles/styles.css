@@ -1,8 +1,3 @@
-/**
- * Copyright (c) karl-cardenas-coding
- * SPDX-License-Identifier: Apache-2.0
- */
-
 /* Reset default margin and padding for all elements */
 * {
     margin: 0;
@@ -99,7 +94,6 @@ p {
 
 /* Additional styling for the message container */
 .message {
-    margin-bottom: 20px;
     flex: 1; /* Grow to fill available space */
 }
 
@@ -167,4 +161,39 @@ p {
 
 .error-retry-button:active {
     background-color: #7f1d26;
+}
+
+/* Token display styles */
+.tokenDisplay {
+    background-color: grey; 
+    padding: 10px; 
+    border-radius: 5px; 
+    margin-bottom: 20px;
+    overflow-wrap: break-word;
+}
+
+.tokenDisplay pre {
+    white-space: pre-wrap;
+}
+
+.clipboard {
+    position: absolute; /* Position absolute to move it to the right */
+    top: 50%; /* Adjust top spacing as needed */
+    right: 10px; /* Move to the far right */
+    transform: translateY(-50%); /* Center vertically */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent; /* Transparent background */
+    color: #007bff; /* Blue color for text */
+    border: none;
+    padding: 0; /* No padding */
+    cursor: pointer;
+}
+
+.clipboard img {
+    margin-right: 5px;
+    height: 20px;
+    width: 20px;
+    fill: currentColor; /* Ensure SVG inherits color from its parent */
 }

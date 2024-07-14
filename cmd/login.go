@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -56,6 +57,8 @@ type PageData struct {
 	Error string
 	// StatusCode is the HTTP status code
 	StatusCode int
+	// Token is the Oauth access token
+	Token string
 }
 
 // login authenticates with Whoop API and gets an access token
@@ -186,8 +189,15 @@ func redirectHandler(assets fs.FS, page, errorPage string, authConf *oauth2.Conf
 			return
 		}
 
+		var jsonData []byte
+		jsonData, err = json.MarshalIndent(accessToken, "", " ")
+		if err != nil {
+			slog.Error("unable to marshal access token", "error", err)
+		}
+
 		data := PageData{
 			CredentialsFilePath: credentialsFilePath,
+			Token:               string(jsonData),
 		}
 
 		tmp, err := template.ParseFS(assets, page)
