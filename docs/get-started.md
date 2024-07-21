@@ -96,7 +96,7 @@ The following steps will guide you through the process of setting up MyWhoop on 
 
     ![A view of the Whoop authentication page](../static/images/tutorial_3.png)
 
-11. Click on **Grant** to allow MyWhoop to receive an authentication token from the Whoop API. A success message will be displayed in the browser.
+11. Click on **Grant** to allow MyWhoop to receive an authentication token from the Whoop API. A success message will be displayed in the browser. You can also use the **Copy to Clipboard** button to copy the token to the clipboard.
 
     ![A view of the MyWhoop login page](../static/images/tutorial_4.png)
     

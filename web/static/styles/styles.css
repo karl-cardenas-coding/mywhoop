@@ -163,13 +163,13 @@ p {
     background-color: #7f1d26;
 }
 
-/* Token display styles */
-.tokenDisplay {
+/* .tokenDisplay {
     background-color: grey; 
     padding: 10px; 
     border-radius: 5px; 
     margin-bottom: 20px;
     overflow-wrap: break-word;
+    position: relative;
 }
 
 .tokenDisplay pre {
@@ -177,23 +177,102 @@ p {
 }
 
 .clipboard {
-    position: absolute; /* Position absolute to move it to the right */
-    top: 50%; /* Adjust top spacing as needed */
-    right: 10px; /* Move to the far right */
-    transform: translateY(-50%); /* Center vertically */
+    position: absolute;
+    top: 10px;
+    right: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: transparent; /* Transparent background */
-    color: #007bff; /* Blue color for text */
+    background-color: transparent;
+    color: inherit; 
     border: none;
-    padding: 0; /* No padding */
+    padding: 0;
     cursor: pointer;
 }
 
 .clipboard img {
-    margin-right: 5px;
+    margin-right: 0;
     height: 20px;
     width: 20px;
-    fill: currentColor; /* Ensure SVG inherits color from its parent */
+    fill: currentColor;
+}
+
+.clipboard:hover,
+.clipboard:focus {
+    background-color: transparent; 
+    color: inherit; 
+    outline: 1px solid black;
+} */
+
+/* Existing styles... */
+
+/* Token display styles */
+.tokenDisplay {
+    background-color: grey; 
+    padding: 10px; 
+    border-radius: 5px; 
+    margin-bottom: 20px;
+    overflow-wrap: break-word;
+    position: relative;
+}
+
+.tokenDisplay pre {
+    white-space: pre-wrap;
+}
+
+.clipboard {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    color: inherit;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.clipboard img {
+    margin-right: 0;
+    height: 20px;
+    width: 20px;
+    fill: currentColor;
+}
+
+.clipboard:hover,
+.clipboard:focus {
+    background-color: transparent;
+    color: inherit;
+    outline: 1px solid black;
+}
+
+/* Tooltip styling */
+.clipboard-tooltip {
+    visibility: hidden;
+    width: 120px;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    border-radius: 5px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%; 
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.clipboard:hover .clipboard-tooltip,
+.clipboard:focus .clipboard-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Click feedback styling */
+.clipboard:active {
+    transform: scale(0.95);
 }
