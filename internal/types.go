@@ -226,6 +226,8 @@ type Server struct {
 	Enabled bool `yaml:"enabled"`
 	// A cron tab string to schedule the server to run at specific times. Default is every 24 hours at 1300 hours -  0 13 * * *.
 	Crontab string `yaml:"crontab"`
+	//JWTRefreshDuration is the duration to refresh the JWT token in minutes. Default is 45 minutes. This value must be greater than 0 and less than 59 minutes.
+	JWTRefreshDuration int `yaml:"jwtRefreshDuration"`
 }
 
 type Credentials struct {

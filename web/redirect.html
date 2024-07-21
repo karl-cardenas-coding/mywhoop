@@ -25,7 +25,32 @@
             <p>A file was created in the specified credentials file path titled <strong>{{.CredentialsFilePath}}</strong>. Use the button below to close the application.</p> 
             <p> ⚠️ You must manually close this window - Sorry browser security settings 🔐</p>
         </div>
+        <div class="tokenDisplay">
+            <pre id="jsonContent">{{.Token}}</pre>
+            <button id="copyBtn" class="clipboard" aria-label="Copy to clipboard">
+                <img src="/static/dependencies/copy-regular.svg" alt="Copy Icon">
+                <span class="clipboard-tooltip">Copy to clipboard</span>
+            </button>
+        </div>
         <button id="closeAppBtn" hx-post="/close" hx-trigger="click" class="close-button">Close Application</button>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('copyBtn').addEventListener('click', function() {
+                const jsonContent = document.getElementById('jsonContent').innerText;
+                const tooltip = copyBtn.querySelector('.clipboard-tooltip');
+                navigator.clipboard.writeText(jsonContent).then(function() {
+                    console.log('Copied to clipboard');
+                    tooltip.textContent = 'Copied!';
+                    setTimeout(function() {
+                        tooltip.textContent = 'Copy to clipboard';
+                        }, 
+                    2000);
+                }, function(err) {
+                    console.error('Failed to copy: ', err);
+                });
+            });
+        });
+    </script>
 </body>
 </html>

@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"path"
@@ -70,6 +71,7 @@ func NewAwsS3Export(region, bucket, profile string, client *http.Client, f *File
 
 	creds, err := cfg.Credentials.Retrieve(context.TODO())
 	if err != nil {
+		slog.Debug("error retrieving aws credentials", "error", err)
 		return nil, errors.New("ERROR RETRIEVING AWS CREDENTIALS")
 	}
 

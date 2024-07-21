@@ -18,6 +18,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	testcontainers "github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/localstack"
+	"github.com/testcontainers/testcontainers-go/network"
 )
 
 func TestNewAwsS3Export(t *testing.T) {
@@ -168,16 +169,16 @@ func TestNewAwsS3Export(t *testing.T) {
 func TestAWSS3Export(t *testing.T) {
 
 	ctx := context.Background()
-	networkName := "localstack-network-v2"
+	newNetwork, err := network.New(ctx)
+	if err != nil {
+		t.Errorf("failed to create network: %s", err)
+	}
 
-	localstackContainer, err := localstack.RunContainer(ctx,
-		localstack.WithNetwork(networkName, "localstack"),
-		testcontainers.CustomizeRequest(testcontainers.GenericContainerRequest{
-			ContainerRequest: testcontainers.ContainerRequest{
-				Image: "localstack/localstack:3.4.0",
-				Env:   map[string]string{"SERVICES": "s3"},
-			},
-		}),
+	localstackContainer, err := localstack.Run(ctx,
+		"localstack/localstack:3.5",
+		testcontainers.WithEnv(map[string]string{
+			"SERVICES": "s3"}),
+		network.WithNetwork([]string{"localstack-network-v2"}, newNetwork),
 	)
 	if err != nil {
 		t.Fatalf("failed to start container: %s", err)

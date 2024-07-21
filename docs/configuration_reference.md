@@ -134,12 +134,14 @@ The server section of the configuration file is used to configure the server fea
 |---|----|---|---|
 | `enabled` | Enable the server feature. | No | `false` |
 | `crontab` | The crontab schedule to use for the server. By default, the server is configured to download your Whoop data daily at 1pm (13:00). Your local time zone is used. Different Operating System implement local time zone differently. Refer to the Go [time.Location](https://pkg.go.dev/time#Local) for additional details on expected behavior. | No | `0 13 * * *` |
+| `jwtRefreshDuration` | The duration to refresh the Whoop API JWT token provided. Default is 45 minutes. This value must be greater than 0 and less than 59 minutes.| No | `45` |
 
 
 ```yaml
 server:
   enabled: true
   crontab: "*/55 * * * *" 
+  jwtRefreshDuration: 45
 ```
 
 
