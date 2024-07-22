@@ -54,7 +54,7 @@ The following steps will guide you through the process of setting up MyWhoop on 
 > These values are sensitive and should be kept secret. Do not share these values with anyone. I recommend storing these values in a secure location such as a password manager.
 
 
-    ![A view of an application with the Whoop App clientID and secretId highlighted](../static/images/tutorial_2.png)
+![A view of an application with the Whoop App clientID and secretId highlighted](../static/images/tutorial_2.png)
 
 6. Open a terminal window and set the `WHOOP_CLIENT_ID` and `WHOOP_CLIENT_SECRET` environment variables with the values you copied from the Whoop Developer Portal.
 

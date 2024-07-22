@@ -1,6 +1,6 @@
 # Configuration Reference
 
-The MyWhoop configuration file is used to configure MyWhoop's behavior and enable advanced features. By default, it is a YAML file located at `~/.mywhoop.yaml`. You can override the configuration file by using CLI flags. 
+A MyWhoop configuration file is used to configure MyWhoop's behavior and enable advanced features. By default, MyWhoop searches for a YAML file located at `~/.mywhoop.yaml`. You can specify a different configuration file using the `--config` flag. The configuration file is divided into the following sections:
 
 
 > [!IMPORTANT]

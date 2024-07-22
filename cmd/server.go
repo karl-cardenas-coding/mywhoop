@@ -169,7 +169,7 @@ func server(ctx context.Context) error {
 		gocron.WithEventListeners(
 			gocron.AfterJobRunsWithError(
 				func(jobID uuid.UUID, jobName string, err error) {
-					slog.Error("error comleting the startup token refresh job", "error", err)
+					slog.Error("error completing the startup token refresh job", "error", err)
 					notifyErr := notificationMethod.Publish(client, []byte(fmt.Sprintf("Error running the token refresh job. Additional context below: \n %s", err)), internal.EventErrors.String())
 					if notifyErr != nil {
 						slog.Error("unable to send notification", "error", notifyErr)

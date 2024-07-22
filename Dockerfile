@@ -4,7 +4,7 @@
 FROM golang:1.22.5-alpine3.20 as builder
 
 LABEL org.opencontainers.image.source="https://github.com/karl-cardenas-coding/mywhoop"
-LABEL org.opencontainers.image.description "A tool for gathering and retaining your own Whoop data."
+LABEL org.opencontainers.image.description="A tool for gathering and retaining your own Whoop data."
 
 ARG VERSION
 

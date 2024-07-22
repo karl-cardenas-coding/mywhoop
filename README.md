@@ -11,16 +11,23 @@ A tool for gathering and retaining your own Whoop data.
 
 ## Overview
 
-MyWhoop is a tool intended to help you take ownership of your Whoop data. You can use MyWhoop to interact with your own Whoop data in ways that are different from what Whoop may offer or intend.  MyWhoop is designed to be deployed on your own machine or server. MyWhoop supports the following features:
+MyWhoop is a tool intended to help you take ownership of your Whoop data. You can use MyWhoop to download your own Whoop data. You can use MyWhoop as a one-time utility to download all your data, or you can use it as a server to automatically download your data daily. MyWhoop is designed to be deployed on your own machine or server. MyWhoop supports the following features:
 
 - 🔐 **Login**: A simple interface to log into the Whoop developer portal and save an authentication token locally. The token is required to interact with the Whoop API.
 - 🗄️ **Server**: Automatically download your Whoop data daily and save it to a local file or export it to a remote location.
 - 📬 **Notifications**: Receive notifications when new data is available or when an error occurs.
 - 💾 **Data Export**: Export your Whoop data to a remote location such as an S3 bucket.
+- 🗂️ **Extensions**: Data exporters and notification services can be extended to support additional use cases.
 
 ## Get Started 🚀
 
 Please check out the [Getting Started](/docs/get-started.md) guide to get started with MyWhoop.
+
+
+### Server Mode Setup 🗄️
+
+Use the [Setup Server Mode](/docs/get-started-server-guide.md) guide to set up MyWhoop in server mode.
+
 
 
 ## Commands
