@@ -38,7 +38,7 @@ Before you begin, ensure you have the following items completed:
 > <details><summary>Why not use Docker 🐳</summary><br>
 >
 >
->    Monitoring and managing Docker containers is not as trivial as using a >   binary. If you are interested in using the MyWhoop Docker container with >  systemd, check out the [Running Docker Containers with Systemd](https://blog.container-solutions.com/running-docker-containers-with-systemd) to get > an idea of how to use Docker containers with systemd. 
+>   Monitoring and managing Docker containers is not as trivial as using a   binary. If you are interested in using the MyWhoop Docker container with >  systemd, check out the [Running Docker Containers with Systemd](https://blog.container-solutions.com/running-docker-containers-with-systemd) to get an idea of how to use Docker containers with systemd. 
 > </details>
 
 3. Unzip the MyWhoop binary and move it to the `/usr/local/bin/` directory. 
