@@ -149,4 +149,8 @@ The following steps will guide you through the process of setting up MyWhoop on 
 
 
 
-15. You have successfully set up MyWhoop on your local machine or server. You can now use MyWhoop to interact with your Whoop data as needed. For more information on the available commands and options, refer to the [Commands Reference](./commands_reference.md) section. 
+## Next Steps
+
+💪 You have successfully set up MyWhoop on your local machine or server. You can now use MyWhoop to interact with your Whoop data as needed. If you want to automate the download of your Whoop data, consider setting up MyWhoop in server mode. Check out the [Setup Server Mode](./get-started-server-guide.md) to learn more.
+
+For more information on the available commands and options, refer to the [Commands Reference](./commands_reference.md) section. 
