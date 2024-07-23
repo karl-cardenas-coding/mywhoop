@@ -84,30 +84,29 @@ debug: info
 > [!NOTE]
 > The working directory is set to the $`/home/ubuntu/mywhoop` directory. You can change the working directory to any directory where you want to store the MyWhoop token and data. In this guide the `/home/ubuntu/mywhoop` directory is used. The same applies to the user and group settings. Change the user and group settings to the appropriate user and group on your system.
 
-<br />
 
-    ```bash
-    sudo cat <<EOF > /etc/systemd/system/mywhoop.service
-    [Unit]
-    Description=MyWhoop
-    Documentation="https://github.com/karl-cardenas-coding/mywhoop"
-    After=network.target
+```bash
+sudo cat <<EOF > /etc/systemd/system/mywhoop.service
+[Unit]
+Description=MyWhoop
+Documentation="https://github.com/karl-cardenas-coding/mywhoop"
+After=network.target
 
-    [Service]
-    Type=simple
-    ExecStart=/usr/local/bin/mywhoop server --config /home/ubuntu/.mywhoop.yaml
-    Restart=on-failure
-    User=ubuntu
-    Group=ubuntu
-    WorkingDirectory=/home/ubuntu/mywhoop
-    Environment="WHOOP_CLIENT_ID=*************"
-    Environment="WHOOP_CLIENT_SECRET==*************"
-    Environment="WHOOP_CREDENTIALS_FILE=/home/ubuntu/mywhoop/token.json
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/mywhoop server --config /home/ubuntu/.mywhoop.yaml
+Restart=on-failure
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/mywhoop
+Environment="WHOOP_CLIENT_ID=*************"
+Environment="WHOOP_CLIENT_SECRET==*************"
+Environment="WHOOP_CREDENTIALS_FILE=/home/ubuntu/mywhoop/token.json
 
-    [Install]
-    WantedBy=multi-user.target
-    EOF
-    ```
+[Install]
+WantedBy=multi-user.target
+EOF
+```
 
 7. Update the systemd service file with your Whoop client ID and client secret. Replace `*************` with your Whoop client ID and client secret. You can use `vi` or other text editors to update the file. 
 
