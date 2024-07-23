@@ -84,6 +84,7 @@ debug: info
 > [!NOTE]
 > The working directory is set to the $`/home/ubuntu/mywhoop` directory. You can change the working directory to any directory where you want to store the MyWhoop token and data. In this guide the `/home/ubuntu/mywhoop` directory is used. The same applies to the user and group settings. Change the user and group settings to the appropriate user and group on your system.
 
+<br />
 
     ```bash
     sudo cat <<EOF > /etc/systemd/system/mywhoop.service
