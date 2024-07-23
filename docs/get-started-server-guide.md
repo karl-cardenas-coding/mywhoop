@@ -9,6 +9,8 @@ Before you begin, ensure you have the following items completed:
 
 - Review and complete all the steps in the [Getting Started](/docs/get-started.md) guide.
 
+- MyWhoop consumes few resources and can be run on a low-powered machine. However,  if you are storing the data locally, ensure you have enough disk space to store the data. Most daily data downloads are less than 10 KB in size. This may vary depending on the amount of activity you track with Whoop.
+
 - Remote access to a Linux machine or server.
 
 - Internet access to download the MyWhoop binary.
@@ -20,7 +22,7 @@ Before you begin, ensure you have the following items completed:
 - A Linux machine with systemd and systemctl installed. 
 
 > [!NOTE]
-> You can use other operating systems and system services tooling to ensure MyWhoop starts up automatically. In this guide, Ubuntu with systemd is used.
+> You can use other operating systems and system services tooling to ensure MyWhoop starts up automatically. In this guide, an x86 Linux machine with Ubuntu and systemd is used.
 
 
 ## Steps
@@ -35,10 +37,10 @@ Before you begin, ensure you have the following items completed:
     wget https://github.com/karl-cardenas-coding/mywhoop/releases/latest/download/mywhoop_darwin_x86_64.zip --output-document mywhoop.zip
     ```
 > [!NOTE]
-> <details><summary>Why not use Docker 🐳</summary><br>
+> <details><summary>🐳 Why not use Docker? </summary><br>
 >
 >
->   Monitoring and managing Docker containers is not as trivial as using a   binary. If you are interested in using the MyWhoop Docker container with >  systemd, check out the [Running Docker Containers with Systemd](https://blog.container-solutions.com/running-docker-containers-with-systemd) to get an idea of how to use Docker containers with systemd. 
+>   Monitoring and managing Docker containers is not as trivial as using a   binary. If you are interested in using the MyWhoop Docker container with systemd, check out the [Running Docker Containers with Systemd](https://blog.container-solutions.com/running-docker-containers-with-systemd) to get an idea of how to use Docker containers with systemd. 
 > </details>
 
 3. Unzip the MyWhoop binary and move it to the `/usr/local/bin/` directory. 
@@ -56,8 +58,6 @@ Before you begin, ensure you have the following items completed:
 
 5. Create a new MyWhoop configuration in your $HOME directory. The following command will create a new configuration file in your $HOME directory. 
 
-> [!TIP]
-> To learn more about the MyWhoop configuration file, refer to the [Configuration Reference](./docs/configuration_reference.md) section.
 
 ```bash
 cat <<EOF > ~/.mywhoop.yaml
@@ -75,6 +75,9 @@ server:
   jwtRefreshDuration: 45
 debug: info
 ```
+
+> [!TIP]
+> To learn more about the MyWhoop configuration file, refer to the [Configuration Reference](./docs/configuration_reference.md) section.
 
 6. Create a new systemd service file to start MyWhoop automatically. The following command will create a new systemd service file in the `/etc/systemd/system/` directory. 
 
@@ -105,10 +108,19 @@ WantedBy=multi-user.target
 EOF
 ```
 
-7. Update the systemd service file with your Whoop client ID and client secret. Replace `*************` with your Whoop client ID and client secret.
+7. Update the systemd service file with your Whoop client ID and client secret. Replace `*************` with your Whoop client ID and client secret. You can use `vi` or other text editors to update the file. 
+
+    ```bash
+    sudo vi /etc/systemd/system/mywhoop.service
+    ```
+
+    ```shell
+    Environment="WHOOP_CLIENT_ID=*************"
+    Environment="WHOOP_CLIENT_SECRET==*************"
+    ```
 
 
-8. The next step is to authenticate with the Whoop API and save the authentication token in `/home/ubuntu/mywhoop/token.json`. If your system has a GUI and web browser, you can use the `mywhoop login` command to authenticate with the Whoop API. 
+8. Next, authenticate with the Whoop API and save the authentication token in `/home/ubuntu/mywhoop/token.json`. If your system has a GUI and web browser, you can use the `mywhoop login` command to authenticate with the Whoop API and save the token locally by issuing the following command. 
 
     ```bash
     mywhoop login --credentials /home/ubuntu/mywhoop/token.json
@@ -166,4 +178,14 @@ Depending on what time you started the service, MyWhoop will download the last 2
     sudo systemctl restart mywhoop.service
     ```
 
-🎊 You have successfully setup MyWhoop in server mode. MyWhoop will automatically download the last 24 hours of data daily at the specified time. You can configure MyWhoop to save the data locally or to a remote location, such as AWS S3. For more advanced configurations, refer to the [Configuration Reference](./docs/configuration_reference.md) section.
+
+
+## Next Steps
+
+🎊 You have successfully setup MyWhoop in server mode. MyWhoop will automatically download the last 24 hours of data daily at the specified time. You can configure MyWhoop to save the data locally or to a remote location, such as AWS S3. Start experimenting with other data exporters such as AWS S3 and automatic notifications through Ntfy. For more advanced configurations, refer to the [Configuration Reference](./docs/configuration_reference.md) section.
+
+
+
+## Additional Resources
+
+- [Configuration Reference](./docs/configuration_reference.md)
