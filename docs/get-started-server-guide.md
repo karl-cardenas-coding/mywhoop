@@ -81,8 +81,8 @@ debug: info
 
 6. Create a new systemd service file to start MyWhoop automatically. The following command will create a new systemd service file in the `/etc/systemd/system/` directory. 
 
-    > [!NOTE]
-    > The working directory is set to the $`/home/ubuntu/mywhoop` directory. You can change the working directory to any directory where you want to store the MyWhoop token and data. In this guide the `/home/ubuntu/mywhoop` directory is used. The same applies to the user and group settings. Change the user and group settings to the appropriate user and group on your system.
+> [!NOTE]
+> The working directory is set to the $`/home/ubuntu/mywhoop` directory. You can change the working directory to any directory where you want to store the MyWhoop token and data. In this guide the `/home/ubuntu/mywhoop` directory is used. The same applies to the user and group settings. Change the user and group settings to the appropriate user and group on your system.
 
 
     ```bash
@@ -106,7 +106,7 @@ debug: info
     [Install]
     WantedBy=multi-user.target
     EOF
-```
+    ```
 
 7. Update the systemd service file with your Whoop client ID and client secret. Replace `*************` with your Whoop client ID and client secret. You can use `vi` or other text editors to update the file. 
 
