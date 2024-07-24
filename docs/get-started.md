@@ -33,7 +33,7 @@ The following steps will guide you through the process of setting up MyWhoop on 
     | Field | Description | Required | Example |
     |---|----|---|--|
     | Name | The name of your application. | Yes | `my-custom-app` |
-    | Logo` | The logo for your application. | No | - |
+    | Logo | The logo for your application. | No | - |
     | Contacts | The contact information for your application. | Yes | `email@example.com` |
     | Privacy Policy | The URL to your application's privacy policy. | No | `https://example.com/privacy` |
     | Redirect URIs | The redirect URIs for your application. | Yes | `http://localhost:8080/redirect, https://localhost:8080/redirect` |
@@ -43,7 +43,7 @@ The following steps will guide you through the process of setting up MyWhoop on 
 > [!NOTE]
 > The redirect URIs are required for the Whoop authentication flow.  Use the values `http://localhost:8080/redirect, https://localhost:8080/` as the redirect UTLs. You can change the port number if you are using a different port.
 
-    ![A view of the application create page](../static/images/tutorial_1.png)
+![A view of the application create page](../static/images/tutorial_1.png)
 
 
 4. Click on the `Create Application` button to create the application. You will be redirected to the application details page.
@@ -54,7 +54,7 @@ The following steps will guide you through the process of setting up MyWhoop on 
 > These values are sensitive and should be kept secret. Do not share these values with anyone. I recommend storing these values in a secure location such as a password manager.
 
 
-    ![A view of an application with the Whoop App clientID and secretId highlighted](../static/images/tutorial_2.png)
+![A view of an application with the Whoop App clientID and secretId highlighted](../static/images/tutorial_2.png)
 
 6. Open a terminal window and set the `WHOOP_CLIENT_ID` and `WHOOP_CLIENT_SECRET` environment variables with the values you copied from the Whoop Developer Portal.
 
@@ -149,4 +149,8 @@ The following steps will guide you through the process of setting up MyWhoop on 
 
 
 
-15. You have successfully set up MyWhoop on your local machine or server. You can now use MyWhoop to interact with your Whoop data as needed. For more information on the available commands and options, refer to the [Commands Reference](./commands_reference.md) section. 
+## Next Steps
+
+💪 You have successfully set up MyWhoop on your local machine or server. You can now use MyWhoop to interact with your Whoop data as needed. If you want to automate the download of your Whoop data, consider setting up MyWhoop in server mode. Check out the [Setup Server Mode](./get-started-server-guide.md) to learn more.
+
+For more information on the available commands and options, refer to the [Commands Reference](./commands_reference.md) section. 
