@@ -5,6 +5,7 @@ package internal
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"path"
@@ -93,7 +94,7 @@ func readConfigFileYaml(file string) (ConfigurationData, error) {
 	dc.KnownFields(true)
 
 	if err := dc.Decode(&config); err != nil {
-		return ConfigurationData{}, errors.New("unable to decode the YAML file. Ensure the file is in the correct format and that all fields are correct")
+		return ConfigurationData{}, fmt.Errorf("unable to decode the YAML file. Ensure the file is in the correct format and that all fields are correct. %s", err.Error())
 	}
 
 	// Set debug values to all upper case.

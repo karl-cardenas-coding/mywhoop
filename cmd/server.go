@@ -368,6 +368,8 @@ func refreshJWT(ctx context.Context, client *http.Client, credentialsFilePath st
 		return err
 	}
 
+	slog.Debug("Using current token", "token", currentToken.AccessToken[0:4])
+
 	auth := internal.AuthRequest{
 		AuthToken:        currentToken.AccessToken,
 		RefreshToken:     currentToken.RefreshToken,
