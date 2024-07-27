@@ -3,7 +3,7 @@
 
 # MyWhoop 
 
-A tool for gathering and retaining your own Whoop data. 
+A tool for gathering and retaining your own Whoop data from the [Whoop API](https://developer.whoop.com/api). 
 
 <p align="center">
   <img src="/static/images/logo.webp" alt="drawing" width="600"/>
@@ -11,7 +11,7 @@ A tool for gathering and retaining your own Whoop data.
 
 ## Overview
 
-MyWhoop is a tool intended to help you take ownership of your Whoop data. You can use MyWhoop to download your all your Whoop data. You can use MyWhoop as a one-time utility to download all your data, or you can use it as a server to automatically download your data daily. MyWhoop is designed to be deployed on your own machine or server. MyWhoop supports the following features:
+MyWhoop is a tool intended to help you take ownership of your Whoop data. You can use MyWhoop to download your all your Whoop data. You can also use MyWhoop it as a server to automatically download your new Whoop data daily. MyWhoop is designed to be deployed on your own machine or server. MyWhoop supports the following features:
 
 - 🔐 **Login**: A simple interface to log into the Whoop developer portal and save an authentication token locally. The token is required to interact with the Whoop API.
 - 🗄️ **Server**: Automatically download your Whoop data daily and save it to a local file or export it to a remote location.
