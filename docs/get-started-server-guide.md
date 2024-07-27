@@ -182,7 +182,7 @@ Before you begin, ensure you have the following items completed:
     Jul 22 13:33:28 beelink-s12-pro mywhoop[34988]: time="2024/07/22 13:33:28" level=INFO msg="New token generated:" ECaL=....
     ```
 
-Depending on what time you started the service, MyWhoop will download the last 24 hours of data at the specified time in the `server.crontab`. By default, this value is to `1 pm | 13:00`. You can change the crontab to any time you want MyWhoop to download the data.
+    Depending on what time you started the service, MyWhoop will download the last 24 hours of data at the specified time in the `server.crontab`. By default, this value is to `1 pm | 13:00`. You can change the crontab to any time you want MyWhoop to download the data.
 
 
 15. At 1 pm, MyWhoop will download the last 24 hours of data. You can verify the data is downloaded by checking the `/home/ubuntu/mywhoop/data/` directory. The data will be saved in a file name containing today's date. 
@@ -198,12 +198,9 @@ Depending on what time you started the service, MyWhoop will download the last 2
     sudo systemctl daemon-reload && sudo systemctl restart mywhoop.service
     ```
 
-
-
 ## Next Steps
 
 🎊 You have successfully setup MyWhoop in server mode. MyWhoop will automatically download the last 24 hours of data daily at the specified time. You can configure MyWhoop to save the data locally or to a remote location, such as AWS S3. Start experimenting with other data exporters such as AWS S3 and automatic notifications through Ntfy. For more advanced configurations, refer to the [Configuration Reference](./docs/configuration_reference.md) section.
-
 
 
 ## Additional Resources
