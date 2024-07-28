@@ -131,14 +131,24 @@ func TestNewAwsS3Export(t *testing.T) {
 
 	for _, tc := range tests {
 
+		// if tc.clearEnv {
+
+		// 	t.Setenv("AWS_PROFILE", "")
+		// 	t.Setenv("AWS_DEFAULT_REGION", "")
+		// 	t.Setenv("AWS_ACCESS_KEY_ID", "")
+		// 	t.Setenv("AWS_SECRET_ACCESS_KEY", "")
+		// }
+
 		t.Run(tc.description, func(t *testing.T) {
 
 			if tc.setProfileEnv {
 				os.Setenv("AWS_PROFILE", "test")
 			}
 
+			os.Unsetenv("AWS_DEFAULT_REGION")
+
 			if tc.setRegionEnv {
-				os.Setenv("AWS_REGION", "us-east-1")
+				os.Setenv("AWS_DEFAULT_REGION", "us-east-1")
 			}
 
 			result, err := NewAwsS3Export(tc.region, tc.bucket, tc.profile, tc.client, tc.f, tc.serverMode)
@@ -158,8 +168,9 @@ func TestNewAwsS3Export(t *testing.T) {
 				t.Errorf("%s: Server mode is not set correctly", tc.description)
 			}
 
+		})
+		t.Cleanup(func() {
 			clearEnvVariables()
-
 		})
 
 	}
@@ -571,7 +582,7 @@ func TestS3CleanUp(t *testing.T) {
 
 func clearEnvVariables() {
 	os.Unsetenv("AWS_PROFILE")
-	os.Unsetenv("AWS_REGION")
+	os.Unsetenv("AWS_DEFAULT_REGION")
 }
 
 func createMockBucket(s3Client *s3.Client, bucket string) error {

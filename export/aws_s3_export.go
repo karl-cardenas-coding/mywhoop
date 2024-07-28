@@ -29,7 +29,7 @@ func NewAwsS3Export(region, bucket, profile string, client *http.Client, f *File
 
 	if region == "" {
 
-		envValue := os.Getenv("AWS_REGION")
+		envValue := os.Getenv("AWS_DEFAULT_REGION")
 		if envValue == "" {
 			return nil, fmt.Errorf("AWS region is required")
 		}
