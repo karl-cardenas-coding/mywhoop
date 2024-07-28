@@ -35,6 +35,7 @@ func TestNewAwsS3Export(t *testing.T) {
 		client        *http.Client
 		setProfileEnv bool
 		setRegionEnv  bool
+		clearEnv      bool
 		expectedError bool
 	}{
 		// Happy path
@@ -48,6 +49,7 @@ func TestNewAwsS3Export(t *testing.T) {
 				ServerMode: true,
 			},
 			client,
+			false,
 			false,
 			false,
 			false,
@@ -66,6 +68,7 @@ func TestNewAwsS3Export(t *testing.T) {
 			false,
 			false,
 			false,
+			false,
 		},
 		// Error case: missing region
 		{
@@ -80,6 +83,7 @@ func TestNewAwsS3Export(t *testing.T) {
 			client,
 			false,
 			false,
+			true,
 			true,
 		},
 		// happy path with region ENV variable
@@ -96,6 +100,7 @@ func TestNewAwsS3Export(t *testing.T) {
 			false,
 			true,
 			false,
+			false,
 		},
 		// Error case: missing bucket
 		{
@@ -108,6 +113,7 @@ func TestNewAwsS3Export(t *testing.T) {
 				ServerMode: true,
 			},
 			client,
+			false,
 			false,
 			false,
 			true,
@@ -126,15 +132,19 @@ func TestNewAwsS3Export(t *testing.T) {
 			false,
 			false,
 			false,
+			false,
 		},
 	}
 
 	for _, tc := range tests {
 
-		t.Setenv("AWS_PROFILE", "")
-		t.Setenv("AWS_DEFAULT_REGION", "")
-		t.Setenv("AWS_ACCESS_KEY_ID", "")
-		t.Setenv("AWS_SECRET_ACCESS_KEY", "")
+		// if tc.clearEnv {
+
+		// 	t.Setenv("AWS_PROFILE", "")
+		// 	t.Setenv("AWS_DEFAULT_REGION", "")
+		// 	t.Setenv("AWS_ACCESS_KEY_ID", "")
+		// 	t.Setenv("AWS_SECRET_ACCESS_KEY", "")
+		// }
 
 		t.Run(tc.description, func(t *testing.T) {
 
@@ -577,7 +587,7 @@ func TestS3CleanUp(t *testing.T) {
 
 func clearEnvVariables() {
 	os.Unsetenv("AWS_PROFILE")
-	os.Unsetenv("AWS_REGION")
+	os.Unsetenv("AWS_DEFAULT_REGION")
 }
 
 func createMockBucket(s3Client *s3.Client, bucket string) error {
