@@ -35,7 +35,6 @@ func TestNewAwsS3Export(t *testing.T) {
 		client        *http.Client
 		setProfileEnv bool
 		setRegionEnv  bool
-		clearEnv      bool
 		expectedError bool
 	}{
 		// Happy path
@@ -49,7 +48,6 @@ func TestNewAwsS3Export(t *testing.T) {
 				ServerMode: true,
 			},
 			client,
-			false,
 			false,
 			false,
 			false,
@@ -68,7 +66,6 @@ func TestNewAwsS3Export(t *testing.T) {
 			false,
 			false,
 			false,
-			false,
 		},
 		// Error case: missing region
 		{
@@ -83,7 +80,6 @@ func TestNewAwsS3Export(t *testing.T) {
 			client,
 			false,
 			false,
-			true,
 			true,
 		},
 		// happy path with region ENV variable
@@ -100,7 +96,6 @@ func TestNewAwsS3Export(t *testing.T) {
 			false,
 			true,
 			false,
-			false,
 		},
 		// Error case: missing bucket
 		{
@@ -113,7 +108,6 @@ func TestNewAwsS3Export(t *testing.T) {
 				ServerMode: true,
 			},
 			client,
-			false,
 			false,
 			false,
 			true,
@@ -129,7 +123,6 @@ func TestNewAwsS3Export(t *testing.T) {
 				ServerMode: true,
 			},
 			client,
-			false,
 			false,
 			false,
 			false,
@@ -151,6 +144,8 @@ func TestNewAwsS3Export(t *testing.T) {
 			if tc.setProfileEnv {
 				os.Setenv("AWS_PROFILE", "test")
 			}
+
+			os.Unsetenv("AWS_DEFAULT_REGION")
 
 			if tc.setRegionEnv {
 				os.Setenv("AWS_DEFAULT_REGION", "us-east-1")
