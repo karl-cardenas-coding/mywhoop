@@ -131,6 +131,11 @@ func TestNewAwsS3Export(t *testing.T) {
 
 	for _, tc := range tests {
 
+		t.Setenv("AWS_PROFILE", "")
+		t.Setenv("AWS_DEFAULT_REGION", "")
+		t.Setenv("AWS_ACCESS_KEY_ID", "")
+		t.Setenv("AWS_SECRET_ACCESS_KEY", "")
+
 		t.Run(tc.description, func(t *testing.T) {
 
 			if tc.setProfileEnv {
@@ -158,8 +163,9 @@ func TestNewAwsS3Export(t *testing.T) {
 				t.Errorf("%s: Server mode is not set correctly", tc.description)
 			}
 
+		})
+		t.Cleanup(func() {
 			clearEnvVariables()
-
 		})
 
 	}
