@@ -55,7 +55,6 @@ func (f *FileExport) Export(data []byte) error {
 		slog.Error("unable to write to file", "error", err)
 		return err
 	}
-
 	return nil
 
 }

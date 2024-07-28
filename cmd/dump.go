@@ -6,13 +6,10 @@ package cmd
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"log/slog"
 	"os"
 
-	"github.com/karl-cardenas-coding/mywhoop/export"
 	"github.com/karl-cardenas-coding/mywhoop/internal"
-	"github.com/karl-cardenas-coding/mywhoop/notifications"
 	"github.com/spf13/cobra"
 )
 
@@ -52,6 +49,7 @@ func dump(ctx context.Context) error {
 	}
 
 	cfg := Configuration
+	cfg.Server.Enabled = false
 
 	ok, token, err := internal.VerfyToken(cfg.Credentials.CredentialsFile)
 	if err != nil {
@@ -63,25 +61,9 @@ func dump(ctx context.Context) error {
 		os.Exit(1)
 	}
 
-	var notificationMethod internal.Notification
-
-	switch cfg.Notification.Method {
-	case "ntfy":
-		ntfy := notifications.NewNtfy()
-		ntfy.ServerEndpoint = cfg.Notification.Ntfy.ServerEndpoint
-		ntfy.SubscriptionID = cfg.Notification.Ntfy.SubscriptionID
-		ntfy.UserName = cfg.Notification.Ntfy.UserName
-		ntfy.Events = cfg.Notification.Ntfy.Events
-		err = ntfy.SetUp()
-		if err != nil {
-			return err
-		}
-		notificationMethod = ntfy
-		slog.Info("Ntfy notification method configured")
-	default:
-		slog.Info("no notification method specified. Defaulting to stdout.")
-		std := notifications.NewStdout()
-		notificationMethod = std
+	notificationMethod, err := determineNotificationExtension(cfg)
+	if err != nil {
+		return err
 	}
 
 	if filter != "" {
@@ -172,83 +154,28 @@ func dump(ctx context.Context) error {
 		}
 		return err
 	}
-	var filePath string
 
-	switch cfg.Export.Method {
-	case "file":
-
-		if dataLocation == "" {
-			filePath = Configuration.Export.FileExport.FilePath
-		} else {
-			filePath = dataLocation
+	exporterMethod, err := determineExporterExtension(cfg, client)
+	if err != nil {
+		slog.Error("unable to determine export method", "error", err)
+		notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
+		if notifyErr != nil {
+			slog.Error("unable to send notification", "error", notifyErr)
 		}
-
-		fileExp := export.NewFileExport(filePath,
-			Configuration.Export.FileExport.FileType,
-			Configuration.Export.FileExport.FileName,
-			Configuration.Export.FileExport.FileNamePrefix,
-			false,
-		)
-		err = fileExp.Export(finalDataRaw)
-		if err != nil {
-			notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
-			if notifyErr != nil {
-				slog.Error("unable to send notification", "error", notifyErr)
-			}
-			return err
-		}
-		slog.Info("Data exported successfully", "file", fileExp.FileName)
-	case "s3":
-
-		if dataLocation != "" {
-			cfg.Export.AWSS3.FileConfig.FilePath = dataLocation
-		}
-
-		awsS3, err := export.NewAwsS3Export(cfg.Export.AWSS3.Region,
-			cfg.Export.AWSS3.Bucket,
-			cfg.Export.AWSS3.Profile,
-			client,
-			&cfg.Export.AWSS3.FileConfig,
-			false,
-		)
-		if err != nil {
-			return errors.New("unable initialize AWS S3 export. Additional error context: " + err.Error())
-		}
-		err = awsS3.Export(finalDataRaw)
-		if err != nil {
-			notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
-			if notifyErr != nil {
-				slog.Error("unable to send notification", "error", notifyErr)
-			}
-			return errors.New("unable to export data to AWS S3. Additional error context: " + err.Error())
-		}
-
-	default:
-
-		if dataLocation == "" {
-			filePath = Configuration.Export.FileExport.FilePath
-		} else {
-			filePath = dataLocation
-		}
-
-		slog.Info("no export method specified. Defaulting to file.")
-		fileExp := export.NewFileExport(filePath,
-			Configuration.Export.FileExport.FileType,
-			Configuration.Export.FileExport.FileName,
-			Configuration.Export.FileExport.FileNamePrefix,
-			false,
-		)
-		err = fileExp.Export(finalDataRaw)
-		if err != nil {
-			notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
-			if notifyErr != nil {
-				slog.Error("unable to send notification", "error", notifyErr)
-			}
-			return err
-		}
-
+		return err
 	}
-	slog.Info("All Whoop data downloaded successfully")
+
+	err = exporterMethod.Export(finalDataRaw)
+	if err != nil {
+		slog.Error("unable to export data", "error", err)
+		notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
+		if notifyErr != nil {
+			slog.Error("unable to send notification", "error", notifyErr)
+		}
+		return err
+	}
+
+	slog.Info("All Whoop data downloaded and exported successfully")
 	if notificationMethod != nil {
 		err = notificationMethod.Publish(client, []byte("Successfully downloaded all Whoop data."), internal.EventSuccess.String())
 		if err != nil {

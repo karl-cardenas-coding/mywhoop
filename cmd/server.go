@@ -18,9 +18,7 @@ import (
 
 	gocron "github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
-	"github.com/karl-cardenas-coding/mywhoop/export"
 	"github.com/karl-cardenas-coding/mywhoop/internal"
-	"github.com/karl-cardenas-coding/mywhoop/notifications"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 )
@@ -64,6 +62,7 @@ func server(ctx context.Context) error {
 	client := internal.CreateHTTPClient()
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	cfg.Server.Enabled = true
 
 	// Evaluate the configuration options
 	err = evaluateConfigOptions(&cfg)
@@ -71,63 +70,24 @@ func server(ctx context.Context) error {
 		slog.Error("unable to evaluate configuration options", "error", err)
 		return err
 	}
-	var exportSelected internal.Export
-	// Initialize the data exporters
-	switch cfg.Export.Method {
-	case "file":
-		fileExp := export.NewFileExport(cfg.Export.FileExport.FilePath,
-			cfg.Export.FileExport.FileType,
-			cfg.Export.FileExport.FileName,
-			cfg.Export.FileExport.FileNamePrefix,
-			true,
-		)
-
-		if cfg.Export.FileExport.FileNamePrefix == "" {
-			cfg.Export.FileExport.FileNamePrefix = "user"
-		}
-
-		exportSelected = fileExp
-	case "s3":
-		awsS3Exp, err := export.NewAwsS3Export(cfg.Export.AWSS3.Region, cfg.Export.AWSS3.Bucket, cfg.Export.AWSS3.Profile, client, &cfg.Export.AWSS3.FileConfig, true)
-		if err != nil {
-			slog.Error("unable to initialize AWS S3 export", "error", err)
-			return err
-		}
-
-		exportSelected = awsS3Exp
-		slog.Info("AWS S3 export method specified")
-	default:
-		slog.Error("unknown exporter", "exporter", cfg.Export.Method)
-		return errors.New("unknown exporter")
+	exportSelected, err := determineExporterExtension(cfg, client)
+	if err != nil {
+		slog.Error("unable to determine exporter extension", "error", err)
+		return err
 	}
 
-	// Setup the notification method
 	err = exportSelected.Setup()
 	if err != nil {
 		slog.Error("unable to setup data exporter", "error", err)
 		return err
 	}
 
-	var notificationMethod internal.Notification
-
-	// Initialize the notification method
-	switch Configuration.Notification.Method {
-	case "ntfy":
-		ntfy := notifications.NewNtfy()
-		ntfy.ServerEndpoint = cfg.Notification.Ntfy.ServerEndpoint
-		ntfy.SubscriptionID = cfg.Notification.Ntfy.SubscriptionID
-		ntfy.UserName = cfg.Notification.Ntfy.UserName
-		ntfy.Events = cfg.Notification.Ntfy.Events
-		slog.Info("Ntfy notification method specified")
-		notificationMethod = ntfy
-	default:
-		slog.Info("No notification method specified. Defaulting to stdout.")
-		std := notifications.NewStdout()
-		notificationMethod = std
-
+	notificationMethod, err := determineNotificationExtension(cfg)
+	if err != nil {
+		slog.Error("unable to determine notification extension", "error", err)
+		return err
 	}
 
-	// Setup the notification method
 	if notificationMethod != nil {
 		err = notificationMethod.SetUp()
 		if err != nil {

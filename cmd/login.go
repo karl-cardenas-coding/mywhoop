@@ -222,9 +222,9 @@ func getStaticAssets(f embed.FS, filePath string) (fs.FS, error) {
 	return fs.Sub(f, filePath)
 }
 
-// closeHandler closes the application after 2 seconds
+// closeHandler closes the CLI application.
 func closeHandler(w http.ResponseWriter, r *http.Request) {
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 	_, err := w.Write([]byte("Closing application..."))
 	if err != nil {
 		slog.Error("unable to write response", "error", err)
