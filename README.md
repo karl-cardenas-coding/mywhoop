@@ -147,21 +147,21 @@ mywhoop version
 
 ## Extensions 🗂️
 
-MyWhoop supports extensions for data exporters and notification services. Exporters are used to export your Whoop data to a remote location, such as an S3 bucket or to a unique data store. Notification services are used to send notifications when new data is available or when an error occurs.
+MyWhoop supports extensions for data exporters and notification services. Exporters are used to export your Whoop data to a remote location, such as an S3 bucket or to a unique data store. Notification services are used to send notifications when new data is available or when an error occurs. Extensions are configured in the MyWhoop configuration file. For more information, refer to the [Configuration Reference](./docs/configuration_reference.md) section.
 
 
 ### Data Exporters
 
-| Name | Description |
-|---|---|
-| File | This is the default exporter. The exporter saves the Whoop data to a local file. |
-| [AWS S3](https://aws.amazon.com/s3/) | The AWS S3 exporter saves the Whoop data to an S3 bucket. |
+| Name | Description | Configuration |
+|---|---| --- |
+| File | This is the default exporter. The exporter saves the Whoop data to a local file. | [File Exporter](./docs/configuration_reference.md#file-export) |
+| [AWS S3](https://aws.amazon.com/s3/) | The AWS S3 exporter saves the Whoop data to an S3 bucket. | [AWS S3 Exporter](./docs/configuration_reference.md#s3-export) |
 
 
 
 ### Notification Services
 
-| Name | Description |
-|---|---|
-| stdout | The stdout notification is the default notification mechanism. Output is sent to the console. |
-| [Ntfy](https://ntfy.sh/) | Use the Ntfy notification service to send notifications to your phone or desktop. |
+| Name | Description | Configuration |
+|---|---| --- |
+| stdout | The stdout notification is the default notification mechanism. Output is sent to the console. | [Stdout](./docs/configuration_reference.md#notification) |
+| [Ntfy](https://ntfy.sh/) | Use the Ntfy notification service to send notifications to your phone or desktop. | [Ntfy](./docs/configuration_reference.md#ntfy) |
