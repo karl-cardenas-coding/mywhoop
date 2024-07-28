@@ -16,7 +16,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var dataLocation string
+var (
+	dataLocation string
+	filter       string
+)
 
 var dumpCmd = &cobra.Command{
 	Use:   "dump",
@@ -31,6 +34,8 @@ var dumpCmd = &cobra.Command{
 
 func init() {
 	dumpCmd.PersistentFlags().StringVarP(&dataLocation, "location", "l", "", "The location to dump the data to. Default is the current directory's data/ folder.")
+	dumpCmd.PersistentFlags().StringVarP(&filter, "filter", "f", "", "Provide a filter string to narrow down the data to download. For example, start=2024-01-01T00:00:00.000Z&end=2022-04-01T00:00:00.000Z")
+
 	rootCmd.AddCommand(dumpCmd)
 }
 
@@ -79,6 +84,10 @@ func dump(ctx context.Context) error {
 		notificationMethod = std
 	}
 
+	if filter != "" {
+		slog.Info("Filtering data with:", "filter", filter)
+	}
+
 	data, err := user.GetUserProfileData(ctx, client, internal.DEFAULT_WHOOP_API_USER_DATA_URL, token.AccessToken, ua)
 	if err != nil {
 		internal.LogError(err)
@@ -103,7 +112,7 @@ func dump(ctx context.Context) error {
 
 	user.UserMesaurements = *measurements
 
-	sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, "", ua)
+	sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, filter, ua)
 	if err != nil {
 		internal.LogError(err)
 		notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
@@ -116,7 +125,7 @@ func dump(ctx context.Context) error {
 	sleep.NextToken = ""
 	user.SleepCollection = *sleep
 
-	recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, "", ua)
+	recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, filter, ua)
 	if err != nil {
 		internal.LogError(err)
 		notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
@@ -129,7 +138,7 @@ func dump(ctx context.Context) error {
 	recovery.NextToken = ""
 	user.RecoveryCollection = *recovery
 
-	workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, "", ua)
+	workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, filter, ua)
 	if err != nil {
 		internal.LogError(err)
 		notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
@@ -142,7 +151,7 @@ func dump(ctx context.Context) error {
 	workout.NextToken = ""
 	user.WorkoutCollection = *workout
 
-	cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, "", ua)
+	cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, filter, ua)
 	if err != nil {
 		internal.LogError(err)
 		notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
