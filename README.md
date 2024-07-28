@@ -17,7 +17,7 @@ MyWhoop is a tool intended to help you take ownership of your Whoop data. You ca
 - 🗄️ **Server**: Automatically download your Whoop data daily and save it to a local file or export it to a remote location.
 - 📬 **Notifications**: Receive notifications when new data is available or when an error occurs.
 - 💾 **Data Export**: Export your Whoop data to a remote location such as an S3 bucket.
-- 🗂️ **Extensions**: Data exporters and notification services can be extended to support additional use cases.
+- 🗂️ **Extensions**: Data exporters and notification services can be extended to support additional use cases. Check out the [Extensions](#extensions-️) section to learn more.
 - 📦 **No Dependencies**: MyWhoop is available as a stand-alone binary or as a Docker image. No additional software is required to get started.
 
 ## Get Started 🚀
@@ -63,9 +63,31 @@ The dump command downloads **all your Whoop data** and saves it to a local file.
 mywhoop dump
 ```
 
+#### Flags
+
 | Long Flag | Short Flag | Description | Required | Default |
 |---|---|---|---|---|
 | `--location` | `-l` |The location to save the Whoop data file. | No | `./data/` |
+| `--filter` | `-f` | Specify a filter string to filter the data. For example to download all the data from January 2024 `start=2024-01-01T00:00:00.000Z&end=2024-01-31T00:00:00.000Z`. You can learn more about the filter syntax in the Whoop API [Pagination](https://developer.whoop.com/docs/developing/pagination) documentation. | No | `""` |
+
+#### Filter
+
+You can apply a filter to the data using the `--filter` flag. The filter flag expects a string that follows the Whoop API [Pagination](https://developer.whoop.com/docs/developing/pagination) filter syntax. A `start` value is required, the `end` value is optional. For example, to download all the data from January 2024, use the following filter string.
+
+```bash
+mywhoop dump --filter "start=2024-01-01T00:00:00.000Z&end=2024-01-31T00:00:00.000Z"
+```
+> [!TIP]
+> Wrap the filter string in quotes to prevent the shell from interpreting the `&` character as a command separator.
+
+
+You can omit the `end` value to download all the data from the specified `start` date to the current date. For example, to download all the data from March 2022 to the current date, use the following filter string. 
+
+```bash
+mywhoop dump --filter "start=2022-03-01T00:00:00.000Z"
+```
+
+If you specify an invalid filter string, Whoop will normaly ignore the filter and return all the data.
 
 
 > [!IMPORTANT]
@@ -79,6 +101,8 @@ The login command is used to authenticate with the Whoop API and save the authen
 ```bash
 mywhoop login
 ```
+
+#### Flags
 
 | Long Flag | Short Flag |Description | Required | Default |
 |---|--|--|---|---|
@@ -120,3 +144,24 @@ mywhoop version
 2024/07/06 10:50:29 INFO mywhoop v1.0.0
 ```
 
+
+## Extensions 🗂️
+
+MyWhoop supports extensions for data exporters and notification services. Exporters are used to export your Whoop data to a remote location, such as an S3 bucket or to a unique data store. Notification services are used to send notifications when new data is available or when an error occurs.
+
+
+### Data Exporters
+
+| Name | Description |
+|---|---|
+| File | This is the default exporter. The exporter saves the Whoop data to a local file. |
+| [AWS S3](https://aws.amazon.com/s3/) | The AWS S3 exporter saves the Whoop data to an S3 bucket. |
+
+
+
+### Notification Services
+
+| Name | Description |
+|---|---|
+| stdout | The stdout notification is the default notification mechanism. Output is sent to the console. |
+| [Ntfy](https://ntfy.sh/) | Use the Ntfy notification service to send notifications to your phone or desktop. |

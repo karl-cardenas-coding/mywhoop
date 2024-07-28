@@ -121,6 +121,7 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, url, 
 	urlWithFilters := url
 
 	if filters != "" {
+		slog.Debug("Sleep Filters", slog.String("Filters", filters))
 		urlWithFilters = url + filters
 	}
 
@@ -128,7 +129,6 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, url, 
 
 	for continueLoop {
 
-		slog.Info(("Requesting sleep collection from Whoop API"))
 		slog.Debug("URL", slog.String("URL", urlWithFilters))
 
 		if nextLoopUrl == "" {
@@ -185,7 +185,7 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, url, 
 			if nextToken == "" {
 				continueLoop = false
 			} else {
-				nextLoopUrl = urlWithFilters + "nextToken=" + nextToken
+				nextLoopUrl = urlWithFilters + "&nextToken=" + nextToken
 			}
 
 			return nil
@@ -283,7 +283,7 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, ur
 			if nextToken == "" {
 				continueLoop = false
 			} else {
-				nextLoopUrl = urlWithFilters + "nextToken=" + nextToken
+				nextLoopUrl = urlWithFilters + "&nextToken=" + nextToken
 			}
 
 			return nil
@@ -381,7 +381,7 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, url
 			if nextToken == "" {
 				continueLoop = false
 			} else {
-				nextLoopUrl = urlWithFilters + "nextToken=" + nextToken
+				nextLoopUrl = urlWithFilters + "&nextToken=" + nextToken
 			}
 
 			return nil
@@ -475,7 +475,7 @@ func (u User) GetCycleCollection(ctx context.Context, client *http.Client, url, 
 			if nextToken == "" {
 				continueLoop = false
 			} else {
-				nextLoopUrl = urlWithFilters + "nextToken=" + nextToken
+				nextLoopUrl = urlWithFilters + "&nextToken=" + nextToken
 			}
 
 			return nil
