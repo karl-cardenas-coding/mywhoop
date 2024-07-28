@@ -138,7 +138,7 @@ func TestNewAwsS3Export(t *testing.T) {
 			}
 
 			if tc.setRegionEnv {
-				os.Setenv("AWS_REGION", "us-east-1")
+				os.Setenv("AWS_DEFAULT_REGION", "us-east-1")
 			}
 
 			result, err := NewAwsS3Export(tc.region, tc.bucket, tc.profile, tc.client, tc.f, tc.serverMode)

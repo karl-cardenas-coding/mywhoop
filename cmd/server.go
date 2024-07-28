@@ -70,7 +70,7 @@ func server(ctx context.Context) error {
 		slog.Error("unable to evaluate configuration options", "error", err)
 		return err
 	}
-	exportSelected, err := determineExporterExtension(cfg, client)
+	exportSelected, err := determineExporterExtension(cfg, client, "")
 	if err != nil {
 		slog.Error("unable to determine exporter extension", "error", err)
 		return err

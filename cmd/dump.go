@@ -155,7 +155,7 @@ func dump(ctx context.Context) error {
 		return err
 	}
 
-	exporterMethod, err := determineExporterExtension(cfg, client)
+	exporterMethod, err := determineExporterExtension(cfg, client, dataLocation)
 	if err != nil {
 		slog.Error("unable to determine export method", "error", err)
 		notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())

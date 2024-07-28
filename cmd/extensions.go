@@ -41,7 +41,7 @@ func determineNotificationExtension(cfg internal.ConfigurationData) (internal.No
 
 // determineExporterExtension determines the export extension to use and returns the appropriate export.
 // The paramter isServerMode is used to determine if the exporter is being used in server mode. Use this flag to set server mode defaults.
-func determineExporterExtension(cfg internal.ConfigurationData, client *http.Client) (internal.Export, error) {
+func determineExporterExtension(cfg internal.ConfigurationData, client *http.Client, dataLocation string) (internal.Export, error) {
 
 	var (
 		filePath string
@@ -52,7 +52,9 @@ func determineExporterExtension(cfg internal.ConfigurationData, client *http.Cli
 	case "file":
 		if dataLocation == "" {
 			filePath = cfg.Export.FileExport.FilePath
-		} else {
+		}
+
+		if dataLocation != "" {
 			filePath = dataLocation
 		}
 
