@@ -141,7 +141,7 @@ The version command is used to display the version of MyWhoop. The version comma
 mywhoop version
 ```
 ```
-2024/07/06 10:50:29 INFO mywhoop v1.0.0
+2024/07/06 10:50:29 INFO mywhoop v0.1.0
 ```
 
 
