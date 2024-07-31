@@ -155,7 +155,7 @@ MyWhoop supports extensions for data exporters and notification services. Export
 | Name | Description | Configuration |
 |---|---| --- |
 | File | This is the default exporter. The exporter saves the Whoop data to a local file. | [File Exporter](./docs/configuration_reference.md#file-export) |
-| [AWS S3](https://aws.amazon.com/s3/) | The AWS S3 exporter saves the Whoop data to an S3 bucket. | [AWS S3 Exporter](./docs/configuration_reference.md#s3-export) |
+| AWS S3 | The [AWS S3](https://aws.amazon.com/s3/) exporter saves the Whoop data to an S3 bucket. | [AWS S3 Exporter](./docs/configuration_reference.md#s3-export) |
 
 
 
@@ -164,4 +164,4 @@ MyWhoop supports extensions for data exporters and notification services. Export
 | Name | Description | Configuration |
 |---|---| --- |
 | stdout | The stdout notification is the default notification mechanism. Output is sent to the console. | [Stdout](./docs/configuration_reference.md#notification) |
-| [Ntfy](https://ntfy.sh/) | Use the Ntfy notification service to send notifications to your phone or desktop. | [Ntfy](./docs/configuration_reference.md#ntfy) |
+| Ntfy | Use the [Ntfy](https://ntfy.sh/) notification service to send notifications to your phone or desktop. | [Ntfy](./docs/configuration_reference.md#ntfy) |
