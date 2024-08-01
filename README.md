@@ -25,7 +25,7 @@ Please check out the [Getting Started](/docs/get-started.md) guide to get starte
 
 ### Server Mode Setup 🗄️
 
-To set up MyWhoop in server mode, use the [Setup Server Mode](/docs/get-started-server-guide.md) guide..
+To set up MyWhoop in server mode, use the [Setup Server Mode](/docs/get-started-server-guide.md) guide.
 
 ## Commands
 
