@@ -10,7 +10,6 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/docker/go-connections v0.5.0
 	github.com/go-playground/validator/v10 v10.22.0
-	github.com/hashicorp/go-version v1.7.0
 	github.com/spf13/cobra v1.8.1
 	github.com/testcontainers/testcontainers-go v0.32.0
 	github.com/testcontainers/testcontainers-go/modules/localstack v0.32.0
@@ -43,7 +42,7 @@ require (
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/cpuguy83/dockercfg v0.3.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/docker v27.0.3+incompatible // indirect
+	github.com/docker/docker v27.1.0+incompatible // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.4 // indirect
