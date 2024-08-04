@@ -273,7 +273,7 @@ func downloadWhoopData(ctx context.Context, config internal.ConfigurationData, c
 	token, err := internal.ReadTokenFromFile(config.Credentials.CredentialsFile)
 	if err != nil {
 		slog.Error("unable to read token file", "error", err)
-		notifyErr := notify.Publish(client, []byte(fmt.Sprintf("Failed to read the authentication token from file during the regular daily retreive cycle. Additional context below: \n %s", err)), internal.EventErrors.String())
+		notifyErr := notify.Publish(client, []byte(fmt.Sprintf("Failed to read the authentication token from file during the regular daily retrieve cycle. Additional context below: \n %s", err)), internal.EventErrors.String())
 		if notifyErr != nil {
 			slog.Error("unable to send notification", "error", notifyErr)
 		}

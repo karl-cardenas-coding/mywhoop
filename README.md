@@ -1,4 +1,7 @@
 [![Go version](https://img.shields.io/github/go-mod/go-version/karl-cardenas-coding/go-lambda-cleanup)](https://golang.org/dl/)
+[![Go Reference](https://pkg.go.dev/badge/github.com/karl-cardenas-coding/mywhoop.svg)](https://pkg.go.dev/github.com/karl-cardenas-coding/mywhoop)
+[![Go Report Card](https://goreportcard.com/badge/github.com/karl-cardenas-coding/mywhoop)](https://goreportcard.com/report/github.com/karl-cardenas-coding/mywhoop)
+[![codecov](https://codecov.io/github/karl-cardenas-coding/mywhoop/graph/badge.svg?token=ZHEE3T4HUG)](https://codecov.io/github/karl-cardenas-coding/mywhoop)
 
 # MyWhoop
 
