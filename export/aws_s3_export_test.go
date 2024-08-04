@@ -217,13 +217,13 @@ func TestAWSS3Export(t *testing.T) {
 	}
 
 	tests := []struct {
-		descritpion   string
+		description   string
 		awsS3         *AWS_S3
 		data          []byte
 		errorExpected bool
 	}{
 		{
-			descritpion: "Test case 1: Export data to S3",
+			description: "Test case 1: Export data to S3",
 			awsS3: &AWS_S3{
 				Region:   "us-east-1",
 				Bucket:   mockBucketName,
@@ -240,7 +240,7 @@ func TestAWSS3Export(t *testing.T) {
 			errorExpected: false,
 		},
 		{
-			descritpion: "Test case 2: Empty data",
+			description: "Test case 2: Empty data",
 			awsS3: &AWS_S3{
 				Region:   "us-east-1",
 				Bucket:   mockBucketName,
@@ -257,7 +257,7 @@ func TestAWSS3Export(t *testing.T) {
 			errorExpected: true,
 		},
 		{
-			descritpion: "Test case 3: 0 data length",
+			description: "Test case 3: 0 data length",
 			awsS3: &AWS_S3{
 				Region:   "us-east-1",
 				Bucket:   mockBucketName,
@@ -274,13 +274,13 @@ func TestAWSS3Export(t *testing.T) {
 			errorExpected: true,
 		},
 		{
-			descritpion:   "Test case 4: Nil AWS S3",
+			description:   "Test case 4: Nil AWS S3",
 			awsS3:         nil,
 			data:          []byte(`{"name": "John Doe", "age": 30}`),
 			errorExpected: true,
 		},
 		{
-			descritpion: "Test case 5: over 10 MB data",
+			description: "Test case 5: over 10 MB data",
 			awsS3: &AWS_S3{
 				Region:   "us-east-1",
 				Bucket:   mockBucketName,
@@ -297,7 +297,7 @@ func TestAWSS3Export(t *testing.T) {
 			errorExpected: false,
 		},
 		{
-			descritpion: "Test case 6: No bucket",
+			description: "Test case 6: No bucket",
 			awsS3: &AWS_S3{
 				Region:   "us-east-1",
 				Bucket:   "",
@@ -316,7 +316,7 @@ func TestAWSS3Export(t *testing.T) {
 	}
 
 	for index, tc := range tests {
-		t.Run(tc.descritpion, func(t *testing.T) {
+		t.Run(tc.description, func(t *testing.T) {
 			err := tc.awsS3.Export(tc.data)
 			if !tc.errorExpected && err != nil {
 				t.Errorf("Test Case - %d: Unexpected error: %v", index+1, err)
