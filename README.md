@@ -1,5 +1,7 @@
 [![Go version](https://img.shields.io/github/go-mod/go-version/karl-cardenas-coding/go-lambda-cleanup)](https://golang.org/dl/)
 
+[![codecov](https://codecov.io/github/karl-cardenas-coding/mywhoop/graph/badge.svg?token=ZHEE3T4HUG)](https://codecov.io/github/karl-cardenas-coding/mywhoop)
+
 # MyWhoop
 
 MyWhoop is a tool for gathering and retaining your Whoop data from the [Whoop API](https://developer.whoop.com/api).
