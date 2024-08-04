@@ -16,7 +16,7 @@ opensource:
 		--ignore $$(tr -d ' \n' <<<"$${{ inputs.ignore-modules }}") \
 		--ignore $$(tr -d ' \n' <<<"$${{ inputs.ignore-modules }}") \
 		--ignore $$(go list std | awk 'NR > 1 { printf(",") } { printf("%s",$0) } END { print "" }') \
-		--template=documentation/open-source.tpl > documentation/open-source.md
+		--template=docs/open-source.tpl > docs/open-source.md
 
 tests: ## Run tests
 	@echo "Running tests"
