@@ -44,7 +44,7 @@ func determineNotificationExtension(cfg internal.ConfigurationData) (internal.No
 
 // determineExporterExtension determines the export extension to use and returns the appropriate export.
 // The parameter isServerMode is used to determine if the exporter is being used in server mode. Use this flag to set server mode defaults.
-func determineExporterExtension(cfg internal.ConfigurationData, client *http.Client, dataLocation string) (internal.Export, error) {
+func determineExporterExtension(cfg internal.ConfigurationData, client *http.Client, cFlags cliFlags) (internal.Export, error) {
 
 	var (
 		filePath string
@@ -53,12 +53,16 @@ func determineExporterExtension(cfg internal.ConfigurationData, client *http.Cli
 
 	switch cfg.Export.Method {
 	case "file":
-		if dataLocation == "" {
+		if cFlags.dataLocation == "" {
 			filePath = cfg.Export.FileExport.FilePath
 		}
 
-		if dataLocation != "" {
-			filePath = dataLocation
+		if cFlags.dataLocation != "" {
+			filePath = cFlags.dataLocation
+		}
+
+		if cFlags.output != "" {
+			cfg.Export.FileExport.FileType = cFlags.output
 		}
 
 		fileExp := export.NewFileExport(filePath,
@@ -72,8 +76,12 @@ func determineExporterExtension(cfg internal.ConfigurationData, client *http.Cli
 
 	case "s3":
 		slog.Info("AWS S3 export method specified")
-		if dataLocation != "" {
-			cfg.Export.AWSS3.FileConfig.FilePath = dataLocation
+		if cFlags.dataLocation != "" {
+			cfg.Export.AWSS3.FileConfig.FilePath = cFlags.dataLocation
+		}
+
+		if cFlags.output != "" {
+			cfg.Export.AWSS3.FileConfig.FileType = cFlags.output
 		}
 
 		awsS3, err := export.NewAwsS3Export(cfg.Export.AWSS3.Region,
@@ -89,11 +97,16 @@ func determineExporterExtension(cfg internal.ConfigurationData, client *http.Cli
 		exporter = awsS3
 
 	default:
-		if dataLocation == "" {
+		if cFlags.dataLocation == "" {
 			filePath = cfg.Export.FileExport.FilePath
 		} else {
-			filePath = dataLocation
+			filePath = cFlags.dataLocation
 		}
+
+		if cFlags.output != "" {
+			cfg.Export.FileExport.FileType = cFlags.output
+		}
+
 		slog.Info("no valid export method specified. Defaulting to file.")
 
 		fileExp := export.NewFileExport(filePath,

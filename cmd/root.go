@@ -167,3 +167,10 @@ func logger(verbosity string) *slog.Logger {
 
 	return slog.New(slog.NewTextHandler(os.Stdout, opts))
 }
+
+// cliFlags is a struct that holds the CLI flags
+type cliFlags struct {
+	dataLocation string
+	output       string
+	filter       string
+}

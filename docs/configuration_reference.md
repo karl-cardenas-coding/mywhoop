@@ -53,7 +53,7 @@ Local file export accepts the following fields.
 |---|----|---|---|
 | `fileName` | The name of the file to export. | Yes | `user` |
 | `filePath` | The path to save the file. By default, a data folder is created in the immediate folder. | Yes | `data/` | 
-| `fileType` | The file type to save the file as. Allowed values are `json`. | Yes | `json` |
+| `fileType` | The file type to save the file as. Allowed values are `json`, and `csv`. | Yes | `json` |
 | `fileNamePrefix` | The prefix to add to the file name. In server mode, the data is automatically inserted as a prefix. | No |`""` |
 | `serverMode` | Ensures the file name is unique and contains a timestamp. Ensures behaviors match server mode. | No | `false` |
 

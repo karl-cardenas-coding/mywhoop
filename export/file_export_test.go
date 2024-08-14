@@ -31,6 +31,11 @@ type UserData struct {
 	LastName  string `json:"last_name"`
 }
 
+func TestConvertToCSV(t *testing.T) {
+
+	t.FailNow()
+}
+
 func TestNewFileExport(t *testing.T) {
 
 	tests := []struct {

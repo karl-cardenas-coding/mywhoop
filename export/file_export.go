@@ -49,6 +49,10 @@ func (f *FileExport) Export(data []byte) error {
 		f.FileName = "user"
 	}
 
+	if f.FileType == "csv" {
+		data = convertToCSV(data)
+	}
+
 	// write the data to a file in the data folder in the current directory
 	err = writeToFile(*f, data)
 	if err != nil {
@@ -73,6 +77,7 @@ func generateName(cfg FileExport) string {
 	if cfg.FileNamePrefix != "" {
 		return cfg.FileNamePrefix + "_" + cfg.FileName + "." + cfg.FileType
 	}
+	slog.Warn("File Type", "Type", cfg.FileType)
 	return cfg.FileName + "." + cfg.FileType
 
 }
@@ -131,4 +136,9 @@ func writeToFile(cfg FileExport, data []byte) error {
 func (f *FileExport) CleanUp() error {
 	// no cleanup required
 	return nil
+}
+
+func convertToCSV(data []byte) []byte {
+
+	return data
 }
