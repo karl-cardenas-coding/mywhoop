@@ -274,7 +274,7 @@ func TestExportDataError(t *testing.T) {
 
 }
 
-func TestWriteToFileError(t *testing.T) {
+func TestWriteFileError(t *testing.T) {
 
 	tests := []struct {
 		id int

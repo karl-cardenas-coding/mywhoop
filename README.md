@@ -65,7 +65,7 @@ mywhoop dump
 | ------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | --------- |
 | `--location` | `-l`       | The location to save the Whoop data file.                                                                                                                                                                                                                                                                         | No       | `./data/` |
 | `--filter`   | `-f`       | Specify a filter string to filter the data. For example to download all the data from January 2024 `start=2024-01-01T00:00:00.000Z&end=2024-01-31T00:00:00.000Z`. You can learn more about the filter syntax in the Whoop API [Pagination](https://developer.whoop.com/docs/developing/pagination) documentation. | No       | `""`      |
-| `--output`  | `-o`        | The output format. Supported types are `json` or `csv`.  | No       | `json`    |
+| `--output`  | `-o`        | The output format. Supported types are `json` or `xlsx`.  | No       | `json`    |
 
 #### Filter
 

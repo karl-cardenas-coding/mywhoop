@@ -158,14 +158,41 @@ func dump(ctx context.Context) error {
 	cycle.NextToken = ""
 	user.CycleCollection = *cycle
 
-	finalDataRaw, err := json.MarshalIndent(user, "", "  ")
-	if err != nil {
-		internal.LogError(err)
-		notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
-		if notifyErr != nil {
-			slog.Error("unable to send notification", "error", notifyErr)
+	var finalDataRaw []byte
+	switch output {
+	case "json":
+		finalDataRaw, err = json.MarshalIndent(user, "", "  ")
+		if err != nil {
+			internal.LogError(err)
+			notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
+			return err
 		}
-		return err
+
+	case "xlsx":
+		finalDataRaw, err = internal.ConvertToCSV(user)
+		if err != nil {
+			internal.LogError(err)
+			notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
+			return err
+		}
+
+	default:
+		finalDataRaw, err = json.MarshalIndent(user, "", "  ")
+		if err != nil {
+			internal.LogError(err)
+			notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
+			return err
+		}
+
 	}
 
 	exporterMethod, err := determineExporterExtension(cfg, client, cliFlags)
