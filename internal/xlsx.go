@@ -209,7 +209,10 @@ func ConvertToExcel(userData User) ([]byte, error) {
 		"Zone Five Time (Miliseconds)",
 	}
 
-	f.SetSheetRow("Workout Data", "A1", &workoutHeaders)
+	err = f.SetSheetRow("Workout Data", "A1", &workoutHeaders)
+	if err != nil {
+		return csvData, fmt.Errorf("failed to set header row in Workout Data sheet: %v", err.Error())
+	}
 	rowCounter = 1
 
 	for i := 0; i < len(userData.WorkoutCollection.Records); i++ {
