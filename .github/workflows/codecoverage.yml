@@ -3,7 +3,11 @@ name: Update Coverage
 on:
   push:
     branches: [main]
-        
+
+env: 
+  GO_VERSION: "1.22"    
+
+
 jobs:
   coverage:
     name: Update Code Coverage
@@ -34,6 +38,6 @@ jobs:
           make tests-coverage
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4.0.1
+        uses: codecov/codecov-action@v4.5.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
