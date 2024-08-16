@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"slices"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
@@ -121,7 +122,7 @@ func (f *AWS_S3) Export(data []byte) error {
 			Bucket:   &f.Bucket,
 			Key:      &fileName,
 			Body:     largeBuffer,
-			Metadata: map[string]string{"Content-Type": "application/json"},
+			Metadata: map[string]string{"Content-Type": determineContentType(f.FileConfig.FileType)},
 		})
 
 		if err != nil {
@@ -137,7 +138,7 @@ func (f *AWS_S3) Export(data []byte) error {
 			Bucket:   &f.Bucket,
 			Key:      &fileName,
 			Body:     bytes.NewReader(data),
-			Metadata: map[string]string{"Content-Type": "application/json"},
+			Metadata: map[string]string{"Content-Type": determineContentType(f.FileConfig.FileType)},
 		})
 		if err != nil {
 			return err
@@ -154,6 +155,8 @@ func (f *AWS_S3) CleanUp() error {
 
 // fileExportDefaults sets the default values for the file export
 func fileExportDefaults(f *FileExport) error {
+
+	supportedFileTypes := []string{"json", "xlsx"}
 
 	h, err := os.UserHomeDir()
 	if err != nil {
@@ -177,10 +180,13 @@ func fileExportDefaults(f *FileExport) error {
 			f.FilePath = path.Join(h, "data")
 		}
 
-		if f.FileType == "" || f.FileType != "json" {
+		if f.FileType == "" {
 			f.FileType = "json"
 		}
+	}
 
+	if !slices.Contains(supportedFileTypes, f.FileType) {
+		f.FileType = "json"
 	}
 
 	return nil
@@ -239,4 +245,19 @@ func uploadCheck(data *[]byte, f *FileExport, bucket string) error {
 	}
 
 	return nil
+}
+
+// determineContentType determines the content type based on the file type
+func determineContentType(fileType string) string {
+
+	switch fileType {
+	case "json":
+		return "application/json"
+	case "csv":
+		return "text/csv"
+	case "xlsx":
+		return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	default:
+		return "application/json"
+	}
 }

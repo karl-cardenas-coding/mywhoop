@@ -122,3 +122,18 @@ func determineExporterExtension(cfg internal.ConfigurationData, client *http.Cli
 	return exporter, nil
 
 }
+
+// getFileType determines the file type to use for the export based on the configuration and command line flags.
+func getFileType(cfg internal.ConfigurationData) string {
+
+	if cfg.Export.FileExport.FileType != "" {
+		return cfg.Export.FileExport.FileType
+	}
+
+	if cfg.Export.AWSS3.FileConfig.FileType != "" {
+		return cfg.Export.AWSS3.FileConfig.FileType
+	}
+
+	return "json"
+
+}

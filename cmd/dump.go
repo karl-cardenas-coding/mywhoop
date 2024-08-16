@@ -117,7 +117,7 @@ func dump(ctx context.Context) error {
 		return err
 	}
 
-	sleep.NextToken = ""
+	sleep.NextToken = nil
 	user.SleepCollection = *sleep
 
 	recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, filter, ua)
@@ -130,7 +130,7 @@ func dump(ctx context.Context) error {
 		return err
 	}
 
-	recovery.NextToken = ""
+	recovery.NextToken = nil
 	user.RecoveryCollection = *recovery
 
 	workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, filter, ua)
@@ -143,7 +143,7 @@ func dump(ctx context.Context) error {
 		return err
 	}
 
-	workout.NextToken = ""
+	workout.NextToken = nil
 	user.WorkoutCollection = *workout
 
 	cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, filter, ua)
@@ -155,7 +155,7 @@ func dump(ctx context.Context) error {
 		}
 		return err
 	}
-	cycle.NextToken = ""
+	cycle.NextToken = nil
 	user.CycleCollection = *cycle
 
 	var finalDataRaw []byte
@@ -172,7 +172,7 @@ func dump(ctx context.Context) error {
 		}
 
 	case "xlsx":
-		finalDataRaw, err = internal.ConvertToCSV(user)
+		finalDataRaw, err = internal.ConvertToExcel(user)
 		if err != nil {
 			internal.LogError(err)
 			notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())

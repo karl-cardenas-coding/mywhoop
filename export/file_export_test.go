@@ -31,11 +31,6 @@ type UserData struct {
 	LastName  string `json:"last_name"`
 }
 
-func TestConvertToCSV(t *testing.T) {
-
-	t.FailNow()
-}
-
 func TestNewFileExport(t *testing.T) {
 
 	tests := []struct {
@@ -69,6 +64,13 @@ func TestNewFileExport(t *testing.T) {
 		{
 			filePath:       "tests/data/",
 			fileType:       "",
+			fileName:       "",
+			fileNamePrefix: "",
+			serverMode:     true,
+		},
+		{
+			filePath:       "tests/data/",
+			fileType:       "xlsx",
 			fileName:       "",
 			fileNamePrefix: "",
 			serverMode:     true,
@@ -153,6 +155,16 @@ func TestGenerateName(t *testing.T) {
 				ServerMode:     true,
 			},
 			want: fmt.Sprintf("test_user_%s.json", getCurrentDate()),
+		},
+		{
+			description: "Test case 6: Excel file",
+			file: FileExport{
+				FileNamePrefix: "test",
+				FileName:       "user",
+				FileType:       "xlsx",
+				ServerMode:     true,
+			},
+			want: fmt.Sprintf("test_user_%s.xlsx", getCurrentDate()),
 		},
 	}
 

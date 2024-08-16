@@ -261,3 +261,87 @@ func setEnvCreds(setPassword, setToken, setAWS bool) {
 	}
 
 }
+
+func TestGetFileType(t *testing.T) {
+
+	tests := []struct {
+		name     string
+		cfg      internal.ConfigurationData
+		expected string
+	}{
+		{
+			name:     "File - json",
+			expected: "json",
+			cfg: internal.ConfigurationData{
+				Export: internal.ConfigExport{
+					FileExport: export.FileExport{
+						FileType: "json",
+					},
+				},
+			},
+		},
+		{
+			name:     "File - xlsx",
+			expected: "xlsx",
+			cfg: internal.ConfigurationData{
+				Export: internal.ConfigExport{
+					FileExport: export.FileExport{
+						FileType: "xlsx",
+					},
+				},
+			},
+		},
+		{
+			name:     "File - No Value Specified",
+			expected: "json",
+			cfg: internal.ConfigurationData{
+				Export: internal.ConfigExport{},
+			},
+		},
+		{
+			name:     "AWS S3 - xlsx",
+			expected: "xlsx",
+			cfg: internal.ConfigurationData{
+				Export: internal.ConfigExport{
+					AWSS3: export.AWS_S3{
+						FileConfig: export.FileExport{
+							FileType: "xlsx",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:     "AWS S3 - json",
+			expected: "json",
+			cfg: internal.ConfigurationData{
+				Export: internal.ConfigExport{
+					AWSS3: export.AWS_S3{
+						FileConfig: export.FileExport{
+							FileType: "json",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:     "AWS S3 - No Value Specified",
+			expected: "json",
+			cfg: internal.ConfigurationData{
+				Export: internal.ConfigExport{
+					AWSS3: export.AWS_S3{},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+
+			result := getFileType(test.cfg)
+			if result != test.expected {
+				t.Errorf("expected: %s, got: %s", test.expected, result)
+			}
+		})
+	}
+}

@@ -3,7 +3,9 @@
 
 package internal
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestEventString(t *testing.T) {
 

@@ -48,7 +48,7 @@ type UserMesaurements struct {
 
 type SleepCollection struct {
 	SleepCollectionRecords []SleepCollectionRecords `json:"records" csv:"records"`
-	NextToken              string                   `json:"next_token,omitempty" csv:"next_token,omitempty"`
+	NextToken              *string                  `json:"next_token,omitempty" csv:"next_token,omitempty"`
 }
 type StageSummary struct {
 	TotalInBedTimeMilli         int `json:"total_in_bed_time_milli" csv:"total_in_bed_time_milli"`
@@ -89,7 +89,7 @@ type SleepCollectionRecords struct {
 
 type CycleCollection struct {
 	Records   []CycleRecords `json:"records" csv:"records"`
-	NextToken string         `json:"next_token,omitempty" csv:"next_token,omitempty"`
+	NextToken *string        `json:"next_token,omitempty" csv:"next_token,omitempty"`
 }
 type CycleScore struct {
 	Strain           float64 `json:"strain" csv:"strain"`
@@ -111,7 +111,7 @@ type CycleRecords struct {
 
 type RecoveryCollection struct {
 	RecoveryRecords []RecoveryRecords `json:"records" csv:"records"`
-	NextToken       string            `json:"next_token,omitempty"`
+	NextToken       *string           `json:"next_token,omitempty"`
 }
 type RecoveryScore struct {
 	UserCalibrating  bool    `json:"user_calibrating" csv:"user_calibrating"`
@@ -133,7 +133,7 @@ type RecoveryRecords struct {
 
 type WorkoutCollection struct {
 	Records   []WorkoutRecords `json:"records" csv:"records"`
-	NextToken string           `json:"next_token,omitempty"`
+	NextToken *string          `json:"next_token,omitempty"`
 }
 type ZoneDuration struct {
 	ZoneZeroMilli  int `json:"zone_zero_milli" csv:"zone_zero_milli"`

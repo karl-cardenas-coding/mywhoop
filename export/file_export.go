@@ -49,26 +49,11 @@ func (f *FileExport) Export(data []byte) error {
 		f.FileName = "user"
 	}
 
-	switch f.FileType {
-	case "json":
-		// write the data to a file in the data folder in the current directory
-		err = writeToFile(*f, data)
-		if err != nil {
-			slog.Error("unable to write to  JSON file", "error", err)
-			return err
-		}
-	case "xlsx":
-		// err = writeToExcelFile(*f, data)
-		// if err != nil {
-		// 	slog.Error("unable to write to Excel file", "error", err)
-		// 	return err
-		// }
-	default:
-		err = writeToFile(*f, data)
-		if err != nil {
-			slog.Error("unable to write to JSON file", "error", err)
-			return err
-		}
+	// write the data to a file in the data folder in the current directory
+	err = writeToFile(*f, data)
+	if err != nil {
+		slog.Error("unable to write to  JSON file", "error", err)
+		return err
 	}
 
 	return nil
@@ -89,7 +74,7 @@ func generateName(cfg FileExport) string {
 	if cfg.FileNamePrefix != "" {
 		return cfg.FileNamePrefix + "_" + cfg.FileName + "." + cfg.FileType
 	}
-	slog.Warn("File Type", "Type", cfg.FileType)
+
 	return cfg.FileName + "." + cfg.FileType
 
 }
