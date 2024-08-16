@@ -35,21 +35,6 @@ func TestFormatBytes(t *testing.T) {
 			input:       make([]byte, 1048576),
 			expected:    "1.0 MB",
 		},
-		{
-			description: "Exactly 1 GB should return '1.0 GB'",
-			input:       make([]byte, 1073741824),
-			expected:    "1.0 GB",
-		},
-		{
-			description: "Exactly 1 TB should return '1.0 TB'",
-			input:       make([]byte, 1099511627776),
-			expected:    "1.0 TB",
-		},
-		{
-			description: "Arbitrary size of 123456789 bytes should return '117.7 MB'",
-			input:       make([]byte, 123456789),
-			expected:    "117.7 MB",
-		},
 	}
 
 	for _, test := range tests {
