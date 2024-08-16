@@ -25,7 +25,7 @@ tests: ## Run tests
 
 tests-coverage: ## Start Go Test with code coverage
 	@echo "Running Go Tests with code coverage"
-	go test -race -shuffle on -cover -coverprofile=coverage.out -covermode=atomic  ./...
+	go test -v -race -shuffle on -cover -coverprofile=coverage.out -covermode=atomic  ./...
 
 view-coverage: ## View the code coverage
 	@echo "Viewing the code coverage"
