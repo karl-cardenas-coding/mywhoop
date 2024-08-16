@@ -441,6 +441,25 @@ func TestFileAWSS3ExportDefaults(t *testing.T) {
 				ServerMode:     true,
 			},
 		},
+		{
+
+			0,
+			"Test case 7: File export with Excel file type",
+			&FileExport{
+				FilePath:       "/tmp",
+				FileType:       "xlsx",
+				FileName:       "user",
+				FileNamePrefix: "",
+				ServerMode:     true,
+			},
+			&FileExport{
+				FilePath:       "/tmp",
+				FileType:       "xlsx",
+				FileName:       "user",
+				FileNamePrefix: "",
+				ServerMode:     true,
+			},
+		},
 	}
 
 	for index, tc := range tests {

@@ -21,6 +21,7 @@ func TestDetermineExporterExtension(t *testing.T) {
 		name          string
 		cfg           internal.ConfigurationData
 		dataLocation  string
+		output        string
 		client        *http.Client
 		expextedError bool
 		expectedType  interface{}
@@ -31,6 +32,7 @@ func TestDetermineExporterExtension(t *testing.T) {
 			name:         "file with datalocation",
 			cfg:          internal.ConfigurationData{},
 			dataLocation: "data/",
+			output:       "json",
 			expectedType: &export.FileExport{
 				FileType:       "json",
 				FileName:       "user",
@@ -41,6 +43,7 @@ func TestDetermineExporterExtension(t *testing.T) {
 		{
 			name:         "file",
 			dataLocation: "",
+			output:       "json",
 			cfg: internal.ConfigurationData{
 				Export: internal.ConfigExport{
 					Method: "file",
@@ -59,6 +62,7 @@ func TestDetermineExporterExtension(t *testing.T) {
 			name:          "aws",
 			expextedError: false,
 			dataLocation:  "",
+			output:        "json",
 			setAWScreds:   true,
 			cfg: internal.ConfigurationData{
 				Export: internal.ConfigExport{
@@ -75,6 +79,7 @@ func TestDetermineExporterExtension(t *testing.T) {
 			name:          "aws with datalocation",
 			expextedError: false,
 			dataLocation:  "whoopdata",
+			output:        "json",
 			setAWScreds:   true,
 			cfg: internal.ConfigurationData{
 				Export: internal.ConfigExport{
@@ -89,6 +94,7 @@ func TestDetermineExporterExtension(t *testing.T) {
 		},
 		{
 			name:          "aws with error",
+			output:        "json",
 			expextedError: true,
 			setEnvCreds:   false,
 			setAWScreds:   false,
@@ -105,13 +111,19 @@ func TestDetermineExporterExtension(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+
+			cFlags := cliFlags{
+				dataLocation: test.dataLocation,
+				output:       test.output,
+			}
+
 			if test.setEnvCreds {
 				setEnvCreds(false, false, test.setAWScreds)
 			}
 
 			test.client = client
 
-			exporterMethod, err := determineExporterExtension(test.cfg, test.client, dataLocation)
+			exporterMethod, err := determineExporterExtension(test.cfg, test.client, cFlags)
 			if (err != nil) != test.expextedError {
 				t.Errorf("expected error: %v, got: %v", test.expextedError, err)
 			}
@@ -248,4 +260,88 @@ func setEnvCreds(setPassword, setToken, setAWS bool) {
 		os.Setenv("AWS_DEFAULT_REGION", "us-west-2")
 	}
 
+}
+
+func TestGetFileType(t *testing.T) {
+
+	tests := []struct {
+		name     string
+		cfg      internal.ConfigurationData
+		expected string
+	}{
+		{
+			name:     "File - json",
+			expected: "json",
+			cfg: internal.ConfigurationData{
+				Export: internal.ConfigExport{
+					FileExport: export.FileExport{
+						FileType: "json",
+					},
+				},
+			},
+		},
+		{
+			name:     "File - xlsx",
+			expected: "xlsx",
+			cfg: internal.ConfigurationData{
+				Export: internal.ConfigExport{
+					FileExport: export.FileExport{
+						FileType: "xlsx",
+					},
+				},
+			},
+		},
+		{
+			name:     "File - No Value Specified",
+			expected: "json",
+			cfg: internal.ConfigurationData{
+				Export: internal.ConfigExport{},
+			},
+		},
+		{
+			name:     "AWS S3 - xlsx",
+			expected: "xlsx",
+			cfg: internal.ConfigurationData{
+				Export: internal.ConfigExport{
+					AWSS3: export.AWS_S3{
+						FileConfig: export.FileExport{
+							FileType: "xlsx",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:     "AWS S3 - json",
+			expected: "json",
+			cfg: internal.ConfigurationData{
+				Export: internal.ConfigExport{
+					AWSS3: export.AWS_S3{
+						FileConfig: export.FileExport{
+							FileType: "json",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:     "AWS S3 - No Value Specified",
+			expected: "json",
+			cfg: internal.ConfigurationData{
+				Export: internal.ConfigExport{
+					AWSS3: export.AWS_S3{},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+
+			result := getFileType(test.cfg)
+			if result != test.expected {
+				t.Errorf("expected: %s, got: %s", test.expected, result)
+			}
+		})
+	}
 }

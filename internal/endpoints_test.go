@@ -271,7 +271,7 @@ func TestGetSleepCollection(t *testing.T) {
 						},
 					},
 				},
-				NextToken: "",
+				NextToken: nil,
 			},
 			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				r.Method = "GET"
@@ -353,7 +353,7 @@ func TestGetSleepCollection(t *testing.T) {
 						},
 					},
 				},
-				NextToken: "",
+				NextToken: nil,
 			},
 			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				r.Method = "GET"
@@ -610,7 +610,7 @@ func TestGetRecoveryCollection(t *testing.T) {
 						},
 					},
 				},
-				NextToken: "",
+				NextToken: nil,
 			},
 			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				r.Method = "GET"
@@ -662,7 +662,7 @@ func TestGetRecoveryCollection(t *testing.T) {
 						},
 					},
 				},
-				NextToken: "",
+				NextToken: nil,
 			},
 			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				r.Method = "GET"
@@ -710,7 +710,9 @@ func TestGetRecoveryCollection(t *testing.T) {
 			true,
 		},
 		{
-			0, RecoveryCollection{},
+			0, RecoveryCollection{
+				NextToken: nil,
+			},
 			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				r.Method = "GET"
 				w.WriteHeader(http.StatusInternalServerError)
@@ -846,7 +848,7 @@ func TestGetWorkoutCollection(t *testing.T) {
 						},
 					},
 				},
-				NextToken: "",
+				NextToken: nil,
 			},
 			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				r.Method = "GET"
@@ -924,7 +926,7 @@ func TestGetWorkoutCollection(t *testing.T) {
 						},
 					},
 				},
-				NextToken: "",
+				NextToken: nil,
 			},
 			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				r.Method = "GET"
@@ -1167,7 +1169,7 @@ func TestGetCycleCollection(t *testing.T) {
 						},
 					},
 				},
-				NextToken: "",
+				NextToken: nil,
 			},
 			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				r.Method = "GET"

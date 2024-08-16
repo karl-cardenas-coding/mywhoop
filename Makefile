@@ -12,11 +12,8 @@ license:
 
 opensource:
 	@echo "Checking for open source licenses"
-	~/go/bin/go-licenses report github.com/karl-cardenas-coding/mywhoop --ignore $$(go list -m) --include_tests \
-		--ignore $$(tr -d ' \n' <<<"$${{ inputs.ignore-modules }}") \
-		--ignore $$(tr -d ' \n' <<<"$${{ inputs.ignore-modules }}") \
-		--ignore $$(go list std | awk 'NR > 1 { printf(",") } { printf("%s",$0) } END { print "" }') \
-		--template=docs/open-source.tpl > docs/open-source.md
+	~/go/bin/go-licenses report github.com/karl-cardenas-coding/mywhoop --template=docs/open-source.tpl > docs/open-source.md
+	
 
 tests: ## Run tests
 	@echo "Running tests"
@@ -25,7 +22,7 @@ tests: ## Run tests
 
 tests-coverage: ## Start Go Test with code coverage
 	@echo "Running Go Tests with code coverage"
-	go test -race -shuffle on -cover -coverprofile=coverage.out -covermode=atomic  ./...
+	go test -v -race -shuffle on -cover -coverprofile=coverage.out -covermode=atomic  ./...
 
 view-coverage: ## View the code coverage
 	@echo "Viewing the code coverage"

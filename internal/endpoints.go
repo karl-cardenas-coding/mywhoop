@@ -126,14 +126,13 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, url, 
 	}
 
 	bo := generateBackoff()
-
+	slog.Info(("Requesting sleep collection from Whoop API"))
 	for continueLoop {
-
-		slog.Debug("URL", slog.String("URL", urlWithFilters))
 
 		if nextLoopUrl == "" {
 			nextLoopUrl = urlWithFilters
 		}
+		slog.Debug("URL", slog.String("URL", nextLoopUrl))
 		req, err := http.NewRequestWithContext(context.Background(), method, nextLoopUrl, nil)
 		if err != nil {
 			LogError(err)
@@ -159,6 +158,11 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, url, 
 
 			defer response.Body.Close()
 
+			if response.StatusCode == http.StatusTooManyRequests {
+				slog.Info("Too many requests. Retrying...")
+				return errors.New("too many requests")
+			}
+
 			if response.StatusCode > 400 && response.StatusCode <= 404 || response.StatusCode >= 500 {
 				continueLoop = false
 				err = fmt.Errorf("request errors related to authentication or server error. Status code is: %d", response.StatusCode)
@@ -172,6 +176,10 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, url, 
 				return err
 			}
 
+			if len(body) == 0 {
+				return errors.New("the Whoop API returned an empty response body for some sleep records. Retrying... ")
+			}
+
 			var sleep SleepCollection
 			err = json.Unmarshal(body, &sleep)
 			if err != nil {
@@ -182,10 +190,10 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, url, 
 			sleepRecords = append(sleepRecords, sleep.SleepCollectionRecords...)
 			nextToken := sleep.NextToken
 
-			if nextToken == "" {
+			if nextToken == nil {
 				continueLoop = false
 			} else {
-				nextLoopUrl = urlWithFilters + "&nextToken=" + nextToken
+				nextLoopUrl = urlWithFilters + "&nextToken=" + *nextToken
 			}
 
 			return nil
@@ -222,15 +230,13 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, ur
 	}
 
 	bo := generateBackoff()
-
+	slog.Info(("Requesting recovery collection from Whoop API"))
 	for continueLoop {
-
-		slog.Info(("Requesting recovery collection from Whoop API"))
-		slog.Debug("URL", slog.String("URL", urlWithFilters))
 
 		if nextLoopUrl == "" {
 			nextLoopUrl = urlWithFilters
 		}
+		slog.Debug("URL", slog.String("URL", nextLoopUrl))
 		req, err := http.NewRequestWithContext(context.Background(), method, nextLoopUrl, nil)
 		if err != nil {
 			LogError(err)
@@ -256,6 +262,11 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, ur
 
 			defer response.Body.Close()
 
+			if response.StatusCode == http.StatusTooManyRequests {
+				slog.Info("Too many requests. Retrying...")
+				return errors.New("too many requests")
+			}
+
 			if response.StatusCode > 400 && response.StatusCode <= 404 || response.StatusCode >= 500 {
 				continueLoop = false
 				err = fmt.Errorf("request errors related to authentication or server error. Status code is: %d", response.StatusCode)
@@ -269,6 +280,10 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, ur
 				return err
 			}
 
+			if len(body) == 0 {
+				return errors.New("the Whoop API returned an empty response body for some recovery records. Retrying... ")
+			}
+
 			var recovery RecoveryCollection
 			err = json.Unmarshal(body, &recovery)
 			if err != nil {
@@ -280,10 +295,10 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, ur
 			recoveryRecords = append(recoveryRecords, recovery.RecoveryRecords...)
 			nextToken := recovery.NextToken
 
-			if nextToken == "" {
+			if nextToken == nil {
 				continueLoop = false
 			} else {
-				nextLoopUrl = urlWithFilters + "&nextToken=" + nextToken
+				nextLoopUrl = urlWithFilters + "&nextToken=" + *nextToken
 			}
 
 			return nil
@@ -319,15 +334,13 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, url
 	}
 
 	bo := generateBackoff()
-
+	slog.Info(("Requesting workout collection from Whoop API"))
 	for continueLoop {
-
-		slog.Info(("Requesting workout collection from Whoop API"))
-		slog.Debug("URL", slog.String("URL", urlWithFilters))
 
 		if nextLoopUrl == "" {
 			nextLoopUrl = urlWithFilters
 		}
+		slog.Debug("URL", slog.String("URL", nextLoopUrl))
 		req, err := http.NewRequestWithContext(context.Background(), method, nextLoopUrl, nil)
 		if err != nil {
 			LogError(err)
@@ -353,6 +366,11 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, url
 
 			defer response.Body.Close()
 
+			if response.StatusCode == http.StatusTooManyRequests {
+				slog.Info("Too many requests. Retrying...")
+				return errors.New("too many requests")
+			}
+
 			if response.StatusCode > 400 && response.StatusCode <= 404 || response.StatusCode >= 500 {
 				continueLoop = false
 				err = fmt.Errorf("request errors related to authentication or server error. Status code is: %d", response.StatusCode)
@@ -367,9 +385,14 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, url
 				return err
 			}
 
+			if len(body) == 0 {
+				return errors.New("the Whoop API returned an empty response body for some workout records. Retrying... ")
+			}
+
 			var workout WorkoutCollection
 			err = json.Unmarshal(body, &workout)
 			if err != nil {
+				slog.Debug("Workout", "data", workout)
 				LogError(err)
 				err = backoff.Permanent(err)
 				return err
@@ -378,10 +401,10 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, url
 			workoutRecords = append(workoutRecords, workout.Records...)
 			nextToken := workout.NextToken
 
-			if nextToken == "" {
+			if nextToken == nil {
 				continueLoop = false
 			} else {
-				nextLoopUrl = urlWithFilters + "&nextToken=" + nextToken
+				nextLoopUrl = urlWithFilters + "&nextToken=" + *nextToken
 			}
 
 			return nil
@@ -414,15 +437,13 @@ func (u User) GetCycleCollection(ctx context.Context, client *http.Client, url, 
 	}
 
 	bo := generateBackoff()
-
+	slog.Info(("Requesting cycle collection from Whoop API"))
 	for continueLoop {
-
-		slog.Info(("Requesting cycle collection from Whoop API"))
-		slog.Debug("URL", slog.String("URL", urlWithFilters))
 
 		if nextLoopUrl == "" {
 			nextLoopUrl = urlWithFilters
 		}
+		slog.Debug("URL", slog.String("URL", nextLoopUrl))
 		req, err := http.NewRequestWithContext(context.Background(), method, nextLoopUrl, nil)
 		if err != nil {
 			LogError(err)
@@ -462,20 +483,25 @@ func (u User) GetCycleCollection(ctx context.Context, client *http.Client, url, 
 			}
 
 			var currentCycle CycleCollection
+
+			if len(body) == 0 {
+				return errors.New("the Whoop API returned an empty response body for some cycle records. Retrying... ")
+			}
+
 			err = json.Unmarshal(body, &currentCycle)
 			if err != nil {
-				LogError(err)
 				err = backoff.Permanent(err)
+				LogError(err)
 				return err
 			}
 
 			cycleRecords = append(cycleRecords, currentCycle.Records...)
 			nextToken := currentCycle.NextToken
 
-			if nextToken == "" {
+			if nextToken == nil {
 				continueLoop = false
 			} else {
-				nextLoopUrl = urlWithFilters + "&nextToken=" + nextToken
+				nextLoopUrl = urlWithFilters + "&nextToken=" + *nextToken
 			}
 
 			return nil

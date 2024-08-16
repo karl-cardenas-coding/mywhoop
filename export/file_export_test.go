@@ -68,6 +68,13 @@ func TestNewFileExport(t *testing.T) {
 			fileNamePrefix: "",
 			serverMode:     true,
 		},
+		{
+			filePath:       "tests/data/",
+			fileType:       "xlsx",
+			fileName:       "",
+			fileNamePrefix: "",
+			serverMode:     true,
+		},
 	}
 
 	for _, tc := range tests {
@@ -148,6 +155,16 @@ func TestGenerateName(t *testing.T) {
 				ServerMode:     true,
 			},
 			want: fmt.Sprintf("test_user_%s.json", getCurrentDate()),
+		},
+		{
+			description: "Test case 6: Excel file",
+			file: FileExport{
+				FileNamePrefix: "test",
+				FileName:       "user",
+				FileType:       "xlsx",
+				ServerMode:     true,
+			},
+			want: fmt.Sprintf("test_user_%s.xlsx", getCurrentDate()),
 		},
 	}
 
@@ -269,7 +286,7 @@ func TestExportDataError(t *testing.T) {
 
 }
 
-func TestWriteToFileError(t *testing.T) {
+func TestWriteFileError(t *testing.T) {
 
 	tests := []struct {
 		id int

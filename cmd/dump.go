@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/karl-cardenas-coding/mywhoop/internal"
 	"github.com/spf13/cobra"
@@ -16,6 +17,7 @@ import (
 var (
 	dataLocation string
 	filter       string
+	output       string
 )
 
 var dumpCmd = &cobra.Command{
@@ -32,6 +34,7 @@ var dumpCmd = &cobra.Command{
 func init() {
 	dumpCmd.PersistentFlags().StringVarP(&dataLocation, "location", "l", "", "The location to dump the data to. Default is the current directory's data/ folder.")
 	dumpCmd.PersistentFlags().StringVarP(&filter, "filter", "f", "", "Provide a filter string to narrow down the data to download. For example, start=2024-01-01T00:00:00.000Z&end=2022-04-01T00:00:00.000Z")
+	dumpCmd.PersistentFlags().StringVarP(&output, "output", "o", "json", "The output format. Supported types are json or csv. Default is json.")
 
 	rootCmd.AddCommand(dumpCmd)
 }
@@ -51,6 +54,20 @@ func dump(ctx context.Context) error {
 	cfg := Configuration
 	cfg.Server.Enabled = false
 
+	if filter != "" {
+		slog.Info("Filtering data with:", "filter", filter)
+	}
+
+	if output != "" {
+		slog.Info("Output format set to", "output", output)
+	}
+
+	cliFlags := cliFlags{
+		dataLocation: dataLocation,
+		filter:       filter,
+		output:       strings.ToLower(output),
+	}
+
 	ok, token, err := internal.VerfyToken(cfg.Credentials.CredentialsFile)
 	if err != nil {
 		slog.Error("unable to verify token", "error", err)
@@ -64,10 +81,6 @@ func dump(ctx context.Context) error {
 	notificationMethod, err := determineNotificationExtension(cfg)
 	if err != nil {
 		return err
-	}
-
-	if filter != "" {
-		slog.Info("Filtering data with:", "filter", filter)
 	}
 
 	data, err := user.GetUserProfileData(ctx, client, internal.DEFAULT_WHOOP_API_USER_DATA_URL, token.AccessToken, ua)
@@ -104,7 +117,7 @@ func dump(ctx context.Context) error {
 		return err
 	}
 
-	sleep.NextToken = ""
+	sleep.NextToken = nil
 	user.SleepCollection = *sleep
 
 	recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, filter, ua)
@@ -117,7 +130,7 @@ func dump(ctx context.Context) error {
 		return err
 	}
 
-	recovery.NextToken = ""
+	recovery.NextToken = nil
 	user.RecoveryCollection = *recovery
 
 	workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, filter, ua)
@@ -130,7 +143,7 @@ func dump(ctx context.Context) error {
 		return err
 	}
 
-	workout.NextToken = ""
+	workout.NextToken = nil
 	user.WorkoutCollection = *workout
 
 	cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, filter, ua)
@@ -142,20 +155,47 @@ func dump(ctx context.Context) error {
 		}
 		return err
 	}
-	cycle.NextToken = ""
+	cycle.NextToken = nil
 	user.CycleCollection = *cycle
 
-	finalDataRaw, err := json.MarshalIndent(user, "", "  ")
-	if err != nil {
-		internal.LogError(err)
-		notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
-		if notifyErr != nil {
-			slog.Error("unable to send notification", "error", notifyErr)
+	var finalDataRaw []byte
+	switch output {
+	case "json":
+		finalDataRaw, err = json.MarshalIndent(user, "", "  ")
+		if err != nil {
+			internal.LogError(err)
+			notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
+			return err
 		}
-		return err
+
+	case "xlsx":
+		finalDataRaw, err = internal.ConvertToExcel(user)
+		if err != nil {
+			internal.LogError(err)
+			notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
+			return err
+		}
+
+	default:
+		finalDataRaw, err = json.MarshalIndent(user, "", "  ")
+		if err != nil {
+			internal.LogError(err)
+			notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
+			return err
+		}
+
 	}
 
-	exporterMethod, err := determineExporterExtension(cfg, client, dataLocation)
+	exporterMethod, err := determineExporterExtension(cfg, client, cliFlags)
 	if err != nil {
 		slog.Error("unable to determine export method", "error", err)
 		notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())

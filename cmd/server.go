@@ -70,7 +70,7 @@ func server(ctx context.Context) error {
 		slog.Error("unable to evaluate configuration options", "error", err)
 		return err
 	}
-	exportSelected, err := determineExporterExtension(cfg, client, "")
+	exportSelected, err := determineExporterExtension(cfg, client, cliFlags{})
 	if err != nil {
 		slog.Error("unable to determine exporter extension", "error", err)
 		return err
@@ -282,7 +282,7 @@ func downloadWhoopData(ctx context.Context, config internal.ConfigurationData, c
 
 	var user internal.User
 
-	finalDataRaw, err := getData(ctx, user, client, token, ua)
+	finalDataRaw, err := getData(ctx, user, client, token, ua, getFileType(config))
 	if err != nil {
 		slog.Error("unable to get data", "error", err)
 		notifyErr := notify.Publish(client, []byte(fmt.Sprintf("Failed to get data from the Whoop API. Additional context below: \n %s", err)), internal.EventErrors.String())
@@ -365,7 +365,7 @@ func refreshJWT(ctx context.Context, client *http.Client, credentialsFilePath st
 }
 
 // getData queries the Whoop API and gets the user data
-func getData(ctx context.Context, user internal.User, client *http.Client, token oauth2.Token, ua string) ([]byte, error) {
+func getData(ctx context.Context, user internal.User, client *http.Client, token oauth2.Token, ua, fileType string) ([]byte, error) {
 
 	startTime, endTime := internal.GenerateLast24HoursString()
 	filterString := fmt.Sprintf("start=%s&end=%s", startTime, endTime)
@@ -378,7 +378,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 		return []byte{}, err
 	}
 
-	sleep.NextToken = ""
+	sleep.NextToken = nil
 	user.SleepCollection = *sleep
 
 	recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, filterString, ua)
@@ -387,7 +387,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 		return []byte{}, err
 	}
 
-	recovery.NextToken = ""
+	recovery.NextToken = nil
 	user.RecoveryCollection = *recovery
 
 	workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, filterString, ua)
@@ -396,7 +396,7 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 		return []byte{}, err
 	}
 
-	workout.NextToken = ""
+	workout.NextToken = nil
 	user.WorkoutCollection = *workout
 
 	cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, filterString, ua)
@@ -405,13 +405,30 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 		return []byte{}, err
 	}
 
-	cycle.NextToken = ""
+	cycle.NextToken = nil
 	user.CycleCollection = *cycle
 
-	finalDataRaw, err := json.MarshalIndent(user, "", "  ")
-	if err != nil {
-		internal.LogError(err)
-		return finalDataRaw, err
+	var finalDataRaw []byte
+	switch fileType {
+	case "json":
+		finalDataRaw, err = json.MarshalIndent(user, "", "  ")
+		if err != nil {
+			internal.LogError(err)
+			return finalDataRaw, err
+		}
+	case "xlsx":
+		finalDataRaw, err = internal.ConvertToExcel(user)
+		if err != nil {
+			internal.LogError(err)
+			return finalDataRaw, err
+		}
+	default:
+		finalDataRaw, err = json.MarshalIndent(user, "", "  ")
+		if err != nil {
+			internal.LogError(err)
+			return finalDataRaw, err
+		}
+
 	}
 
 	return finalDataRaw, nil
