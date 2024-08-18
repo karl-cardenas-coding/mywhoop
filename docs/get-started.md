@@ -67,7 +67,7 @@ The following steps will guide you through the process of setting up MyWhoop on 
 7. Download the MyWhoop Docker image.
 
     ```shell
-    docker pull ghcr.io/karl-cardenas-coding/mywhoop:v0.1.1
+    docker pull ghcr.io/karl-cardenas-coding/mywhoop:v0.1.2
     ```
 
 8. Create a directory where you want to store the MyWhoop data and credentials token. The command below creates a folder in your home directory and changes to that directory.
@@ -83,7 +83,7 @@ The following steps will guide you through the process of setting up MyWhoop on 
     --volume $PWD:/data  \
     -e WHOOP_CLIENT_ID=$WHOOP_CLIENT_ID \
     -e WHOOP_CLIENT_SECRET=$WHOOP_CLIENT_SECRET  \
-    ghcr.io/karl-cardenas-coding/mywhoop:v0.1.1 login \
+    ghcr.io/karl-cardenas-coding/mywhoop:v0.1.2 login \
     --no-auto-open \
     --credentials /app/token.json
     ```
@@ -112,7 +112,7 @@ The following steps will guide you through the process of setting up MyWhoop on 
     docker run --publish 8080:8080 --volume $PWD:/app \
     -e WHOOP_CLIENT_ID=$WHOOP_CLIENT_ID \
     -e WHOOP_CLIENT_SECRET=$WHOOP_CLIENT_SECRET \
-    ghcr.io/karl-cardenas-coding/mywhoop:v0.1.1 dump \
+    ghcr.io/karl-cardenas-coding/mywhoop:v0.1.2 dump \
     --credentials /app/token.json \
     --location /app
     ```
