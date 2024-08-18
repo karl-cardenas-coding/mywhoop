@@ -567,10 +567,11 @@ func TestGetAuthURL(t *testing.T) {
 	tests := []struct {
 		description string
 		auth        oauth2.Config
+		enableState bool
 	}{
 		{
-			"Test Case - 1: Valid auth",
-			oauth2.Config{
+			description: "Test Case - 1: Valid auth",
+			auth: oauth2.Config{
 				ClientID:     "testClientID",
 				ClientSecret: "testClientSecret",
 				RedirectURL:  "http://localhost:8080/redirect",
@@ -588,24 +589,58 @@ func TestGetAuthURL(t *testing.T) {
 					TokenURL: DEFAULT_ACCESS_TOKEN_URL,
 				},
 			},
+			enableState: true,
+		},
+		{
+			description: "Test Case - 2: Missing State",
+			auth: oauth2.Config{
+				ClientID:     "testClientID",
+				ClientSecret: "testClientSecret",
+				RedirectURL:  "http://localhost:8080/redirect",
+				Scopes: []string{
+					"offline",
+					"read:recovery",
+					"read:cycles",
+					"read:workout",
+					"read:sleep",
+					"read:profile",
+					"read:body_measurement",
+				},
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  DEFAULT_AUTHENTICATION_URL,
+					TokenURL: DEFAULT_ACCESS_TOKEN_URL,
+				},
+			},
+			enableState: false,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
 
-			state, err := GenerateStateOauthCookie()
-			if err != nil {
-				t.Errorf("%s: Failed to generate state cookie: %v", test.description, err)
+			var state string
+			if test.enableState {
+				s, err := GenerateStateOauthCookie()
+				if err != nil {
+					t.Errorf("%s: Failed to generate state cookie: %v", test.description, err)
+				}
+				state = s
 			}
-			authUrl := GetAuthURL(test.auth, state)
 
+			authUrl := GetAuthURL(test.auth, state)
 			if authUrl == "" {
 				t.Errorf("%s: Expected a non-empty string but got an empty string", test.description)
 			}
 
 			if !strings.HasPrefix(authUrl, "https://api.prod.whoop.com") {
 				t.Errorf("%s: Expected URL to start with https://api.prod.whoop.com but got %s", test.description, authUrl)
+			}
+
+			// Check if the state is included in the URL
+			if test.enableState {
+				if !strings.Contains(authUrl, state) {
+					t.Errorf("%s: Expected URL to contain state but it does not", test.description)
+				}
 			}
 
 		})
