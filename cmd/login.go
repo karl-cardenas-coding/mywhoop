@@ -100,8 +100,11 @@ func login() error {
 			TokenURL: internal.DEFAULT_ACCESS_TOKEN_URL,
 		},
 	}
+
+	state := internal.GenerateStateOauthCookie()
+
 	slog.Debug("Redirect Config", "URL:", "http://localhost:"+port+redirectURL)
-	authUrl := internal.GetAuthURL(*config)
+	authUrl := internal.GetAuthURL(*config, state)
 
 	if authUrl == "" {
 		return errors.New("unable to get authentication URL. Please check the client ID and client secret are correct")
@@ -113,7 +116,7 @@ func login() error {
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 	http.HandleFunc("/", landingPageHandler(GlobalStaticAssets, "web/index.html", authUrl))
 	http.HandleFunc("/close", closeHandler)
-	http.HandleFunc("/redirect", redirectHandler(GlobalStaticAssets, "web/redirect.html", "web/error.html", config, cliCfg.Credentials.CredentialsFile))
+	http.HandleFunc("/redirect", redirectHandler(GlobalStaticAssets, "web/redirect.html", "web/error.html", config, state, cliCfg.Credentials.CredentialsFile))
 
 	slog.Info("Listening on port 8080. Visit http://localhost:8080 to autenticate with the Whoop API and get an access token.")
 	err = openBrowser("http://localhost:"+port, noAutoOpenBrowser)
@@ -152,11 +155,24 @@ func landingPageHandler(assets fs.FS, indexFile string, authUrl string) http.Han
 
 // redirectHandler handles the redirect URL after authenticating with the Whoop API
 // and writes the access token to a file
-func redirectHandler(assets fs.FS, page, errorPage string, authConf *oauth2.Config, credentialsFilePath string) http.HandlerFunc {
+func redirectHandler(assets fs.FS, page, errorPage string, authConf *oauth2.Config, stateIdentifier string, credentialsFilePath string) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		code := r.URL.Query().Get("code")
 		slog.Debug("Code received", "code", code)
+
+		state := r.URL.Query().Get("state")
+
+		if state != stateIdentifier {
+			slog.Error("State does not match", "state", state)
+			err := sendErrorTemplate(w, "The unique authentication state identifier does not match the provided value from MyWhoop. You may be subject to a man-in-the-middle (MITM) attack.", http.StatusBadRequest, errorPage, assets)
+			if err != nil {
+				slog.Error("unable to send error template", "error", err)
+			}
+			return
+		}
+
+		slog.Debug("State received", "state", state)
 
 		if code == "" {
 			// slog.Info("no code received.", "Error response status: ", r.Response.StatusCode)

@@ -5,6 +5,8 @@ package internal
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,9 +29,8 @@ func getEndpoint() oauth2.Endpoint {
 }
 
 // GetAuthURL returns the URL to authenticate with the Whoop API
-func GetAuthURL(auth oauth2.Config) string {
-
-	return auth.AuthCodeURL("stateidentifier", oauth2.AccessTypeOffline)
+func GetAuthURL(auth oauth2.Config, state string) string {
+	return auth.AuthCodeURL(state, oauth2.AccessTypeOffline)
 }
 
 // GetAccessToken exchanges the access code returned from the authorization flow for an access token
@@ -157,4 +158,16 @@ func ReadTokenFromFile(filePath string) (oauth2.Token, error) {
 	}
 
 	return token, nil
+}
+
+// GenerateStateOauthCookie generates a random state string
+func GenerateStateOauthCookie() string {
+	b := make([]byte, 128)
+	rand.Read(b)
+	// only do letters and numbers
+	randString := base64.URLEncoding.EncodeToString(b)
+	// Return 8 characters of the random string
+	state := randString[:12]
+
+	return state
 }
