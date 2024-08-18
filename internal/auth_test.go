@@ -594,7 +594,11 @@ func TestGetAuthURL(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
 
-			authUrl := GetAuthURL(test.auth, GenerateStateOauthCookie())
+			state, err := GenerateStateOauthCookie()
+			if err != nil {
+				t.Errorf("%s: Failed to generate state cookie: %v", test.description, err)
+			}
+			authUrl := GetAuthURL(test.auth, state)
 
 			if authUrl == "" {
 				t.Errorf("%s: Expected a non-empty string but got an empty string", test.description)
@@ -608,10 +612,12 @@ func TestGetAuthURL(t *testing.T) {
 	}
 }
 func TestGenerateStateOauthCookie(t *testing.T) {
-	state := GenerateStateOauthCookie()
-
-	if len(state) == 0 {
+	state, err := GenerateStateOauthCookie()
+	if err != nil {
 		t.Error("Failed to generate state cookie")
 	}
 
+	if len(state) < 8 {
+		t.Error("Failed to generate state cookie")
+	}
 }

@@ -101,7 +101,10 @@ func login() error {
 		},
 	}
 
-	state := internal.GenerateStateOauthCookie()
+	state, err := internal.GenerateStateOauthCookie()
+	if err != nil {
+		return err
+	}
 
 	slog.Debug("Redirect Config", "URL:", "http://localhost:"+port+redirectURL)
 	authUrl := internal.GetAuthURL(*config, state)
@@ -159,12 +162,12 @@ func redirectHandler(assets fs.FS, page, errorPage string, authConf *oauth2.Conf
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		code := r.URL.Query().Get("code")
-		slog.Debug("Code received", "code", code)
+		// slog.Debug("Code received", "code", code)
 
 		state := r.URL.Query().Get("state")
 
 		if state != stateIdentifier {
-			slog.Error("State does not match", "state", state)
+			slog.Error("State does not match the expected stateIdentifier", "state received:", state)
 			err := sendErrorTemplate(w, "The unique authentication state identifier does not match the provided value from MyWhoop. You may be subject to a man-in-the-middle (MITM) attack.", http.StatusBadRequest, errorPage, assets)
 			if err != nil {
 				slog.Error("unable to send error template", "error", err)
@@ -172,10 +175,9 @@ func redirectHandler(assets fs.FS, page, errorPage string, authConf *oauth2.Conf
 			return
 		}
 
-		slog.Debug("State received", "state", state)
+		// slog.Debug("State received", "state", state)
 
 		if code == "" {
-			// slog.Info("no code received.", "Error response status: ", r.Response.StatusCode)
 			err := sendErrorTemplate(w, "No authorization code returned by the Whoop authorization server.", http.StatusInternalServerError, errorPage, assets)
 			if err != nil {
 				slog.Error("unable to send error template", "error", err)

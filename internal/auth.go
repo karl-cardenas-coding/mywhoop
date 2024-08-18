@@ -161,13 +161,17 @@ func ReadTokenFromFile(filePath string) (oauth2.Token, error) {
 }
 
 // GenerateStateOauthCookie generates a random state string
-func GenerateStateOauthCookie() string {
+func GenerateStateOauthCookie() (string, error) {
 	b := make([]byte, 128)
-	rand.Read(b)
+	_, err := rand.Read(b)
+	if err != nil {
+		slog.Error("unable to generate random string", "error", err)
+		return "", err
+	}
 	// only do letters and numbers
 	randString := base64.URLEncoding.EncodeToString(b)
-	// Return 8 characters of the random string
+	// Return 8 characters of the random string. The Whoop API requires a state string of at least 8 characters.
 	state := randString[:12]
 
-	return state
+	return state, nil
 }
