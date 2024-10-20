@@ -12,7 +12,7 @@ comment:
 coverage:
   precision: 2
   range:
-  - 60.0
+  - 50.0
   - 85.0
   round: down
   status:
