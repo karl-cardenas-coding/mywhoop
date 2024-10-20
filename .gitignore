@@ -26,6 +26,7 @@ go.work
 
 # VS Code 
 .DS_Store
+.vscode/
 
 # Credentials
 

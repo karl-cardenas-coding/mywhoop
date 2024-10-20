@@ -12,8 +12,8 @@ permissions:
 
 
 env: 
-  SVU_VERSION: "2.0.1"
-  GO_VERSION: "1.22"
+  SVU_VERSION: "2.2.0"
+  GO_VERSION: "1.23"
   UPX_VERSION: "4.2.4"
 
 jobs:
@@ -124,7 +124,7 @@ jobs:
 
       - uses: actions/setup-go@v4
         with:
-          go-version: "1.22"
+          go-version: ${{ env.GO_VERSION }}
           check-latest: true
 
       - name: Set up QEMU
