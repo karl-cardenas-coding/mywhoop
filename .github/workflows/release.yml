@@ -46,8 +46,8 @@ jobs:
 
      - id: tag
        run: |
-           VERSION=$(svu next --tag-mode all-branches)
-           PREV_VERSION=$(svu current --tag-mode all-branches)
+           VERSION=$(svu next --tag.mode all)
+           PREV_VERSION=$(svu current --tag.mode all)
  
            if [ "$VERSION" = "$PREV_VERSION" ]; then
              echo "no new version detected"
@@ -82,8 +82,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
          fetch-depth: 0
-
-      - run: git fetch --force --tags
+         fetch-tags: true
 
       - uses: actions/setup-go@v5.0.2
         with:
