@@ -12,8 +12,8 @@ permissions:
 
 
 env: 
-  SVU_VERSION: "2.2.0"
-  GO_VERSION: "1.23"
+  SVU_VERSION: "3.2.1"
+  GO_VERSION: "1.24"
   UPX_VERSION: "4.2.4"
 
 jobs:
