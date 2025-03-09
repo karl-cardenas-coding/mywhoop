@@ -163,7 +163,7 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, url, 
 				return errors.New("too many requests")
 			}
 
-			if response.StatusCode > 400 && response.StatusCode <= 404 || response.StatusCode >= 500 {
+			if (response.StatusCode > 400 && response.StatusCode <= 404) || response.StatusCode >= 500 {
 				continueLoop = false
 				err = fmt.Errorf("request errors related to authentication or server error. Status code is: %d", response.StatusCode)
 				err = backoff.Permanent(err)
@@ -267,7 +267,7 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, ur
 				return errors.New("too many requests")
 			}
 
-			if response.StatusCode > 400 && response.StatusCode <= 404 || response.StatusCode >= 500 {
+			if (response.StatusCode > 400 && response.StatusCode <= 404) || response.StatusCode >= 500 {
 				continueLoop = false
 				err = fmt.Errorf("request errors related to authentication or server error. Status code is: %d", response.StatusCode)
 				err = backoff.Permanent(err)
@@ -371,7 +371,7 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, url
 				return errors.New("too many requests")
 			}
 
-			if response.StatusCode > 400 && response.StatusCode <= 404 || response.StatusCode >= 500 {
+			if (response.StatusCode > 400 && response.StatusCode <= 404) || response.StatusCode >= 500 {
 				continueLoop = false
 				err = fmt.Errorf("request errors related to authentication or server error. Status code is: %d", response.StatusCode)
 				err = backoff.Permanent(err)
@@ -469,7 +469,7 @@ func (u User) GetCycleCollection(ctx context.Context, client *http.Client, url, 
 
 			defer response.Body.Close()
 
-			if response.StatusCode > 400 && response.StatusCode <= 404 || response.StatusCode >= 500 {
+			if (response.StatusCode > 400 && response.StatusCode <= 404) || response.StatusCode >= 500 {
 				continueLoop = false
 				err = backoff.Permanent(err)
 				return err
