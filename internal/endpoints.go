@@ -326,6 +326,7 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, url
 	var workoutRecords []WorkoutRecords
 	var continueLoop = true
 	var nextLoopUrl string
+	activityIDTable := InitActivityIDTable()
 
 	urlWithFilters := url
 
@@ -396,6 +397,11 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, url
 				LogError(err)
 				err = backoff.Permanent(err)
 				return err
+			}
+
+			// Add the sport name to the workout records
+			for i := range workout.Records {
+				workout.Records[i].SportName = activityIDTable[workout.Records[i].SportID]
 			}
 
 			workoutRecords = append(workoutRecords, workout.Records...)
