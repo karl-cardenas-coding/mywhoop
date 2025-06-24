@@ -27,7 +27,7 @@ The following steps will guide you through the process of setting up MyWhoop on 
 2. Click on the `Create New Application` button to start creating a new application.
 
 
-3. Fill out the application details. You can use the following details as a guide to fill out the application details.
+3. Fill out the application details. You can use the following details as a guide to complete the application form. Make sure you complete all the fields marked as required in the following table.
 
 
     | Field | Description | Required | Example |
@@ -35,7 +35,7 @@ The following steps will guide you through the process of setting up MyWhoop on 
     | Name | The name of your application. | Yes | `my-custom-app` |
     | Logo | The logo for your application. | No | - |
     | Contacts | The contact information for your application. | Yes | `email@example.com` |
-    | Privacy Policy | The URL to your application's privacy policy. | No | `https://example.com/privacy` |
+    | Privacy Policy | The URL to your application's privacy policy. | Yes | `https://example.com/privacy` |
     | Redirect URIs | The redirect URIs for your application. | Yes | `http://localhost:8080/redirect, https://localhost:8080/redirect` |
     | Scopes | The scopes required for your application. | Yes | `read:recovery, read:cycles,read:sleep, read:workout, read:profile, read:body_measurement` |
     | Webhook URL| The URL for the webhook endpoint. | No | - |
