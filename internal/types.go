@@ -162,7 +162,7 @@ type WorkoutRecords struct {
 	Start          time.Time    `json:"start" csv:"start"`
 	End            time.Time    `json:"end" csv:"end"`
 	TimezoneOffset string       `json:"timezone_offset" csv:"timezone_offset"`
-	SportID        int          `json:"sport_id" csv:"sport_id,omitempty"`
+	SportID        int          `json:"sport_id,omitempty" csv:"sport_id"`
 	SportName      string       `json:"sport_name" csv:"sport_name"`
 	ScoreState     string       `json:"score_state" csv:"score_state"`
 	Score          WorkoutScore `json:"score" csv:"score"`

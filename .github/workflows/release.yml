@@ -37,7 +37,7 @@ jobs:
 
      - name: Get svu
        run: |
-         URL=""https://github.com/caarlos0/svu/releases/download/v${SVU_VERSION}/svu_${SVU_VERSION}_linux_amd64.tar.gz"
+         URL="https://github.com/caarlos0/svu/releases/download/v${SVU_VERSION}/svu_${SVU_VERSION}_linux_amd64.tar.gz"
          wget --quiet $URL --output-document svu.tar.gz
          tar -xzf svu.tar.gz
          chmod +x svu
