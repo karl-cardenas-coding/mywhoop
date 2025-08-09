@@ -238,7 +238,7 @@ func TestGetSleepCollection(t *testing.T) {
 			0, SleepCollection{
 				SleepCollectionRecords: []SleepCollectionRecords{
 					{
-						ID:             1053725843,
+						ID:             "550e8400-e29b-41d4-a716-446655440000",
 						UserID:         11111110,
 						CreatedAt:      time.Date(2024, 05, 19, 21, 16, 24, 607000000, time.UTC),
 						UpdatedAt:      time.Date(2024, 05, 19, 21, 20, 9, 208000000, time.UTC),
@@ -278,7 +278,7 @@ func TestGetSleepCollection(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				w.Header().Set("Content-Type", "application/json")
 				_, err := w.Write([]byte(`{"records":[{
-					"id": 1053725843,
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
 					"user_id": 11111110,
 					"created_at": "2024-05-19T21:16:24.607Z",
 					"updated_at": "2024-05-19T21:20:09.208Z",
@@ -320,7 +320,7 @@ func TestGetSleepCollection(t *testing.T) {
 			0, SleepCollection{
 				SleepCollectionRecords: []SleepCollectionRecords{
 					{
-						ID:             1052702379,
+						ID:             "ecfc6a15-4661-442f-a9a4-f160dd7afae8",
 						UserID:         11111110,
 						CreatedAt:      time.Date(2024, 05, 19, 05, 40, 30, 547000000, time.UTC),
 						UpdatedAt:      time.Date(2024, 05, 19, 14, 50, 17, 496000000, time.UTC),
@@ -360,7 +360,7 @@ func TestGetSleepCollection(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				w.Header().Set("Content-Type", "application/json")
 				_, err := w.Write([]byte(`{"records":[{
-				"id": 1052702379,
+                "id": "ecfc6a15-4661-442f-a9a4-f160dd7afae8",
 				"user_id": 11111110,
 				"created_at": "2024-05-19T05:40:30.547Z",
 				"updated_at": "2024-05-19T14:50:17.496Z",
@@ -595,7 +595,7 @@ func TestGetRecoveryCollection(t *testing.T) {
 				RecoveryRecords: []RecoveryRecords{
 					{
 						CycleID:    578161638,
-						SleepID:    1059898994,
+						SleepID:    "550e8400-e29b-41d4-a716-446655440000",
 						UserID:     14465117,
 						CreatedAt:  time.Date(2024, 05, 24, 9, 20, 18, 917000000, time.UTC),
 						UpdatedAt:  time.Date(2024, 05, 24, 12, 45, 38, 5000000, time.UTC),
@@ -620,7 +620,7 @@ func TestGetRecoveryCollection(t *testing.T) {
 					"records": [
 					  {
 						"cycle_id": 578161638,
-						"sleep_id": 1059898994,
+                        "sleep_id": "550e8400-e29b-41d4-a716-446655440000",
 						"user_id": 14465117,
 						"created_at": "2024-05-24T09:20:18.917Z",
 						"updated_at": "2024-05-24T12:45:38.005Z",
@@ -647,7 +647,7 @@ func TestGetRecoveryCollection(t *testing.T) {
 				RecoveryRecords: []RecoveryRecords{
 					{
 						CycleID:    578161638,
-						SleepID:    1059898994,
+						SleepID:    "550e8400-e29b-41d4-a716-446655440000",
 						UserID:     14465117,
 						CreatedAt:  time.Date(2024, 05, 24, 9, 20, 18, 917000000, time.UTC),
 						UpdatedAt:  time.Date(2024, 05, 24, 12, 45, 38, 5000000, time.UTC),
@@ -672,7 +672,7 @@ func TestGetRecoveryCollection(t *testing.T) {
 					"records": [
 					  {
 						"cycle_id": 578161638,
-						"sleep_id": 1059898994,
+                        "sleep_id": "550e8400-e29b-41d4-a716-446655440000",
 						"user_id": 14465117,
 						"created_at": "2024-05-24T09:20:18.917Z",
 						"updated_at": "2024-05-24T12:45:38.005Z",
@@ -819,7 +819,7 @@ func TestGetWorkoutCollection(t *testing.T) {
 			0, WorkoutCollection{
 				Records: []WorkoutRecords{
 					{
-						ID:             1059528008,
+						ID:             "7bfc6a15-5521-612f-b9a4-e274dd7afae9",
 						UserID:         19999999,
 						CreatedAt:      time.Date(2024, 05, 24, 01, 48, 52, 178000000, time.UTC),
 						UpdatedAt:      time.Date(2024, 05, 24, 01, 56, 11, 338000000, time.UTC),
@@ -857,7 +857,7 @@ func TestGetWorkoutCollection(t *testing.T) {
 				_, err := w.Write([]byte(`{
 					"records": [
 					  {
-						"id": 1059528008,
+                        "id": "7bfc6a15-5521-612f-b9a4-e274dd7afae9",
 						"user_id": 19999999,
 						"created_at": "2024-05-24T01:48:52.178Z",
 						"updated_at": "2024-05-24T01:56:11.338Z",
@@ -897,7 +897,7 @@ func TestGetWorkoutCollection(t *testing.T) {
 			0, WorkoutCollection{
 				Records: []WorkoutRecords{
 					{
-						ID:             1059528008,
+						ID:             "7bfc6a15-5521-612f-b9a4-e274dd7afae9",
 						UserID:         19999999,
 						CreatedAt:      time.Date(2024, 05, 24, 01, 48, 52, 178000000, time.UTC),
 						UpdatedAt:      time.Date(2024, 05, 24, 01, 56, 11, 338000000, time.UTC),
@@ -935,7 +935,7 @@ func TestGetWorkoutCollection(t *testing.T) {
 				_, err := w.Write([]byte(`{
 					"records": [
 					  {
-						"id": 1059528008,
+                        "id": "7bfc6a15-5521-612f-b9a4-e274dd7afae9",
 						"user_id": 19999999,
 						"created_at": "2024-05-24T01:48:52.178Z",
 						"updated_at": "2024-05-24T01:56:11.338Z",
@@ -1178,7 +1178,7 @@ func TestGetCycleCollection(t *testing.T) {
 				_, err := w.Write([]byte(`{
 					"records": [
 					  {
-						"id": 571373432,
+                        "id": 571373432,
 						"user_id": 19999999,
 						"created_at": "2024-05-14T10:12:58.083Z",
 						"updated_at": "2024-05-15T13:27:45.950Z",
@@ -1194,7 +1194,7 @@ func TestGetCycleCollection(t *testing.T) {
 						}
 					  },
 					  {
-						"id": 570921306,
+                        "id": 570921306,
 						"user_id": 19999999,
 						"created_at": "2024-05-13T14:10:10.248Z",
 						"updated_at": "2024-05-14T10:13:03.243Z",

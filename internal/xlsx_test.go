@@ -73,7 +73,7 @@ func TestConvertToExcel(t *testing.T) {
 				SleepCollection: SleepCollection{
 					SleepCollectionRecords: []SleepCollectionRecords{
 						{
-							ID:             123456789,
+							ID:             "550e8400-e29b-41d4-a716-446655440000",
 							UserID:         111111111,
 							CreatedAt:      time.Date(2024, time.August, 15, 0, 0, 0, 0, time.UTC),
 							UpdatedAt:      time.Date(2024, time.August, 15, 1, 0, 0, 0, time.UTC),
@@ -111,7 +111,7 @@ func TestConvertToExcel(t *testing.T) {
 					RecoveryRecords: []RecoveryRecords{
 						{
 							CycleID:    78942566,
-							SleepID:    655468825,
+							SleepID:    "550e8400-e29b-41d4-a716-446655440000",
 							UserID:     111111111,
 							CreatedAt:  time.Date(2024, time.August, 15, 0, 0, 0, 0, time.UTC),
 							UpdatedAt:  time.Date(2024, time.August, 15, 1, 0, 0, 0, time.UTC),
@@ -130,7 +130,7 @@ func TestConvertToExcel(t *testing.T) {
 				WorkoutCollection: WorkoutCollection{
 					Records: []WorkoutRecords{
 						{
-							ID:             48588744545,
+							ID:             "7bfc6a15-5521-612f-b9a4-e274dd7afae9",
 							UserID:         111111111,
 							CreatedAt:      time.Date(2024, time.August, 15, 0, 6, 25, 0, time.UTC),
 							UpdatedAt:      time.Date(2024, time.August, 15, 0, 7, 0, 0, time.UTC),
@@ -206,7 +206,7 @@ func TestConvertToExcel(t *testing.T) {
 					RecoveryRecords: []RecoveryRecords{
 						{
 							CycleID:    78942566,
-							SleepID:    655468825,
+							SleepID:    "550e8400-e29b-41d4-a716-446655440000",
 							UserID:     111111111,
 							CreatedAt:  time.Date(2024, time.August, 15, 0, 0, 0, 0, time.UTC),
 							UpdatedAt:  time.Date(2024, time.August, 15, 1, 0, 0, 0, time.UTC),
@@ -225,7 +225,7 @@ func TestConvertToExcel(t *testing.T) {
 				WorkoutCollection: WorkoutCollection{
 					Records: []WorkoutRecords{
 						{
-							ID:             48588744545,
+							ID:             "7bfc6a15-5521-612f-b9a4-e274dd7afae9",
 							UserID:         111111111,
 							CreatedAt:      time.Date(2024, time.August, 15, 0, 6, 25, 0, time.UTC),
 							UpdatedAt:      time.Date(2024, time.August, 15, 0, 7, 0, 0, time.UTC),
