@@ -121,7 +121,7 @@ func login() error {
 	http.HandleFunc("/close", closeHandler)
 	http.HandleFunc("/redirect", redirectHandler(GlobalStaticAssets, "web/redirect.html", "web/error.html", config, state, cliCfg.Credentials.CredentialsFile))
 
-	slog.Info("Listening on port " + port + ". Visit http://localhost:" + port + " to autenticate with the Whoop API and get an access token.")
+	slog.Info("Listening on port " + port + ". Visit http://localhost:" + port + " to authenticate with the Whoop API and get an access token.")
 	err = openBrowser("http://localhost:"+port, noAutoOpenBrowser)
 	if err != nil {
 		slog.Error("unable to open web browser automaticaly", "error", err)
