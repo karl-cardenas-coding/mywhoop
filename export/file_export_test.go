@@ -15,10 +15,10 @@ import (
 
 type User struct {
 	UserData         UserData         `json:"user_data"`
-	UserMesaurements UserMesaurements `json:"user_mesaurements"`
+	UserMeasurements UserMeasurements `json:"user_measurements"`
 }
 
-type UserMesaurements struct {
+type UserMeasurements struct {
 	HeightMeter    float64 `json:"height_meter"`
 	WeightKilogram float64 `json:"weight_kilogram"`
 	MaxHeartRate   int     `json:"max_heart_rate"`
@@ -263,7 +263,7 @@ func TestExportDataError(t *testing.T) {
 			FirstName: "John",
 			LastName:  "Doe",
 		},
-		UserMesaurements: UserMesaurements{
+		UserMeasurements: UserMeasurements{
 			HeightMeter:    1.778,
 			WeightKilogram: 58.9,
 			MaxHeartRate:   125,

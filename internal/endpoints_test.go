@@ -140,12 +140,12 @@ func TestGetUserMeasurements(t *testing.T) {
 
 	tests := []struct {
 		id              int
-		userMeasurement UserMesaurements
+		userMeasurement UserMeasurements
 		ts              *httptest.Server
 		errorExpected   bool
 	}{
 		{
-			0, UserMesaurements{
+			0, UserMeasurements{
 				HeightMeter:    1.78,
 				WeightKilogram: 66.678085,
 				MaxHeartRate:   198,
@@ -166,7 +166,7 @@ func TestGetUserMeasurements(t *testing.T) {
 			false,
 		},
 		{
-			0, UserMesaurements{},
+			0, UserMeasurements{},
 			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				r.Method = "GET"
 				w.WriteHeader(http.StatusInternalServerError)
@@ -180,7 +180,7 @@ func TestGetUserMeasurements(t *testing.T) {
 			true,
 		},
 		{
-			0, UserMesaurements{},
+			0, UserMeasurements{},
 			httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				r.Method = "GET"
 				w.WriteHeader(http.StatusOK)
@@ -202,7 +202,7 @@ func TestGetUserMeasurements(t *testing.T) {
 		defer test.ts.Close()
 		ctx := context.Background()
 		testUser := User{
-			UserMesaurements: test.userMeasurement,
+			UserMeasurements: test.userMeasurement,
 		}
 
 		result, err := testUser.GetUserMeasurements(ctx, client, test.ts.URL, "abc", "mock-user-agent")

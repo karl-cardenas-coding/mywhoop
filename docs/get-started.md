@@ -138,7 +138,7 @@ The following steps will guide you through the process of setting up MyWhoop on 
         "first_name": "John",
         "last_name": "Doe "
     },
-    "user_mesaurements": {
+    "user_measurements": {
         "height_meter": 1.48,
         "weight_kilogram": 66.678085,
         "max_heart_rate": 198

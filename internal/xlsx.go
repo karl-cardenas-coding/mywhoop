@@ -40,9 +40,9 @@ func ConvertToExcel(userData User) ([]byte, error) {
 		userData.UserData.FirstName,
 		userData.UserData.LastName,
 		userData.UserData.Email,
-		userData.UserMesaurements.HeightMeter,
-		userData.UserMesaurements.WeightKilogram,
-		userData.UserMesaurements.MaxHeartRate,
+		userData.UserMeasurements.HeightMeter,
+		userData.UserMeasurements.WeightKilogram,
+		userData.UserMeasurements.MaxHeartRate,
 	})
 	if err != nil {
 		return csvData, fmt.Errorf("failed to set row in User Data sheet: %v", err.Error())
