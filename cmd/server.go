@@ -372,6 +372,14 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 
 	slog.Debug("Filter string", "filter", filterString)
 
+	measurements, err := user.GetUserMeasurements(ctx, client, internal.DEFAULT_WHOOP_API_USER_MEASUREMENT_DATA_URL, token.AccessToken, ua)
+	if err != nil {
+		internal.LogError(err)
+		return []byte{}, err
+	}
+
+	user.UserMeasurements = *measurements
+
 	sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, filterString, ua)
 	if err != nil {
 		internal.LogError(err)
