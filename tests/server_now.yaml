@@ -1,0 +1,21 @@
+# Copyright (c) karl-cardenas-coding
+# SPDX-License-Identifier: Apache-2.0
+
+export:
+  method: file
+  fileExport:
+    fileName: "user"
+    filePath: "data/"
+    fileType: "json"
+    fileNamePrefix: ""
+    serverMode: true
+notification:
+  method: "ntfy"
+  ntfy:
+    serverEndpoint: "http://ntfy.hole:2586"
+    subscriptionID: "1234567890"
+server:
+  enabled: true
+  crontab: "* * * * *"
+debug: debug
+

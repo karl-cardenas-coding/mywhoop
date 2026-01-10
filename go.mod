@@ -1,6 +1,6 @@
 module github.com/karl-cardenas-coding/mywhoop
 
-go 1.24
+go 1.25
 
 require (
 	github.com/aws/aws-sdk-go-v2/config v1.30.3
