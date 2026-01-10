@@ -63,7 +63,7 @@ jobs:
               go get
 
         - name: Run golangci-lint
-          uses: golangci/golangci-lint-action@v6.0.1
+          uses: golangci/golangci-lint-action@v9.2.0
           with:
               args: --verbose --timeout=2m
 
