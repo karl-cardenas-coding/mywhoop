@@ -26,7 +26,7 @@ type AuthCredentials struct {
 
 type User struct {
 	UserData           UserData           `json:"user_data,omitempty" csv:"user_data"`
-	UserMesaurements   UserMesaurements   `json:"user_mesaurements,omitempty" csv:"user_mesaurements"`
+	UserMeasurements   UserMeasurements   `json:"user_measurements,omitempty" csv:"user_measurements"`
 	SleepCollection    SleepCollection    `json:"sleep_collection" csv:"sleep_collection"`
 	RecoveryCollection RecoveryCollection `json:"recovery_collection" csv:"recovery_collection"`
 	WorkoutCollection  WorkoutCollection  `json:"workout_collection" csv:"workout_collection"`
@@ -40,7 +40,7 @@ type UserData struct {
 	LastName  string `json:"last_name" csv:"last_name"`
 }
 
-type UserMesaurements struct {
+type UserMeasurements struct {
 	HeightMeter    float64 `json:"height_meter" csv:"height_meter"`
 	WeightKilogram float64 `json:"weight_kilogram" csv:"weight_kilogram"`
 	MaxHeartRate   int     `json:"max_heart_rate" csv:"max_heart_rate"`

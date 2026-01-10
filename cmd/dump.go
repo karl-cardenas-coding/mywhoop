@@ -105,7 +105,7 @@ func dump(ctx context.Context) error {
 		return err
 	}
 
-	user.UserMesaurements = *measurements
+	user.UserMeasurements = *measurements
 
 	sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, filter, ua)
 	if err != nil {

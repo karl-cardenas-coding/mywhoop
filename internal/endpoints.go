@@ -64,7 +64,7 @@ func (u User) GetUserProfileData(ctx context.Context, client *http.Client, url, 
 }
 
 // GetUserMeasurements returns the user measurements provided by the user from the Whoop API
-func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, url, authToken, ua string) (*UserMesaurements, error) {
+func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, url, authToken, ua string) (*UserMeasurements, error) {
 	const method = "GET"
 
 	req, err := http.NewRequestWithContext(context.Background(), method, url, nil)
@@ -97,7 +97,7 @@ func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, url,
 		return nil, err
 	}
 
-	var user UserMesaurements
+	var user UserMeasurements
 	err = json.Unmarshal(body, &user)
 	if err != nil {
 		slog.Error("unable to unmarshal data from Whoop API user mesaurement payload", "msg", err)

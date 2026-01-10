@@ -65,7 +65,7 @@ func TestConvertToExcel(t *testing.T) {
 					LastName:  "Doe",
 					Email:     "john.doe@example.com",
 				},
-				UserMesaurements: UserMesaurements{
+				UserMeasurements: UserMeasurements{
 					HeightMeter:    180,
 					WeightKilogram: 80,
 					MaxHeartRate:   175,
@@ -197,7 +197,7 @@ func TestConvertToExcel(t *testing.T) {
 					LastName:  "Doe",
 					Email:     "john.doe@example.com",
 				},
-				UserMesaurements: UserMesaurements{
+				UserMeasurements: UserMeasurements{
 					HeightMeter:    180,
 					WeightKilogram: 80,
 					MaxHeartRate:   175,
