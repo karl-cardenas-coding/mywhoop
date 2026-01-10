@@ -42,7 +42,7 @@ func init() {
 func dump(ctx context.Context) error {
 
 	var user internal.User
-	var ua string = UserAgent
+	var ua = UserAgent
 
 	client := internal.CreateHTTPClient()
 

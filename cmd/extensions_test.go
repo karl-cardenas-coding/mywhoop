@@ -146,9 +146,9 @@ func TestDetermineExporterExtension(t *testing.T) {
 		})
 		t.Cleanup(func() {
 
-			os.Unsetenv("AWS_ACCESS_KEY_ID")
-			os.Unsetenv("AWS_SECRET_ACCESS_KEY")
-			os.Unsetenv("AWS_DEFAULT_REGION")
+			_ = os.Unsetenv("AWS_ACCESS_KEY_ID")
+			_ = os.Unsetenv("AWS_SECRET_ACCESS_KEY")
+			_ = os.Unsetenv("AWS_DEFAULT_REGION")
 
 		})
 	}
@@ -235,8 +235,8 @@ func TestDetermineNotificationExtension(t *testing.T) {
 		})
 		t.Cleanup(func() {
 			if test.setEnvCreds {
-				os.Unsetenv("NOTIFICATION_NTFY_PASSWORD")
-				os.Unsetenv("NOTIFICATION_NTFY_AUTH_TOKEN")
+				_ = os.Unsetenv("NOTIFICATION_NTFY_PASSWORD")
+				_ = os.Unsetenv("NOTIFICATION_NTFY_AUTH_TOKEN")
 			}
 		})
 	}
@@ -246,18 +246,18 @@ func TestDetermineNotificationExtension(t *testing.T) {
 func setEnvCreds(setPassword, setToken, setAWS bool) {
 
 	if setPassword {
-		os.Setenv("NOTIFICATION_NTFY_PASSWORD", "1234")
+		_ = os.Setenv("NOTIFICATION_NTFY_PASSWORD", "1234")
 	}
 
 	if setToken {
 
-		os.Setenv("NOTIFICATION_NTFY_AUTH_TOKEN", "abcd")
+		_ = os.Setenv("NOTIFICATION_NTFY_AUTH_TOKEN", "abcd")
 	}
 
 	if setAWS {
-		os.Setenv("AWS_ACCESS_KEY_ID", "1234")
-		os.Setenv("AWS_SECRET_ACCESS_KEY", "abcd")
-		os.Setenv("AWS_DEFAULT_REGION", "us-west-2")
+		_ = os.Setenv("AWS_ACCESS_KEY_ID", "1234")
+		_ = os.Setenv("AWS_SECRET_ACCESS_KEY", "abcd")
+		_ = os.Setenv("AWS_DEFAULT_REGION", "us-west-2")
 	}
 
 }

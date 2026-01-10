@@ -37,7 +37,7 @@ func TestSetup(t *testing.T) {
 	ntfy.SubscriptionID = "1234"
 	ntfy.UserName = "test"
 
-	os.Setenv("NOTIFICATION_NTFY_PASSWORD", "password")
+	_ = os.Setenv("NOTIFICATION_NTFY_PASSWORD", "password")
 
 	err := ntfy.SetUp()
 	if err != nil {
@@ -71,7 +71,7 @@ func TestSend(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Method = "POST"
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "Notification sent successfully.")
+		_, _ = fmt.Fprintln(w, "Notification sent successfully.")
 	}))
 	defer ts.Close()
 
@@ -95,7 +95,7 @@ func TestSendWithError(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "Notification failed.")
+		_, _ = fmt.Fprintln(w, "Notification failed.")
 	}))
 	defer ts.Close()
 
@@ -119,7 +119,7 @@ func TestSendWithMissingClientError(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "Notification failed.")
+		_, _ = fmt.Fprintln(w, "Notification failed.")
 	}))
 	defer ts.Close()
 
@@ -159,8 +159,8 @@ func TestCanSendMsg(t *testing.T) {
 }
 
 func clearEnvVariables() {
-	os.Unsetenv("NOTIFICATION_NTFY_PASSWORD")
-	os.Unsetenv("NOTIFICATION_NTFY_AUTH_TOKEN")
+	_ = os.Unsetenv("NOTIFICATION_NTFY_PASSWORD")
+	_ = os.Unsetenv("NOTIFICATION_NTFY_AUTH_TOKEN")
 }
 
 func TestRequiredParams(t *testing.T) {

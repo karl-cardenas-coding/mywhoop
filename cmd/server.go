@@ -268,7 +268,7 @@ func downloadWhoopData(ctx context.Context, config internal.ConfigurationData, c
 	}
 
 	slog.Info("Starting data collection")
-	var ua string = UserAgent
+	var ua = UserAgent
 
 	token, err := internal.ReadTokenFromFile(config.Credentials.CredentialsFile)
 	if err != nil {

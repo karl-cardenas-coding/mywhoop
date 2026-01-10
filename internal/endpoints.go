@@ -44,7 +44,7 @@ func (u User) GetUserProfileData(ctx context.Context, client *http.Client, url, 
 		return nil, fmt.Errorf("the HTTP request for user profile data returned an empty response struct or a non-200 status code. Status Code: %d", response.StatusCode)
 	}
 
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
@@ -89,7 +89,7 @@ func (u User) GetUserMeasurements(ctx context.Context, client *http.Client, url,
 		return nil, fmt.Errorf("the HTTP request for user profile data returned an empty response struct or a non-200 status code. Status Code: %d", response.StatusCode)
 	}
 
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
@@ -156,7 +156,7 @@ func (u User) GetSleepCollection(ctx context.Context, client *http.Client, url, 
 				return errors.New("the HTTP request for user profile data returned an empty response struct")
 			}
 
-			defer response.Body.Close()
+			defer func() { _ = response.Body.Close() }()
 
 			if response.StatusCode == http.StatusTooManyRequests {
 				slog.Info("Too many requests. Retrying...")
@@ -260,7 +260,7 @@ func (u User) GetRecoveryCollection(ctx context.Context, client *http.Client, ur
 				return errors.New("the HTTP request for recovery data returned an empty response struct")
 			}
 
-			defer response.Body.Close()
+			defer func() { _ = response.Body.Close() }()
 
 			if response.StatusCode == http.StatusTooManyRequests {
 				slog.Info("Too many requests. Retrying...")
@@ -364,7 +364,7 @@ func (u User) GetWorkoutCollection(ctx context.Context, client *http.Client, url
 				return errors.New("the HTTP request for user profile data returned an empty response struct")
 			}
 
-			defer response.Body.Close()
+			defer func() { _ = response.Body.Close() }()
 
 			if response.StatusCode == http.StatusTooManyRequests {
 				slog.Info("Too many requests. Retrying...")
@@ -467,7 +467,7 @@ func (u User) GetCycleCollection(ctx context.Context, client *http.Client, url, 
 				return errors.New("the HTTP request for cycle data returned an empty response struct")
 			}
 
-			defer response.Body.Close()
+			defer func() { _ = response.Body.Close() }()
 
 			if (response.StatusCode > 400 && response.StatusCode <= 404) || response.StatusCode >= 500 {
 				continueLoop = false

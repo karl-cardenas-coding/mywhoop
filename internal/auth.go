@@ -69,7 +69,7 @@ func RefreshToken(ctx context.Context, auth AuthRequest) (oauth2.Token, error) {
 		return oauth2.Token{}, errors.New("empty response body from HTTP requests")
 	}
 
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
@@ -101,7 +101,7 @@ func WriteLocalToken(filePath string, token *oauth2.Token) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	json, err := json.MarshalIndent(token, " ", " ")
 	if err != nil {
@@ -148,7 +148,7 @@ func ReadTokenFromFile(filePath string) (oauth2.Token, error) {
 		slog.Error("unable to open token file", "error", err)
 		return oauth2.Token{}, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	var token oauth2.Token
 	err = json.NewDecoder(f).Decode(&token)
