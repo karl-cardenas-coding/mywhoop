@@ -31,7 +31,7 @@ upx:
 
 
 archives:
-  - format: zip
+  - formats: ['zip']
     name_template: >-
       {{ .ProjectName }}_
       {{- tolower .Os }}_
@@ -42,7 +42,7 @@ archives:
 
     format_overrides:
       - goos: windows
-        format: zip
+        formats: ['zip']
 
 checksum:
   name_template: 'checksums.txt'
