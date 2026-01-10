@@ -42,7 +42,7 @@ func init() {
 func dump(ctx context.Context) error {
 
 	var user internal.User
-	var ua string = UserAgent
+	var ua = UserAgent
 
 	client := internal.CreateHTTPClient()
 
@@ -105,7 +105,7 @@ func dump(ctx context.Context) error {
 		return err
 	}
 
-	user.UserMesaurements = *measurements
+	user.UserMeasurements = *measurements
 
 	sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, filter, ua)
 	if err != nil {

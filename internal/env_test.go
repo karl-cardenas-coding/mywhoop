@@ -10,9 +10,9 @@ import (
 
 func TestExtractEnvVariablesError(t *testing.T) {
 
-	os.Unsetenv("WHOOP_CLIENT_ID")
-	os.Unsetenv("WHOOP_CLIENT_SECRET")
-	os.Unsetenv("WHOOP_CREDENTIALS_FILE")
+	_ = os.Unsetenv("WHOOP_CLIENT_ID")
+	_ = os.Unsetenv("WHOOP_CLIENT_SECRET")
+	_ = os.Unsetenv("WHOOP_CREDENTIALS_FILE")
 
 	expectedMsg := "the required env variables WHOOP_CLIENT_ID and WHOOP_CLIENT_SECRET are not set"
 	_, err := ExtractEnvVariables()
@@ -32,7 +32,7 @@ func TestExtractEnvVariablesClient(t *testing.T) {
 
 	cleanUpEnvVars()
 
-	os.Setenv("WHOOP_CLIENT_ID", "AAAAAAAAAAAAAAAAAAA")
+	_ = os.Setenv("WHOOP_CLIENT_ID", "AAAAAAAAAAAAAAAAAAA")
 	expectedMsg := "the required env variable WHOOP_CLIENT_SECRET is not set"
 	_, err := ExtractEnvVariables()
 
@@ -51,7 +51,7 @@ func TestExtractEnvVariablesClientSecret(t *testing.T) {
 
 	cleanUpEnvVars()
 
-	os.Setenv("WHOOP_CLIENT_SECRET", "BBBBBBBBBBBBBBBBBBBBB")
+	_ = os.Setenv("WHOOP_CLIENT_SECRET", "BBBBBBBBBBBBBBBBBBBBB")
 	expectedMsg := "the required env variable WHOOP_CLIENT_ID is not set"
 	_, err := ExtractEnvVariables()
 
@@ -70,8 +70,8 @@ func TestExtractEnvVariablesClientSecret(t *testing.T) {
 
 func TestExtractEnvVariablesCredsFileEmpty(t *testing.T) {
 
-	os.Setenv("WHOOP_CLIENT_ID", "AAAAAAAAAAAAAAAAAAA")
-	os.Setenv("WHOOP_CLIENT_SECRET", "BBBBBBBBBBBBBBBBBBBBB")
+	_ = os.Setenv("WHOOP_CLIENT_ID", "AAAAAAAAAAAAAAAAAAA")
+	_ = os.Setenv("WHOOP_CLIENT_SECRET", "BBBBBBBBBBBBBBBBBBBBB")
 
 	cfg, err := ExtractEnvVariables()
 	if err != nil {
@@ -89,9 +89,9 @@ func TestExtractEnvVariablesCredsFileEmpty(t *testing.T) {
 
 func TestExtractEnvVariablesCredsFile(t *testing.T) {
 
-	os.Setenv("WHOOP_CLIENT_ID", "AAAAAAAAAAAAAAAAAAA")
-	os.Setenv("WHOOP_CLIENT_SECRET", "BBBBBBBBBBBBBBBBBBBBB")
-	os.Setenv("WHOOP_CREDENTIALS_FILE", "myToken.json")
+	_ = os.Setenv("WHOOP_CLIENT_ID", "AAAAAAAAAAAAAAAAAAA")
+	_ = os.Setenv("WHOOP_CLIENT_SECRET", "BBBBBBBBBBBBBBBBBBBBB")
+	_ = os.Setenv("WHOOP_CREDENTIALS_FILE", "myToken.json")
 
 	cfg, err := ExtractEnvVariables()
 	if err != nil {
@@ -109,8 +109,7 @@ func TestExtractEnvVariablesCredsFile(t *testing.T) {
 
 // cleanUpEnvVars unsets the required env variables.
 func cleanUpEnvVars() {
-	os.Unsetenv("WHOOP_CLIENT_ID")
-	os.Unsetenv("WHOOP_CLIENT_SECRET")
-	os.Unsetenv("WHOOP_CREDENTIALS_FILE")
-
+	_ = os.Unsetenv("WHOOP_CLIENT_ID")
+	_ = os.Unsetenv("WHOOP_CLIENT_SECRET")
+	_ = os.Unsetenv("WHOOP_CREDENTIALS_FILE")
 }

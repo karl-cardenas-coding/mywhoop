@@ -1,0 +1,63 @@
+version: '3'
+
+tasks:
+  build:
+    desc: Build the binary file
+    cmds:
+      - echo "Building the binary file"
+      - go build -ldflags="-X 'github.com/karl-cardenas-coding/mywhoop/cmd.VersionString=1.0.0'" -o=whoop -v
+
+  license:
+    desc: Apply license headers
+    cmds:
+      - echo "Applying license headers..."
+      - copywrite headers
+
+  opensource:
+    desc: Check for open source licenses
+    cmds:
+      - echo "Checking for open source licenses"
+      - ~/go/bin/go-licenses report github.com/karl-cardenas-coding/mywhoop --template=docs/open-source.tpl > docs/open-source.md
+
+  tests:
+    desc: Run tests
+    cmds:
+      - echo "Running tests"
+      - go test -race -shuffle on ./...
+
+  tests-coverage:
+    desc: Start Go Test with code coverage
+    cmds:
+      - echo "Running Go Tests with code coverage"
+      - go test -v -race -shuffle on -cover -coverprofile=coverage.out -covermode=atomic ./...
+
+  view-coverage:
+    desc: View the code coverage
+    cmds:
+      - echo "Viewing the code coverage"
+      - go tool cover -html=coverage.out
+
+  nil:
+    desc: Check for nil errors
+    cmds:
+      - echo "Checking for nil errors"
+      - ~/go/bin/nilaway ./...
+
+  clean:
+    desc: Clean the binary file
+    cmds:
+      - echo "Cleaning the binary file"
+      - rm -rf dist/
+      - rm mywhoop_* || true
+
+  release-preview:
+    desc: Create a preview release
+    cmds:
+      - goreleaser release --snapshot --clean
+
+  docker-build:
+    desc: Build the Docker image
+    cmds:
+      - echo "Building the Docker image"
+      - docker build -t mywhoop .
+

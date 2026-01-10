@@ -13,7 +13,7 @@ permissions:
 
 env: 
   SVU_VERSION: "3.2.3"
-  GO_VERSION: "1.24"
+  GO_VERSION: "1.25"
   UPX_VERSION: "4.2.4"
 
 jobs:

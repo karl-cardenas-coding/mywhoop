@@ -142,13 +142,13 @@ func TestNewAwsS3Export(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 
 			if tc.setProfileEnv {
-				os.Setenv("AWS_PROFILE", "test")
+				_ = os.Setenv("AWS_PROFILE", "test")
 			}
 
-			os.Unsetenv("AWS_DEFAULT_REGION")
+			_ = os.Unsetenv("AWS_DEFAULT_REGION")
 
 			if tc.setRegionEnv {
-				os.Setenv("AWS_DEFAULT_REGION", "us-east-1")
+				_ = os.Setenv("AWS_DEFAULT_REGION", "us-east-1")
 			}
 
 			result, err := NewAwsS3Export(tc.region, tc.bucket, tc.profile, tc.client, tc.f, tc.serverMode)
@@ -600,8 +600,8 @@ func TestS3CleanUp(t *testing.T) {
 }
 
 func clearEnvVariables() {
-	os.Unsetenv("AWS_PROFILE")
-	os.Unsetenv("AWS_DEFAULT_REGION")
+	_ = os.Unsetenv("AWS_PROFILE")
+	_ = os.Unsetenv("AWS_DEFAULT_REGION")
 }
 
 func createMockBucket(s3Client *s3.Client, bucket string) error {
@@ -627,7 +627,7 @@ func s3Client(ctx context.Context, l *localstack.LocalStackContainer, region str
 	if err != nil {
 		return nil, err
 	}
-	defer provider.Close()
+	defer func() { _ = provider.Close() }()
 
 	host, err := provider.DaemonHost(ctx)
 	if err != nil {

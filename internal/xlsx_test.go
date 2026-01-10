@@ -65,7 +65,7 @@ func TestConvertToExcel(t *testing.T) {
 					LastName:  "Doe",
 					Email:     "john.doe@example.com",
 				},
-				UserMesaurements: UserMesaurements{
+				UserMeasurements: UserMeasurements{
 					HeightMeter:    180,
 					WeightKilogram: 80,
 					MaxHeartRate:   175,
@@ -197,7 +197,7 @@ func TestConvertToExcel(t *testing.T) {
 					LastName:  "Doe",
 					Email:     "john.doe@example.com",
 				},
-				UserMesaurements: UserMesaurements{
+				UserMeasurements: UserMeasurements{
 					HeightMeter:    180,
 					WeightKilogram: 80,
 					MaxHeartRate:   175,
@@ -305,7 +305,7 @@ func TestConvertToExcel(t *testing.T) {
 					t.Errorf("%s - failed to open Excel file: %v", tt.name, err)
 					return
 				}
-				defer f.Close()
+				defer func() { _ = f.Close() }()
 
 				// Check if the expected sheets exist
 				sheets := []string{"User Data", "Sleep Data", "Recovery Data", "Workout Data", "Cycle Data"}

@@ -19,7 +19,7 @@ func TestPublishSuccess(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "Notification success.")
+		_, _ = fmt.Fprintln(w, "Notification success.")
 	}))
 	defer ts.Close()
 

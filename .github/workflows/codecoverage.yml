@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 env: 
-  GO_VERSION: "1.24"    
+  GO_VERSION: "1.25"    
 
 
 jobs:
@@ -32,10 +32,13 @@ jobs:
         run: |
             go get
 
+      - name: Install Task
+        uses: go-task/setup-task@v1
+
       - name: Go Tests
         run: |
           mkdir -p tests/data
-          make tests-coverage
+          task tests-coverage
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5

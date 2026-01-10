@@ -268,7 +268,7 @@ func downloadWhoopData(ctx context.Context, config internal.ConfigurationData, c
 	}
 
 	slog.Info("Starting data collection")
-	var ua string = UserAgent
+	var ua = UserAgent
 
 	token, err := internal.ReadTokenFromFile(config.Credentials.CredentialsFile)
 	if err != nil {
@@ -371,6 +371,14 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 	filterString := fmt.Sprintf("start=%s&end=%s", startTime, endTime)
 
 	slog.Debug("Filter string", "filter", filterString)
+
+	measurements, err := user.GetUserMeasurements(ctx, client, internal.DEFAULT_WHOOP_API_USER_MEASUREMENT_DATA_URL, token.AccessToken, ua)
+	if err != nil {
+		internal.LogError(err)
+		return []byte{}, err
+	}
+
+	user.UserMeasurements = *measurements
 
 	sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, filterString, ua)
 	if err != nil {
