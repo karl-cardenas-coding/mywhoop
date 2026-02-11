@@ -14,6 +14,118 @@ import (
 
 const sqliteBusyTimeoutMS = 5000
 
+var sqliteDataTableNames = []string{
+	"user_data",
+	"user_measurements",
+	"sleep_records",
+	"recovery_records",
+	"workout_records",
+	"cycle_records",
+}
+
+var sqliteSchemaStatementsByTable = map[string]string{
+	"user_data": `CREATE TABLE IF NOT EXISTS user_data (
+			user_id INTEGER PRIMARY KEY,
+			email TEXT NOT NULL,
+			first_name TEXT NOT NULL,
+			last_name TEXT NOT NULL
+		)`,
+	"user_measurements": `CREATE TABLE IF NOT EXISTS user_measurements (
+			user_id INTEGER PRIMARY KEY,
+			height_meter REAL NOT NULL,
+			weight_kilogram REAL NOT NULL,
+			max_heart_rate INTEGER NOT NULL
+		)`,
+	"sleep_records": `CREATE TABLE IF NOT EXISTS sleep_records (
+			id TEXT PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			start TEXT NOT NULL,
+			end TEXT NOT NULL,
+			timezone_offset TEXT NOT NULL,
+			nap INTEGER NOT NULL,
+			score_state TEXT NOT NULL,
+			total_in_bed_time_milli INTEGER NOT NULL,
+			total_awake_time_milli INTEGER NOT NULL,
+			total_no_data_time_milli INTEGER NOT NULL,
+			total_light_sleep_time_milli INTEGER NOT NULL,
+			total_slow_wave_sleep_time_milli INTEGER NOT NULL,
+			total_rem_sleep_time_milli INTEGER NOT NULL,
+			sleep_cycle_count INTEGER NOT NULL,
+			disturbance_count INTEGER NOT NULL,
+			baseline_milli INTEGER NOT NULL,
+			need_from_sleep_debt_milli INTEGER NOT NULL,
+			need_from_recent_strain_milli INTEGER NOT NULL,
+			need_from_recent_nap_milli INTEGER NOT NULL,
+			respiratory_rate REAL NOT NULL,
+			sleep_performance_percentage REAL NOT NULL,
+			sleep_consistency_percentage REAL NOT NULL,
+			sleep_efficiency_percentage REAL NOT NULL
+		)`,
+	"recovery_records": `CREATE TABLE IF NOT EXISTS recovery_records (
+			cycle_id INTEGER NOT NULL,
+			sleep_id TEXT NOT NULL,
+			user_id INTEGER NOT NULL,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			score_state TEXT NOT NULL,
+			user_calibrating INTEGER NOT NULL,
+			recovery_score REAL NOT NULL,
+			resting_heart_rate REAL NOT NULL,
+			hrv_rmssd_milli REAL NOT NULL,
+			spo2_percentage REAL NOT NULL,
+			skin_temp_celsius REAL NOT NULL,
+			PRIMARY KEY (cycle_id, sleep_id)
+		)`,
+	"workout_records": `CREATE TABLE IF NOT EXISTS workout_records (
+			id TEXT PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			start TEXT NOT NULL,
+			end TEXT NOT NULL,
+			timezone_offset TEXT NOT NULL,
+			sport_id INTEGER NOT NULL,
+			sport_name TEXT NOT NULL,
+			score_state TEXT NOT NULL,
+			strain REAL NOT NULL,
+			average_heart_rate INTEGER NOT NULL,
+			max_heart_rate INTEGER NOT NULL,
+			kilojoule REAL NOT NULL,
+			percent_recorded REAL NOT NULL,
+			distance_meter REAL NOT NULL,
+			altitude_gain_meter REAL NOT NULL,
+			altitude_change_meter REAL NOT NULL,
+			zone_zero_milli INTEGER NOT NULL,
+			zone_one_milli INTEGER NOT NULL,
+			zone_two_milli INTEGER NOT NULL,
+			zone_three_milli INTEGER NOT NULL,
+			zone_four_milli INTEGER NOT NULL,
+			zone_five_milli INTEGER NOT NULL
+		)`,
+	"cycle_records": `CREATE TABLE IF NOT EXISTS cycle_records (
+			id INTEGER PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			start TEXT NOT NULL,
+			end TEXT NOT NULL,
+			timezone_offset TEXT NOT NULL,
+			score_state TEXT NOT NULL,
+			strain REAL NOT NULL,
+			kilojoule REAL NOT NULL,
+			average_heart_rate INTEGER NOT NULL,
+			max_heart_rate INTEGER NOT NULL
+		)`,
+}
+
+const sqliteExportRunSchema = `CREATE TABLE IF NOT EXISTS export_runs (
+			run_id INTEGER PRIMARY KEY AUTOINCREMENT,
+			exported_at TEXT NOT NULL,
+			source TEXT NOT NULL
+		)`
+
 // ConvertToSQLite converts user data to a SQLite database file and returns the raw bytes.
 func ConvertToSQLite(userData User) ([]byte, error) {
 	tempFile, err := os.CreateTemp("", "mywhoop-*.sqlite")
@@ -119,112 +231,19 @@ func writeUserDataToSQLite(db *sql.DB, userData User) error {
 }
 
 func createSQLiteSchema(tx *sql.Tx) error {
-	schemaStatements := []string{
-		`CREATE TABLE IF NOT EXISTS user_data (
-			user_id INTEGER PRIMARY KEY,
-			email TEXT NOT NULL,
-			first_name TEXT NOT NULL,
-			last_name TEXT NOT NULL
-		)`,
-		`CREATE TABLE IF NOT EXISTS user_measurements (
-			user_id INTEGER PRIMARY KEY,
-			height_meter REAL NOT NULL,
-			weight_kilogram REAL NOT NULL,
-			max_heart_rate INTEGER NOT NULL
-		)`,
-		`CREATE TABLE IF NOT EXISTS sleep_records (
-			id TEXT PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			created_at TEXT NOT NULL,
-			updated_at TEXT NOT NULL,
-			start TEXT NOT NULL,
-			end TEXT NOT NULL,
-			timezone_offset TEXT NOT NULL,
-			nap INTEGER NOT NULL,
-			score_state TEXT NOT NULL,
-			total_in_bed_time_milli INTEGER NOT NULL,
-			total_awake_time_milli INTEGER NOT NULL,
-			total_no_data_time_milli INTEGER NOT NULL,
-			total_light_sleep_time_milli INTEGER NOT NULL,
-			total_slow_wave_sleep_time_milli INTEGER NOT NULL,
-			total_rem_sleep_time_milli INTEGER NOT NULL,
-			sleep_cycle_count INTEGER NOT NULL,
-			disturbance_count INTEGER NOT NULL,
-			baseline_milli INTEGER NOT NULL,
-			need_from_sleep_debt_milli INTEGER NOT NULL,
-			need_from_recent_strain_milli INTEGER NOT NULL,
-			need_from_recent_nap_milli INTEGER NOT NULL,
-			respiratory_rate REAL NOT NULL,
-			sleep_performance_percentage REAL NOT NULL,
-			sleep_consistency_percentage REAL NOT NULL,
-			sleep_efficiency_percentage REAL NOT NULL
-		)`,
-		`CREATE TABLE IF NOT EXISTS recovery_records (
-			cycle_id INTEGER NOT NULL,
-			sleep_id TEXT NOT NULL,
-			user_id INTEGER NOT NULL,
-			created_at TEXT NOT NULL,
-			updated_at TEXT NOT NULL,
-			score_state TEXT NOT NULL,
-			user_calibrating INTEGER NOT NULL,
-			recovery_score REAL NOT NULL,
-			resting_heart_rate REAL NOT NULL,
-			hrv_rmssd_milli REAL NOT NULL,
-			spo2_percentage REAL NOT NULL,
-			skin_temp_celsius REAL NOT NULL,
-			PRIMARY KEY (cycle_id, sleep_id)
-		)`,
-		`CREATE TABLE IF NOT EXISTS workout_records (
-			id TEXT PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			created_at TEXT NOT NULL,
-			updated_at TEXT NOT NULL,
-			start TEXT NOT NULL,
-			end TEXT NOT NULL,
-			timezone_offset TEXT NOT NULL,
-			sport_id INTEGER NOT NULL,
-			sport_name TEXT NOT NULL,
-			score_state TEXT NOT NULL,
-			strain REAL NOT NULL,
-			average_heart_rate INTEGER NOT NULL,
-			max_heart_rate INTEGER NOT NULL,
-			kilojoule REAL NOT NULL,
-			percent_recorded REAL NOT NULL,
-			distance_meter REAL NOT NULL,
-			altitude_gain_meter REAL NOT NULL,
-			altitude_change_meter REAL NOT NULL,
-			zone_zero_milli INTEGER NOT NULL,
-			zone_one_milli INTEGER NOT NULL,
-			zone_two_milli INTEGER NOT NULL,
-			zone_three_milli INTEGER NOT NULL,
-			zone_four_milli INTEGER NOT NULL,
-			zone_five_milli INTEGER NOT NULL
-		)`,
-		`CREATE TABLE IF NOT EXISTS cycle_records (
-			id INTEGER PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			created_at TEXT NOT NULL,
-			updated_at TEXT NOT NULL,
-			start TEXT NOT NULL,
-			end TEXT NOT NULL,
-			timezone_offset TEXT NOT NULL,
-			score_state TEXT NOT NULL,
-			strain REAL NOT NULL,
-			kilojoule REAL NOT NULL,
-			average_heart_rate INTEGER NOT NULL,
-			max_heart_rate INTEGER NOT NULL
-		)`,
-		`CREATE TABLE IF NOT EXISTS export_runs (
-			run_id INTEGER PRIMARY KEY AUTOINCREMENT,
-			exported_at TEXT NOT NULL,
-			source TEXT NOT NULL
-		)`,
+	for _, table := range sqliteDataTableNames {
+		stmt, ok := sqliteSchemaStatementsByTable[table]
+		if !ok {
+			return fmt.Errorf("sqlite schema statement missing for table %s", table)
+		}
+
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("failed to initialize sqlite schema for table %s: %w", table, err)
+		}
 	}
 
-	for _, stmt := range schemaStatements {
-		if _, err := tx.Exec(stmt); err != nil {
-			return fmt.Errorf("failed to initialize sqlite schema: %w", err)
-		}
+	if _, err := tx.Exec(sqliteExportRunSchema); err != nil {
+		return fmt.Errorf("failed to initialize sqlite export metadata schema: %w", err)
 	}
 
 	return nil

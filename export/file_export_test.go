@@ -174,7 +174,7 @@ func TestGenerateName(t *testing.T) {
 				FileType:       "sqlite",
 				ServerMode:     true,
 			},
-			want: "test_user.sqlite",
+			want: fmt.Sprintf("test_user_%s.sqlite", getCurrentDate()),
 		},
 	}
 
@@ -199,6 +199,31 @@ func TestSetup(t *testing.T) {
 		t.Errorf("Expected nil error, got: %v", err)
 	}
 
+}
+
+func TestSetupSQLiteStableName(t *testing.T) {
+	tempDir := t.TempDir()
+	exp := &FileExport{
+		FilePath:       tempDir,
+		FileType:       "sqlite",
+		FileName:       "user",
+		FileNamePrefix: "",
+		ServerMode:     true,
+	}
+
+	err := exp.Setup()
+	if err != nil {
+		t.Fatalf("Expected nil error, got: %v", err)
+	}
+
+	if exp.ServerMode {
+		t.Fatalf("expected sqlite setup to disable server mode for stable naming")
+	}
+
+	_, err = os.Stat(filepath.Join(tempDir, "user.sqlite"))
+	if err != nil {
+		t.Fatalf("expected sqlite setup file to exist, got: %v", err)
+	}
 }
 
 func TestCleanUp(t *testing.T) {

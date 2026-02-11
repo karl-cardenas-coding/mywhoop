@@ -27,7 +27,7 @@ type sqliteFixture struct {
 	exportSource          string
 }
 
-func TestWriteSQLiteToFile(t *testing.T) {
+func TestWriteSQLiteData(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "user.sqlite")
 	data := createSQLiteFixtureData(t, sqliteFixture{
 		userID:                111111111,
@@ -43,9 +43,9 @@ func TestWriteSQLiteToFile(t *testing.T) {
 		exportSource:          "run-1",
 	})
 
-	err := writeSQLiteToFile(filePath, data)
+	err := writeSQLiteData(filePath, data)
 	if err != nil {
-		t.Fatalf("writeSQLiteToFile returned an error: %v", err)
+		t.Fatalf("writeSQLiteData returned an error: %v", err)
 	}
 
 	db := openSQLiteFile(t, filePath)
@@ -54,7 +54,7 @@ func TestWriteSQLiteToFile(t *testing.T) {
 	assertSQLiteCount(t, db, "export_runs", 1)
 }
 
-func TestWriteSQLiteToFileIncrementalMerge(t *testing.T) {
+func TestMergeSQLiteFileIncrementalMerge(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "user.sqlite")
 
 	initialData := createSQLiteFixtureData(t, sqliteFixture{
@@ -71,8 +71,8 @@ func TestWriteSQLiteToFileIncrementalMerge(t *testing.T) {
 		exportSource:          "run-1",
 	})
 
-	if err := writeSQLiteToFile(filePath, initialData); err != nil {
-		t.Fatalf("writeSQLiteToFile initial call returned an error: %v", err)
+	if err := writeSQLiteData(filePath, initialData); err != nil {
+		t.Fatalf("writeSQLiteData initial call returned an error: %v", err)
 	}
 
 	incrementalData := createSQLiteFixtureData(t, sqliteFixture{
@@ -89,8 +89,8 @@ func TestWriteSQLiteToFileIncrementalMerge(t *testing.T) {
 		exportSource:          "run-2",
 	})
 
-	if err := writeSQLiteToFile(filePath, incrementalData); err != nil {
-		t.Fatalf("writeSQLiteToFile incremental call returned an error: %v", err)
+	if err := mergeSQLiteFile(filePath, incrementalData); err != nil {
+		t.Fatalf("mergeSQLiteFile incremental call returned an error: %v", err)
 	}
 
 	db := openSQLiteFile(t, filePath)
@@ -115,12 +115,27 @@ func TestWriteSQLiteToFileIncrementalMerge(t *testing.T) {
 	}
 }
 
-func TestWriteSQLiteToFileEmptyData(t *testing.T) {
+func TestWriteSQLiteDataEmptyData(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "user.sqlite")
-	err := writeSQLiteToFile(filePath, []byte{})
+	err := writeSQLiteData(filePath, []byte{})
 	if err == nil {
 		t.Fatal("expected error for empty sqlite payload, got nil")
 	}
+}
+
+func TestInitializeSQLiteFile(t *testing.T) {
+	filePath := filepath.Join(t.TempDir(), "user.sqlite")
+
+	err := initializeSQLiteFile(filePath)
+	if err != nil {
+		t.Fatalf("initializeSQLiteFile returned an error: %v", err)
+	}
+
+	db := openSQLiteFile(t, filePath)
+	for _, table := range sqliteDataTableNames {
+		assertSQLiteTableExists(t, db, table)
+	}
+	assertSQLiteTableExists(t, db, "export_runs")
 }
 
 func TestWriteToFileSQLitePath(t *testing.T) {
@@ -293,5 +308,18 @@ func assertSQLiteCount(t *testing.T, db *sql.DB, table string, expected int) {
 
 	if count != expected {
 		t.Fatalf("unexpected row count for table %s. expected %d, got %d", table, expected, count)
+	}
+}
+
+func assertSQLiteTableExists(t *testing.T, db *sql.DB, table string) {
+	t.Helper()
+
+	var count int
+	if err := db.QueryRow("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?", table).Scan(&count); err != nil {
+		t.Fatalf("failed to verify table %s existence: %v", table, err)
+	}
+
+	if count != 1 {
+		t.Fatalf("expected table %s to exist", table)
 	}
 }

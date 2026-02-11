@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	_ "modernc.org/sqlite"
@@ -14,23 +15,175 @@ import (
 
 const sqliteBusyTimeoutMS = 5000
 
-func writeSQLiteToFile(filePath string, data []byte) error {
-	if len(data) == 0 {
-		return fmt.Errorf("sqlite export data is empty")
+var sqliteDataTableNames = []string{
+	"user_data",
+	"user_measurements",
+	"sleep_records",
+	"recovery_records",
+	"workout_records",
+	"cycle_records",
+}
+
+var sqliteSchemaStatementsByTable = map[string]string{
+	"user_data": `CREATE TABLE IF NOT EXISTS user_data (
+			user_id INTEGER PRIMARY KEY,
+			email TEXT NOT NULL,
+			first_name TEXT NOT NULL,
+			last_name TEXT NOT NULL
+		)`,
+	"user_measurements": `CREATE TABLE IF NOT EXISTS user_measurements (
+			user_id INTEGER PRIMARY KEY,
+			height_meter REAL NOT NULL,
+			weight_kilogram REAL NOT NULL,
+			max_heart_rate INTEGER NOT NULL
+		)`,
+	"sleep_records": `CREATE TABLE IF NOT EXISTS sleep_records (
+			id TEXT PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			start TEXT NOT NULL,
+			end TEXT NOT NULL,
+			timezone_offset TEXT NOT NULL,
+			nap INTEGER NOT NULL,
+			score_state TEXT NOT NULL,
+			total_in_bed_time_milli INTEGER NOT NULL,
+			total_awake_time_milli INTEGER NOT NULL,
+			total_no_data_time_milli INTEGER NOT NULL,
+			total_light_sleep_time_milli INTEGER NOT NULL,
+			total_slow_wave_sleep_time_milli INTEGER NOT NULL,
+			total_rem_sleep_time_milli INTEGER NOT NULL,
+			sleep_cycle_count INTEGER NOT NULL,
+			disturbance_count INTEGER NOT NULL,
+			baseline_milli INTEGER NOT NULL,
+			need_from_sleep_debt_milli INTEGER NOT NULL,
+			need_from_recent_strain_milli INTEGER NOT NULL,
+			need_from_recent_nap_milli INTEGER NOT NULL,
+			respiratory_rate REAL NOT NULL,
+			sleep_performance_percentage REAL NOT NULL,
+			sleep_consistency_percentage REAL NOT NULL,
+			sleep_efficiency_percentage REAL NOT NULL
+		)`,
+	"recovery_records": `CREATE TABLE IF NOT EXISTS recovery_records (
+			cycle_id INTEGER NOT NULL,
+			sleep_id TEXT NOT NULL,
+			user_id INTEGER NOT NULL,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			score_state TEXT NOT NULL,
+			user_calibrating INTEGER NOT NULL,
+			recovery_score REAL NOT NULL,
+			resting_heart_rate REAL NOT NULL,
+			hrv_rmssd_milli REAL NOT NULL,
+			spo2_percentage REAL NOT NULL,
+			skin_temp_celsius REAL NOT NULL,
+			PRIMARY KEY (cycle_id, sleep_id)
+		)`,
+	"workout_records": `CREATE TABLE IF NOT EXISTS workout_records (
+			id TEXT PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			start TEXT NOT NULL,
+			end TEXT NOT NULL,
+			timezone_offset TEXT NOT NULL,
+			sport_id INTEGER NOT NULL,
+			sport_name TEXT NOT NULL,
+			score_state TEXT NOT NULL,
+			strain REAL NOT NULL,
+			average_heart_rate INTEGER NOT NULL,
+			max_heart_rate INTEGER NOT NULL,
+			kilojoule REAL NOT NULL,
+			percent_recorded REAL NOT NULL,
+			distance_meter REAL NOT NULL,
+			altitude_gain_meter REAL NOT NULL,
+			altitude_change_meter REAL NOT NULL,
+			zone_zero_milli INTEGER NOT NULL,
+			zone_one_milli INTEGER NOT NULL,
+			zone_two_milli INTEGER NOT NULL,
+			zone_three_milli INTEGER NOT NULL,
+			zone_four_milli INTEGER NOT NULL,
+			zone_five_milli INTEGER NOT NULL
+		)`,
+	"cycle_records": `CREATE TABLE IF NOT EXISTS cycle_records (
+			id INTEGER PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			start TEXT NOT NULL,
+			end TEXT NOT NULL,
+			timezone_offset TEXT NOT NULL,
+			score_state TEXT NOT NULL,
+			strain REAL NOT NULL,
+			kilojoule REAL NOT NULL,
+			average_heart_rate INTEGER NOT NULL,
+			max_heart_rate INTEGER NOT NULL
+		)`,
+}
+
+const sqliteExportRunSchema = `CREATE TABLE IF NOT EXISTS export_runs (
+			run_id INTEGER PRIMARY KEY AUTOINCREMENT,
+			exported_at TEXT NOT NULL,
+			source TEXT NOT NULL
+		)`
+
+func writeSQLiteData(filePath string, data []byte) error {
+	if err := validateSQLiteData(data); err != nil {
+		return err
 	}
 
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		if err := os.WriteFile(filePath, data, 0644); err != nil {
-			return fmt.Errorf("unable to write sqlite file: %w", err)
-		}
+	if err := os.WriteFile(filePath, data, 0644); err != nil {
+		return fmt.Errorf("unable to write sqlite file: %w", err)
+	}
 
+	return nil
+}
+
+func initializeSQLiteFile(filePath string) error {
+	if _, err := os.Stat(filePath); err == nil {
 		return nil
 	}
 
-	return mergeSQLiteFile(filePath, data)
+	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+		return fmt.Errorf("unable to create sqlite directory: %w", err)
+	}
+
+	db, err := sql.Open("sqlite", filePath)
+	if err != nil {
+		return fmt.Errorf("unable to open sqlite target file: %w", err)
+	}
+	defer func() {
+		_ = db.Close()
+	}()
+
+	if err := configureSQLiteConnection(db); err != nil {
+		return err
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("unable to start sqlite setup transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	if err := createSQLiteMergeSchema(tx); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("unable to commit sqlite setup transaction: %w", err)
+	}
+
+	return nil
 }
 
 func mergeSQLiteFile(existingFilePath string, incomingData []byte) error {
+	if err := validateSQLiteData(incomingData); err != nil {
+		return err
+	}
+
 	tempIncomingFile, err := os.CreateTemp("", "mywhoop-merge-*.sqlite")
 	if err != nil {
 		return fmt.Errorf("unable to create temporary sqlite file: %w", err)
@@ -45,10 +198,14 @@ func mergeSQLiteFile(existingFilePath string, incomingData []byte) error {
 		_ = os.Remove(tempIncomingFilePath)
 	}()
 
-	if err := os.WriteFile(tempIncomingFilePath, incomingData, 0600); err != nil {
-		return fmt.Errorf("unable to write temporary sqlite file: %w", err)
+	if err := writeSQLiteData(tempIncomingFilePath, incomingData); err != nil {
+		return err
 	}
 
+	return mergeSQLiteFiles(existingFilePath, tempIncomingFilePath)
+}
+
+func mergeSQLiteFiles(existingFilePath, incomingFilePath string) error {
 	db, err := sql.Open("sqlite", existingFilePath)
 	if err != nil {
 		return fmt.Errorf("unable to open target sqlite file: %w", err)
@@ -73,19 +230,12 @@ func mergeSQLiteFile(existingFilePath string, incomingData []byte) error {
 		return err
 	}
 
-	escapedPath := strings.ReplaceAll(tempIncomingFilePath, "'", "''")
+	escapedPath := strings.ReplaceAll(incomingFilePath, "'", "''")
 	if _, err := tx.Exec("ATTACH DATABASE '" + escapedPath + "' AS incoming"); err != nil {
 		return fmt.Errorf("unable to attach incoming sqlite file: %w", err)
 	}
 
-	for _, table := range []string{
-		"user_data",
-		"user_measurements",
-		"sleep_records",
-		"recovery_records",
-		"workout_records",
-		"cycle_records",
-	} {
+	for _, table := range sqliteDataTableNames {
 		query := fmt.Sprintf("INSERT OR REPLACE INTO %s SELECT * FROM incoming.%s", table, table)
 		if _, err := tx.Exec(query); err != nil {
 			return fmt.Errorf("unable to merge sqlite table %s: %w", table, err)
@@ -116,112 +266,31 @@ func configureSQLiteConnection(db *sql.DB) error {
 }
 
 func createSQLiteMergeSchema(tx *sql.Tx) error {
-	schemaStatements := []string{
-		`CREATE TABLE IF NOT EXISTS user_data (
-			user_id INTEGER PRIMARY KEY,
-			email TEXT NOT NULL,
-			first_name TEXT NOT NULL,
-			last_name TEXT NOT NULL
-		)`,
-		`CREATE TABLE IF NOT EXISTS user_measurements (
-			user_id INTEGER PRIMARY KEY,
-			height_meter REAL NOT NULL,
-			weight_kilogram REAL NOT NULL,
-			max_heart_rate INTEGER NOT NULL
-		)`,
-		`CREATE TABLE IF NOT EXISTS sleep_records (
-			id TEXT PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			created_at TEXT NOT NULL,
-			updated_at TEXT NOT NULL,
-			start TEXT NOT NULL,
-			end TEXT NOT NULL,
-			timezone_offset TEXT NOT NULL,
-			nap INTEGER NOT NULL,
-			score_state TEXT NOT NULL,
-			total_in_bed_time_milli INTEGER NOT NULL,
-			total_awake_time_milli INTEGER NOT NULL,
-			total_no_data_time_milli INTEGER NOT NULL,
-			total_light_sleep_time_milli INTEGER NOT NULL,
-			total_slow_wave_sleep_time_milli INTEGER NOT NULL,
-			total_rem_sleep_time_milli INTEGER NOT NULL,
-			sleep_cycle_count INTEGER NOT NULL,
-			disturbance_count INTEGER NOT NULL,
-			baseline_milli INTEGER NOT NULL,
-			need_from_sleep_debt_milli INTEGER NOT NULL,
-			need_from_recent_strain_milli INTEGER NOT NULL,
-			need_from_recent_nap_milli INTEGER NOT NULL,
-			respiratory_rate REAL NOT NULL,
-			sleep_performance_percentage REAL NOT NULL,
-			sleep_consistency_percentage REAL NOT NULL,
-			sleep_efficiency_percentage REAL NOT NULL
-		)`,
-		`CREATE TABLE IF NOT EXISTS recovery_records (
-			cycle_id INTEGER NOT NULL,
-			sleep_id TEXT NOT NULL,
-			user_id INTEGER NOT NULL,
-			created_at TEXT NOT NULL,
-			updated_at TEXT NOT NULL,
-			score_state TEXT NOT NULL,
-			user_calibrating INTEGER NOT NULL,
-			recovery_score REAL NOT NULL,
-			resting_heart_rate REAL NOT NULL,
-			hrv_rmssd_milli REAL NOT NULL,
-			spo2_percentage REAL NOT NULL,
-			skin_temp_celsius REAL NOT NULL,
-			PRIMARY KEY (cycle_id, sleep_id)
-		)`,
-		`CREATE TABLE IF NOT EXISTS workout_records (
-			id TEXT PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			created_at TEXT NOT NULL,
-			updated_at TEXT NOT NULL,
-			start TEXT NOT NULL,
-			end TEXT NOT NULL,
-			timezone_offset TEXT NOT NULL,
-			sport_id INTEGER NOT NULL,
-			sport_name TEXT NOT NULL,
-			score_state TEXT NOT NULL,
-			strain REAL NOT NULL,
-			average_heart_rate INTEGER NOT NULL,
-			max_heart_rate INTEGER NOT NULL,
-			kilojoule REAL NOT NULL,
-			percent_recorded REAL NOT NULL,
-			distance_meter REAL NOT NULL,
-			altitude_gain_meter REAL NOT NULL,
-			altitude_change_meter REAL NOT NULL,
-			zone_zero_milli INTEGER NOT NULL,
-			zone_one_milli INTEGER NOT NULL,
-			zone_two_milli INTEGER NOT NULL,
-			zone_three_milli INTEGER NOT NULL,
-			zone_four_milli INTEGER NOT NULL,
-			zone_five_milli INTEGER NOT NULL
-		)`,
-		`CREATE TABLE IF NOT EXISTS cycle_records (
-			id INTEGER PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			created_at TEXT NOT NULL,
-			updated_at TEXT NOT NULL,
-			start TEXT NOT NULL,
-			end TEXT NOT NULL,
-			timezone_offset TEXT NOT NULL,
-			score_state TEXT NOT NULL,
-			strain REAL NOT NULL,
-			kilojoule REAL NOT NULL,
-			average_heart_rate INTEGER NOT NULL,
-			max_heart_rate INTEGER NOT NULL
-		)`,
-		`CREATE TABLE IF NOT EXISTS export_runs (
-			run_id INTEGER PRIMARY KEY AUTOINCREMENT,
-			exported_at TEXT NOT NULL,
-			source TEXT NOT NULL
-		)`,
+	for _, table := range sqliteDataTableNames {
+		stmt, ok := sqliteSchemaStatementsByTable[table]
+		if !ok {
+			return fmt.Errorf("sqlite schema statement missing for table %s", table)
+		}
+
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("unable to initialize sqlite schema for table %s: %w", table, err)
+		}
 	}
 
-	for _, stmt := range schemaStatements {
-		if _, err := tx.Exec(stmt); err != nil {
-			return fmt.Errorf("unable to initialize sqlite schema for file merge: %w", err)
-		}
+	if _, err := tx.Exec(sqliteExportRunSchema); err != nil {
+		return fmt.Errorf("unable to initialize sqlite export metadata schema: %w", err)
+	}
+
+	return nil
+}
+
+func validateSQLiteData(data []byte) error {
+	if len(data) == 0 {
+		return fmt.Errorf("sqlite export data is empty")
+	}
+
+	if len(data) < 16 || string(data[:16]) != "SQLite format 3\x00" {
+		return fmt.Errorf("sqlite export data is not a valid sqlite database")
 	}
 
 	return nil

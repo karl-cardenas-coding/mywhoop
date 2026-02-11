@@ -216,6 +216,16 @@ func dump(ctx context.Context) error {
 		return err
 	}
 
+	err = exporterMethod.Setup()
+	if err != nil {
+		slog.Error("unable to setup exporter", "error", err)
+		notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
+		if notifyErr != nil {
+			slog.Error("unable to send notification", "error", notifyErr)
+		}
+		return err
+	}
+
 	err = exporterMethod.Export(finalDataRaw)
 	if err != nil {
 		slog.Error("unable to export data", "error", err)
