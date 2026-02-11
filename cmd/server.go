@@ -430,6 +430,12 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 			internal.LogError(err)
 			return finalDataRaw, err
 		}
+	case "sqlite":
+		finalDataRaw, err = internal.ConvertToSQLite(user)
+		if err != nil {
+			internal.LogError(err)
+			return finalDataRaw, err
+		}
 	default:
 		finalDataRaw, err = json.MarshalIndent(user, "", "  ")
 		if err != nil {

@@ -156,7 +156,7 @@ func (f *AWS_S3) CleanUp() error {
 // fileExportDefaults sets the default values for the file export
 func fileExportDefaults(f *FileExport) error {
 
-	supportedFileTypes := []string{"json", "xlsx"}
+	supportedFileTypes := []string{"json", "xlsx", "sqlite"}
 
 	h, err := os.UserHomeDir()
 	if err != nil {
@@ -257,6 +257,8 @@ func determineContentType(fileType string) string {
 		return "text/csv"
 	case "xlsx":
 		return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	case "sqlite":
+		return "application/vnd.sqlite3"
 	default:
 		return "application/json"
 	}

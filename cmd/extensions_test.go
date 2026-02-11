@@ -292,6 +292,17 @@ func TestGetFileType(t *testing.T) {
 			},
 		},
 		{
+			name:     "File - sqlite",
+			expected: "sqlite",
+			cfg: internal.ConfigurationData{
+				Export: internal.ConfigExport{
+					FileExport: export.FileExport{
+						FileType: "sqlite",
+					},
+				},
+			},
+		},
+		{
 			name:     "File - No Value Specified",
 			expected: "json",
 			cfg: internal.ConfigurationData{
@@ -319,6 +330,19 @@ func TestGetFileType(t *testing.T) {
 					AWSS3: export.AWS_S3{
 						FileConfig: export.FileExport{
 							FileType: "json",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:     "AWS S3 - sqlite",
+			expected: "sqlite",
+			cfg: internal.ConfigurationData{
+				Export: internal.ConfigExport{
+					AWSS3: export.AWS_S3{
+						FileConfig: export.FileExport{
+							FileType: "sqlite",
 						},
 					},
 				},

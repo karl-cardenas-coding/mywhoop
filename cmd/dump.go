@@ -34,7 +34,7 @@ var dumpCmd = &cobra.Command{
 func init() {
 	dumpCmd.PersistentFlags().StringVarP(&dataLocation, "location", "l", "", "The location to dump the data to. Default is the current directory's data/ folder.")
 	dumpCmd.PersistentFlags().StringVarP(&filter, "filter", "f", "", "Provide a filter string to narrow down the data to download. For example, start=2024-01-01T00:00:00.000Z&end=2022-04-01T00:00:00.000Z")
-	dumpCmd.PersistentFlags().StringVarP(&output, "output", "o", "json", "The output format. Supported types are json or csv. Default is json.")
+	dumpCmd.PersistentFlags().StringVarP(&output, "output", "o", "json", "The output format. Supported types are json, xlsx, or sqlite. Default is json.")
 
 	rootCmd.AddCommand(dumpCmd)
 }
@@ -173,6 +173,17 @@ func dump(ctx context.Context) error {
 
 	case "xlsx":
 		finalDataRaw, err = internal.ConvertToExcel(user)
+		if err != nil {
+			internal.LogError(err)
+			notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())
+			if notifyErr != nil {
+				slog.Error("unable to send notification", "error", notifyErr)
+			}
+			return err
+		}
+
+	case "sqlite":
+		finalDataRaw, err = internal.ConvertToSQLite(user)
 		if err != nil {
 			internal.LogError(err)
 			notifyErr := notificationMethod.Publish(client, []byte(err.Error()), internal.EventErrors.String())

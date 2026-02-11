@@ -166,6 +166,16 @@ func TestGenerateName(t *testing.T) {
 			},
 			want: fmt.Sprintf("test_user_%s.xlsx", getCurrentDate()),
 		},
+		{
+			description: "Test case 7: sqlite file",
+			file: FileExport{
+				FileNamePrefix: "test",
+				FileName:       "user",
+				FileType:       "sqlite",
+				ServerMode:     true,
+			},
+			want: "test_user.sqlite",
+		},
 	}
 
 	for index, tc := range tests {

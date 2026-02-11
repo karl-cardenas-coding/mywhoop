@@ -63,6 +63,14 @@ func (f *FileExport) Export(data []byte) error {
 // generateName generates the name of the file to be created
 func generateName(cfg FileExport) string {
 
+	if cfg.FileType == "sqlite" {
+		if cfg.FileNamePrefix != "" {
+			return cfg.FileNamePrefix + "_" + cfg.FileName + "." + cfg.FileType
+		}
+
+		return cfg.FileName + "." + cfg.FileType
+	}
+
 	if cfg.ServerMode {
 
 		if cfg.FileNamePrefix != "" {
@@ -83,6 +91,7 @@ func generateName(cfg FileExport) string {
 func writeToFile(cfg FileExport, data []byte) error {
 
 	fileName := generateName(cfg)
+	fileDestination := path.Join(cfg.FilePath, fileName)
 
 	// check if the path folder exists, if not create it
 	_, err := os.Stat(cfg.FilePath)
@@ -95,20 +104,30 @@ func writeToFile(cfg FileExport, data []byte) error {
 				return err
 			}
 		}
-		// Remove identical file if it exists to avoid conflicts
-	} else {
-		if _, err := os.Stat(path.Join(cfg.FilePath, fileName)); err == nil {
-			slog.Info("file already exists, removing it", "file", path.Join(cfg.FilePath, fileName))
-			err := os.Remove(path.Join(cfg.FilePath, fileName))
-			if err != nil {
-				slog.Error("unable to remove file", "file", path.Join(cfg.FilePath, fileName), "error", err)
-				return err
-			}
-		}
-
 	}
 
-	f, err := os.Create(path.Join(cfg.FilePath, fileName))
+	if cfg.FileType == "sqlite" {
+		err = writeSQLiteToFile(fileDestination, data)
+		if err != nil {
+			slog.Error("unable to write sqlite data to the file", "error", err)
+			return err
+		}
+
+		slog.Info("data written to file", "file", fileDestination)
+		return nil
+	}
+
+	// Remove identical file if it exists to avoid conflicts
+	if _, err := os.Stat(fileDestination); err == nil {
+		slog.Info("file already exists, removing it", "file", fileDestination)
+		err := os.Remove(fileDestination)
+		if err != nil {
+			slog.Error("unable to remove file", "file", fileDestination, "error", err)
+			return err
+		}
+	}
+
+	f, err := os.Create(fileDestination)
 	if err != nil {
 		slog.Error("unable to create file", "error", err)
 		return err
@@ -116,15 +135,13 @@ func writeToFile(cfg FileExport, data []byte) error {
 
 	defer func() { _ = f.Close() }()
 
-	dataPretty := string(data)
-
-	_, err = f.WriteString(dataPretty)
+	_, err = f.Write(data)
 	if err != nil {
 		slog.Error("unable to write the content to the file", "error", err)
 		return err
 	}
 
-	slog.Info("data written to file", "file", path.Join(cfg.FilePath, fileName))
+	slog.Info("data written to file", "file", fileDestination)
 
 	return nil
 }

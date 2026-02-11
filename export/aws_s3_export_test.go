@@ -460,6 +460,24 @@ func TestFileAWSS3ExportDefaults(t *testing.T) {
 				ServerMode:     true,
 			},
 		},
+		{
+			0,
+			"Test case 8: File export with sqlite file type",
+			&FileExport{
+				FilePath:       "/tmp",
+				FileType:       "sqlite",
+				FileName:       "user",
+				FileNamePrefix: "",
+				ServerMode:     true,
+			},
+			&FileExport{
+				FilePath:       "/tmp",
+				FileType:       "sqlite",
+				FileName:       "user",
+				FileNamePrefix: "",
+				ServerMode:     true,
+			},
+		},
 	}
 
 	for index, tc := range tests {
@@ -785,6 +803,49 @@ func TestUploadCheck(t *testing.T) {
 
 			if tc.errorExpected && err == nil {
 				t.Errorf("Expected error, but got no error")
+			}
+		})
+	}
+}
+
+func TestDetermineContentType(t *testing.T) {
+	tests := []struct {
+		name     string
+		fileType string
+		expected string
+	}{
+		{
+			name:     "json",
+			fileType: "json",
+			expected: "application/json",
+		},
+		{
+			name:     "csv",
+			fileType: "csv",
+			expected: "text/csv",
+		},
+		{
+			name:     "xlsx",
+			fileType: "xlsx",
+			expected: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+		},
+		{
+			name:     "sqlite",
+			fileType: "sqlite",
+			expected: "application/vnd.sqlite3",
+		},
+		{
+			name:     "default",
+			fileType: "unknown",
+			expected: "application/json",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := determineContentType(test.fileType)
+			if got != test.expected {
+				t.Errorf("expected %s, got %s", test.expected, got)
 			}
 		})
 	}
