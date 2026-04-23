@@ -4,9 +4,12 @@
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/karl-cardenas-coding/mywhoop/export"
 	"github.com/karl-cardenas-coding/mywhoop/internal"
@@ -43,48 +46,54 @@ func determineNotificationExtension(cfg internal.ConfigurationData) (internal.No
 }
 
 // determineExporterExtension determines the export extension to use and returns the appropriate export.
-// The parameter isServerMode is used to determine if the exporter is being used in server mode. Use this flag to set server mode defaults.
+// When the resolved file type is sqlite, a SQLite-aware exporter is returned (SQLiteExport for file,
+// S3SQLiteExport for s3). Otherwise the classic byte-stream exporter is returned.
 func determineExporterExtension(cfg internal.ConfigurationData, client *http.Client, cFlags cliFlags) (internal.Export, error) {
 
-	var (
-		filePath string
-		exporter internal.Export
-	)
+	method := cfg.Export.Method
+	if method == "" {
+		slog.Info("no valid export method specified. Defaulting to file.")
+		method = "file"
+	}
 
-	switch cfg.Export.Method {
+	switch method {
 	case "file":
-		if cFlags.dataLocation == "" {
-			filePath = cfg.Export.FileExport.FilePath
-		}
-
+		filePath := cfg.Export.FileExport.FilePath
 		if cFlags.dataLocation != "" {
 			filePath = cFlags.dataLocation
 		}
-
 		if cFlags.output != "" {
 			cfg.Export.FileExport.FileType = cFlags.output
 		}
 
-		fileExp := export.NewFileExport(filePath,
+		if cfg.Export.FileExport.FileType == "sqlite" {
+			slog.Info("File + SQLite export method specified")
+			return internal.NewSQLiteExport(
+				filePath,
+				cfg.Export.FileExport.FileName,
+				cfg.Export.FileExport.FileNamePrefix,
+			), nil
+		}
+
+		slog.Info("File export method specified")
+		return export.NewFileExport(
+			filePath,
 			cfg.Export.FileExport.FileType,
 			cfg.Export.FileExport.FileName,
 			cfg.Export.FileExport.FileNamePrefix,
 			cfg.Server.Enabled,
-		)
-		slog.Info("File export method specified")
-		exporter = fileExp
+		), nil
 
 	case "s3":
-		slog.Info("AWS S3 export method specified")
 		if cFlags.dataLocation != "" {
 			cfg.Export.AWSS3.FileConfig.FilePath = cFlags.dataLocation
 		}
-
 		if cFlags.output != "" {
 			cfg.Export.AWSS3.FileConfig.FileType = cFlags.output
 		}
 
-		awsS3, err := export.NewAwsS3Export(cfg.Export.AWSS3.Region,
+		awsS3, err := export.NewAwsS3Export(
+			cfg.Export.AWSS3.Region,
 			cfg.Export.AWSS3.Bucket,
 			cfg.Export.AWSS3.Profile,
 			client,
@@ -92,35 +101,25 @@ func determineExporterExtension(cfg internal.ConfigurationData, client *http.Cli
 			cfg.Server.Enabled,
 		)
 		if err != nil {
-			return exporter, errors.New("unable initialize AWS S3 export. Additional error context: " + err.Error())
+			return nil, errors.New("unable initialize AWS S3 export. Additional error context: " + err.Error())
 		}
-		exporter = awsS3
+
+		if cfg.Export.AWSS3.FileConfig.FileType == "sqlite" {
+			slog.Info("S3 + SQLite export method specified")
+			sqlite := internal.NewSQLiteExport(
+				cfg.Export.AWSS3.FileConfig.FilePath,
+				cfg.Export.AWSS3.FileConfig.FileName,
+				cfg.Export.AWSS3.FileConfig.FileNamePrefix,
+			)
+			return internal.NewS3SQLiteExport(sqlite, awsS3.S3Client, awsS3.Bucket), nil
+		}
+
+		slog.Info("AWS S3 export method specified")
+		return awsS3, nil
 
 	default:
-		if cFlags.dataLocation == "" {
-			filePath = cfg.Export.FileExport.FilePath
-		} else {
-			filePath = cFlags.dataLocation
-		}
-
-		if cFlags.output != "" {
-			cfg.Export.FileExport.FileType = cFlags.output
-		}
-
-		slog.Info("no valid export method specified. Defaulting to file.")
-
-		fileExp := export.NewFileExport(filePath,
-			cfg.Export.FileExport.FileType,
-			cfg.Export.FileExport.FileName,
-			cfg.Export.FileExport.FileNamePrefix,
-			cfg.Server.Enabled,
-		)
-		exporter = fileExp
-
+		return nil, fmt.Errorf("unsupported export method %q", method)
 	}
-
-	return exporter, nil
-
 }
 
 // getFileType determines the file type to use for the export based on the configuration and command line flags.
@@ -136,4 +135,33 @@ func getFileType(cfg internal.ConfigurationData) string {
 
 	return "json"
 
+}
+
+// writeUserToExporter is the single code path that hands Whoop data to an exporter.
+// Exporters that implement UserExporter (e.g. SQLite) consume the User struct directly.
+// Everything else is serialized to bytes according to outputType and passed through
+// the classic Export([]byte) path.
+func writeUserToExporter(user internal.User, exporter internal.Export, outputType string) error {
+	if ue, ok := exporter.(internal.UserExporter); ok {
+		return ue.ExportUser(user)
+	}
+
+	data, err := marshalUser(user, outputType)
+	if err != nil {
+		return err
+	}
+	return exporter.Export(data)
+}
+
+// marshalUser converts a User into bytes appropriate for the given output format.
+// Unknown formats fall back to pretty-printed JSON.
+func marshalUser(user internal.User, outputType string) ([]byte, error) {
+	switch strings.ToLower(outputType) {
+	case "xlsx":
+		return internal.ConvertToExcel(user)
+	case "json", "":
+		return json.MarshalIndent(user, "", "  ")
+	default:
+		return json.MarshalIndent(user, "", "  ")
+	}
 }

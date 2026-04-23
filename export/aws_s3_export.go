@@ -16,7 +16,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
-	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/transfermanager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
@@ -102,47 +102,25 @@ func (f *AWS_S3) Export(data []byte) error {
 		return errors.New("s3 client is required")
 	}
 
-	s3c := f.S3Client
-
 	err := uploadCheck(&data, &f.FileConfig, f.Bucket)
 	if err != nil {
 		return err
 	}
 
 	fileName := generateObjectKey(f.FileConfig)
+	contentType := determineContentType(f.FileConfig.FileType)
 
-	// If the data is greater than 5 MB part size, upload the data in parts.
-	if int64(len(data)) > manager.MinUploadPartSize {
-
-		largeBuffer := bytes.NewReader(data)
-		uploader := manager.NewUploader(s3c, func(u *manager.Uploader) {
-			u.PartSize = manager.MinUploadPartSize * 1024 * 1024
-		})
-		_, err := uploader.Upload(context.TODO(), &s3.PutObjectInput{
-			Bucket:   &f.Bucket,
-			Key:      &fileName,
-			Body:     largeBuffer,
-			Metadata: map[string]string{"Content-Type": determineContentType(f.FileConfig.FileType)},
-		})
-
-		if err != nil {
-			return err
-		}
-
-	}
-
-	// If the data is less than 5 MB, upload the data as a single part.
-	if int64(len(data)) <= manager.MinUploadPartSize {
-
-		_, err = s3c.PutObject(context.TODO(), &s3.PutObjectInput{
-			Bucket:   &f.Bucket,
-			Key:      &fileName,
-			Body:     bytes.NewReader(data),
-			Metadata: map[string]string{"Content-Type": determineContentType(f.FileConfig.FileType)},
-		})
-		if err != nil {
-			return err
-		}
+	// Transfer manager v2 transparently picks single-part vs multipart based on
+	// the configured MultipartUploadThreshold, so we no longer branch on size.
+	tm := transfermanager.New(f.S3Client)
+	_, err = tm.UploadObject(context.TODO(), &transfermanager.UploadObjectInput{
+		Bucket:      &f.Bucket,
+		Key:         &fileName,
+		Body:        bytes.NewReader(data),
+		ContentType: &contentType,
+	})
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -156,7 +134,7 @@ func (f *AWS_S3) CleanUp() error {
 // fileExportDefaults sets the default values for the file export
 func fileExportDefaults(f *FileExport) error {
 
-	supportedFileTypes := []string{"json", "xlsx"}
+	supportedFileTypes := []string{"json", "xlsx", "sqlite"}
 
 	h, err := os.UserHomeDir()
 	if err != nil {
@@ -257,6 +235,8 @@ func determineContentType(fileType string) string {
 		return "text/csv"
 	case "xlsx":
 		return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	case "sqlite":
+		return "application/vnd.sqlite3"
 	default:
 		return "application/json"
 	}

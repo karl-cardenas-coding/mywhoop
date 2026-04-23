@@ -1,7 +1,7 @@
 # Copyright (c) karl-cardenas-coding
 # SPDX-License-Identifier: Apache-2.0
 
-FROM golang:1.25.5-alpine3.23 AS builder
+FROM golang:1.26-alpine3.23 AS builder
 
 LABEL org.opencontainers.image.source="https://github.com/karl-cardenas-coding/mywhoop"
 LABEL org.opencontainers.image.description="A tool for gathering and retaining your own Whoop data."
