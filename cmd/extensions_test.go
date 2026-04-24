@@ -292,9 +292,9 @@ type recordingUserExporter struct {
 	bytesCalled int
 }
 
-func (r *recordingUserExporter) Setup() error                  { return nil }
-func (r *recordingUserExporter) CleanUp() error                { return nil }
-func (r *recordingUserExporter) Export(_ []byte) error         { r.bytesCalled++; return nil }
+func (r *recordingUserExporter) Setup() error          { return nil }
+func (r *recordingUserExporter) CleanUp() error        { return nil }
+func (r *recordingUserExporter) Export(_ []byte) error { r.bytesCalled++; return nil }
 func (r *recordingUserExporter) ExportUser(u internal.User) error {
 	r.gotUser = u
 	r.userCalled++
