@@ -15,7 +15,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/docker/go-connections/nat"
 	testcontainers "github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/localstack"
 	"github.com/testcontainers/testcontainers-go/network"
@@ -619,7 +618,7 @@ func createMockBucket(s3Client *s3.Client, bucket string) error {
 }
 
 func s3Client(ctx context.Context, l *localstack.LocalStackContainer, region string) (*s3.Client, error) {
-	mappedPort, err := l.MappedPort(ctx, nat.Port("4566/tcp"))
+	mappedPort, err := l.MappedPort(ctx, "4566/tcp")
 	if err != nil {
 		return nil, err
 	}
