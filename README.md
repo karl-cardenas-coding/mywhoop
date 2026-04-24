@@ -131,7 +131,7 @@ mywhoop version
 ```
 
 ```
-2024/07/06 10:50:29 INFO mywhoop v0.3.1
+2024/07/06 10:50:29 INFO mywhoop v0.3.3
 ```
 
 ## Extensions 🗂️
