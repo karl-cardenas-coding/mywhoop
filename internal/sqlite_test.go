@@ -6,6 +6,7 @@ package internal
 import (
 	"database/sql"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -426,6 +427,87 @@ func TestSQLiteExport_NullableWorkoutFields(t *testing.T) {
 	}
 	if sportName.Valid {
 		t.Errorf("sport_name expected NULL, got %q", sportName.String)
+	}
+}
+
+// copyFile copies the file at src to dst byte-for-byte. Used by the WAL
+// checkpoint test to simulate "uploading just the main .sqlite file" without
+// the -wal / -shm sidecars.
+func copyFile(t *testing.T, src, dst string) {
+	t.Helper()
+	in, err := os.Open(src)
+	if err != nil {
+		t.Fatalf("open src: %v", err)
+	}
+	defer func() { _ = in.Close() }()
+	out, err := os.Create(dst)
+	if err != nil {
+		t.Fatalf("create dst: %v", err)
+	}
+	if _, err := io.Copy(out, in); err != nil {
+		_ = out.Close()
+		t.Fatalf("copy: %v", err)
+	}
+	if err := out.Close(); err != nil {
+		t.Fatalf("close dst: %v", err)
+	}
+}
+
+// TestSQLiteExport_CheckpointFlushesWAL is the regression test for the WAL
+// + S3 upload bug: in WAL mode, a small commit may live entirely in the
+// <db>-wal sidecar until SQLite's auto-checkpoint threshold (~4MB) is hit.
+// Copying just the main .sqlite file (which is what the S3 upload path does)
+// would therefore be missing that data unless we explicitly checkpoint first.
+func TestSQLiteExport_CheckpointFlushesWAL(t *testing.T) {
+	dir := t.TempDir()
+	s := NewSQLiteExport(dir, "user", "")
+	if err := s.Setup(); err != nil {
+		t.Fatalf("Setup: %v", err)
+	}
+	t.Cleanup(func() { _ = s.CleanUp() })
+
+	if err := s.ExportUser(sampleUser(t)); err != nil {
+		t.Fatalf("ExportUser: %v", err)
+	}
+
+	// Sanity check: with the DB still open and no checkpoint forced, we
+	// expect the WAL sidecar to exist and hold the recent commit.
+	walPath := s.Path() + "-wal"
+	if info, err := os.Stat(walPath); err != nil || info.Size() == 0 {
+		t.Skipf("test environment did not produce a non-empty WAL sidecar (err=%v); cannot exercise the checkpoint path", err)
+	}
+
+	if err := s.Checkpoint(); err != nil {
+		t.Fatalf("Checkpoint: %v", err)
+	}
+
+	// PRAGMA wal_checkpoint(TRUNCATE) drains and zero-truncates the WAL.
+	if info, err := os.Stat(walPath); err == nil && info.Size() != 0 {
+		t.Errorf("WAL not truncated after checkpoint: size=%d", info.Size())
+	}
+
+	// Now copy just the main file (no -wal / -shm) and prove the data is
+	// fully present in the snapshot.
+	snapshot := filepath.Join(dir, "snapshot.sqlite")
+	copyFile(t, s.Path(), snapshot)
+
+	db, err := sql.Open(sqliteDriverName, snapshot)
+	if err != nil {
+		t.Fatalf("open snapshot: %v", err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+
+	for _, table := range []string{"user_data", "sleep_records", "cycle_records", "recovery_records", "workout_records"} {
+		if got := countRows(t, db, table); got != 1 {
+			t.Errorf("snapshot %s row count = %d, want 1 (checkpoint did not flush this table)", table, got)
+		}
+	}
+}
+
+func TestSQLiteExport_CheckpointBeforeSetupErrors(t *testing.T) {
+	s := &SQLiteExport{}
+	if err := s.Checkpoint(); err == nil {
+		t.Fatalf("expected error when Checkpoint is called before Setup")
 	}
 }
 

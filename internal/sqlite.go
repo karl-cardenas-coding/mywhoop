@@ -80,6 +80,15 @@ func (s *SQLiteExport) Setup() error {
 		return fmt.Errorf("open sqlite at %q: %w", s.path, err)
 	}
 
+	// Pin the pool to a single connection. Several of the PRAGMAs below
+	// (busy_timeout, synchronous, foreign_keys) are scoped to a connection,
+	// so a pool that hands out fresh connections would silently lose them.
+	// SQLite is also a single-writer store, so a multi-connection pool buys
+	// us nothing and creates lock contention.
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
+	db.SetConnMaxLifetime(0)
+
 	if err := configureSQLiteConnection(db); err != nil {
 		_ = db.Close()
 		return err
@@ -136,6 +145,22 @@ func (s *SQLiteExport) Export(data []byte) error {
 		return fmt.Errorf("sqlite export: decode user payload: %w", err)
 	}
 	return s.ExportUser(user)
+}
+
+// Checkpoint forces any pending WAL frames to be merged into the main database
+// file and truncates the WAL. Call this before copying or uploading the .sqlite
+// file out-of-band, otherwise recent commits may still live in the -wal sidecar
+// and the snapshot will be stale.
+func (s *SQLiteExport) Checkpoint() error {
+	if s.db == nil {
+		return errors.New("sqlite exporter not initialized; call Setup first")
+	}
+	// wal_checkpoint(TRUNCATE) blocks until all readers/writers release the WAL,
+	// then drains every frame into the main DB and zeroes the WAL file.
+	if _, err := s.db.Exec("PRAGMA wal_checkpoint(TRUNCATE)"); err != nil {
+		return fmt.Errorf("checkpoint sqlite WAL: %w", err)
+	}
+	return nil
 }
 
 // CleanUp closes the database handle. It is safe to call multiple times.

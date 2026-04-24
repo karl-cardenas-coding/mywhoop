@@ -430,18 +430,6 @@ func TestFileAWSS3ExportDefaults(t *testing.T) {
 			},
 		},
 		{
-			0,
-			"Test case 6: Nil file export",
-			nil,
-			&FileExport{
-				FilePath:       homePath,
-				FileType:       "json",
-				FileName:       "user",
-				FileNamePrefix: "",
-				ServerMode:     true,
-			},
-		},
-		{
 
 			0,
 			"Test case 7: File export with Excel file type",
@@ -464,54 +452,67 @@ func TestFileAWSS3ExportDefaults(t *testing.T) {
 
 	for index, tc := range tests {
 		tc.id = index + 1
-		file := tc.file
-		err := fileExportDefaults(file)
+		file, err := fileExportDefaults(tc.file)
 		if err != nil {
 			t.Errorf("%s: Unexpected error: %v", tc.description, err)
+			continue
 		}
 
 		if file == nil {
-
-			if tc.expected.FilePath != homePath {
-				t.Errorf("%s: Expected file path %s, got %s", tc.description, homePath, tc.expected.FilePath)
-			}
-
-			if tc.expected.FileName != "user" {
-				t.Errorf("%s: Expected file name user, got %s", tc.description, tc.expected.FileName)
-			}
-
-			if tc.expected.FileType != "json" {
-				t.Errorf("%s: Expected file type json, got %s", tc.description, tc.expected.FileType)
-			}
-
-			if tc.expected.FileNamePrefix != "" {
-				t.Errorf("%s: Expected file name prefix empty, got %s", tc.description, tc.expected.FileNamePrefix)
-			}
-
-			if tc.expected.ServerMode != true {
-				t.Errorf("%s: Expected server mode true, got %v", tc.description, tc.expected.ServerMode)
-			}
-
+			t.Errorf("%s: fileExportDefaults returned nil result", tc.description)
+			continue
 		}
 
-		if file != nil {
-			if file.FilePath != tc.expected.FilePath {
-				t.Errorf("%s: Expected file path %s, got %s", tc.description, tc.expected.FilePath, file.FilePath)
-			}
-
-			if file.FileType != tc.expected.FileType {
-				t.Errorf("%s: Expected file type %s, got %s", tc.description, tc.expected.FileType, file.FileType)
-			}
-
-			if file.FileName != tc.expected.FileName {
-				t.Errorf("%s: Expected file name %s, got %s", tc.description, tc.expected.FileName, file.FileName)
-			}
-
-			if file.FileNamePrefix != tc.expected.FileNamePrefix {
-				t.Errorf("%s: Expected file name prefix %s, got %s", tc.description, tc.expected.FileNamePrefix, file.FileNamePrefix)
-			}
+		if file.FilePath != tc.expected.FilePath {
+			t.Errorf("%s: Expected file path %s, got %s", tc.description, tc.expected.FilePath, file.FilePath)
 		}
 
+		if file.FileType != tc.expected.FileType {
+			t.Errorf("%s: Expected file type %s, got %s", tc.description, tc.expected.FileType, file.FileType)
+		}
+
+		if file.FileName != tc.expected.FileName {
+			t.Errorf("%s: Expected file name %s, got %s", tc.description, tc.expected.FileName, file.FileName)
+		}
+
+		if file.FileNamePrefix != tc.expected.FileNamePrefix {
+			t.Errorf("%s: Expected file name prefix %s, got %s", tc.description, tc.expected.FileNamePrefix, file.FileNamePrefix)
+		}
+	}
+}
+
+// TestFileAWSS3ExportDefaults_NilReturnsDefaults pins down the contract that
+// callers can pass nil and get a fully populated default config back. This is
+// the regression test for the prior bug where the in-place version "defaulted"
+// nil into a local pointer that never reached the caller.
+func TestFileAWSS3ExportDefaults_NilReturnsDefaults(t *testing.T) {
+	h, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("Unable to get user home directory: %v", err)
+	}
+	wantPath := path.Join(h, "data")
+
+	got, err := fileExportDefaults(nil)
+	if err != nil {
+		t.Fatalf("fileExportDefaults(nil): %v", err)
+	}
+	if got == nil {
+		t.Fatal("fileExportDefaults(nil) returned a nil result")
+	}
+	if got.FilePath != wantPath {
+		t.Errorf("FilePath = %q, want %q", got.FilePath, wantPath)
+	}
+	if got.FileType != "json" {
+		t.Errorf("FileType = %q, want \"json\"", got.FileType)
+	}
+	if got.FileName != "user" {
+		t.Errorf("FileName = %q, want \"user\"", got.FileName)
+	}
+	if got.FileNamePrefix != "" {
+		t.Errorf("FileNamePrefix = %q, want \"\"", got.FileNamePrefix)
+	}
+	if !got.ServerMode {
+		t.Errorf("ServerMode = false, want true")
 	}
 }
 

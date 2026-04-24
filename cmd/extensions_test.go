@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"testing"
@@ -151,6 +152,192 @@ func TestDetermineExporterExtension(t *testing.T) {
 			_ = os.Unsetenv("AWS_DEFAULT_REGION")
 
 		})
+	}
+}
+
+func TestDetermineExporterExtension_SQLiteBranches(t *testing.T) {
+	client := internal.CreateHTTPClient()
+
+	t.Run("file+sqlite returns SQLiteExport", func(t *testing.T) {
+		cfg := internal.ConfigurationData{
+			Export: internal.ConfigExport{
+				Method: "file",
+				FileExport: export.FileExport{
+					FilePath:       t.TempDir(),
+					FileType:       "sqlite",
+					FileName:       "user",
+					FileNamePrefix: "test",
+				},
+			},
+		}
+
+		exporter, err := determineExporterExtension(cfg, client, cliFlags{})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if _, ok := exporter.(*internal.SQLiteExport); !ok {
+			t.Fatalf("expected *internal.SQLiteExport, got %T", exporter)
+		}
+		if _, ok := exporter.(internal.UserExporter); !ok {
+			t.Fatalf("expected exporter to satisfy internal.UserExporter")
+		}
+	})
+
+	t.Run("file+sqlite via output flag override", func(t *testing.T) {
+		// FileType in cfg is json, but the --output flag should override it
+		// and route to the sqlite exporter.
+		cfg := internal.ConfigurationData{
+			Export: internal.ConfigExport{
+				Method: "file",
+				FileExport: export.FileExport{
+					FilePath: t.TempDir(),
+					FileType: "json",
+					FileName: "user",
+				},
+			},
+		}
+
+		exporter, err := determineExporterExtension(cfg, client, cliFlags{output: "sqlite"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if _, ok := exporter.(*internal.SQLiteExport); !ok {
+			t.Fatalf("expected --output=sqlite to route to *internal.SQLiteExport, got %T", exporter)
+		}
+	})
+
+	t.Run("s3+sqlite returns S3SQLiteExport", func(t *testing.T) {
+		setEnvCreds(false, false, true)
+		t.Cleanup(func() {
+			_ = os.Unsetenv("AWS_ACCESS_KEY_ID")
+			_ = os.Unsetenv("AWS_SECRET_ACCESS_KEY")
+			_ = os.Unsetenv("AWS_DEFAULT_REGION")
+		})
+
+		cfg := internal.ConfigurationData{
+			Export: internal.ConfigExport{
+				Method: "s3",
+				AWSS3: export.AWS_S3{
+					Region: "us-west-2",
+					Bucket: "mybucket",
+					FileConfig: export.FileExport{
+						FilePath: t.TempDir(),
+						FileType: "sqlite",
+						FileName: "user",
+					},
+				},
+			},
+		}
+
+		exporter, err := determineExporterExtension(cfg, client, cliFlags{})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if _, ok := exporter.(*internal.S3SQLiteExport); !ok {
+			t.Fatalf("expected *internal.S3SQLiteExport, got %T", exporter)
+		}
+		if _, ok := exporter.(internal.UserExporter); !ok {
+			t.Fatalf("expected s3+sqlite exporter to satisfy internal.UserExporter")
+		}
+	})
+
+	t.Run("s3+json still returns AWS_S3", func(t *testing.T) {
+		setEnvCreds(false, false, true)
+		t.Cleanup(func() {
+			_ = os.Unsetenv("AWS_ACCESS_KEY_ID")
+			_ = os.Unsetenv("AWS_SECRET_ACCESS_KEY")
+			_ = os.Unsetenv("AWS_DEFAULT_REGION")
+		})
+
+		cfg := internal.ConfigurationData{
+			Export: internal.ConfigExport{
+				Method: "s3",
+				AWSS3: export.AWS_S3{
+					Region: "us-west-2",
+					Bucket: "mybucket",
+					FileConfig: export.FileExport{
+						FileType: "json",
+					},
+				},
+			},
+		}
+
+		exporter, err := determineExporterExtension(cfg, client, cliFlags{})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if _, ok := exporter.(*export.AWS_S3); !ok {
+			t.Fatalf("expected *export.AWS_S3, got %T", exporter)
+		}
+	})
+}
+
+// recordingByteExporter only implements the byte-stream Export interface.
+// writeUserToExporter should fall back to marshaling and call Export([]byte).
+type recordingByteExporter struct {
+	gotBytes []byte
+	called   int
+}
+
+func (r *recordingByteExporter) Setup() error             { return nil }
+func (r *recordingByteExporter) CleanUp() error           { return nil }
+func (r *recordingByteExporter) Export(data []byte) error { r.gotBytes = data; r.called++; return nil }
+
+// recordingUserExporter implements UserExporter so writeUserToExporter should
+// dispatch directly without going through []byte.
+type recordingUserExporter struct {
+	gotUser     internal.User
+	userCalled  int
+	bytesCalled int
+}
+
+func (r *recordingUserExporter) Setup() error          { return nil }
+func (r *recordingUserExporter) CleanUp() error        { return nil }
+func (r *recordingUserExporter) Export(_ []byte) error { r.bytesCalled++; return nil }
+func (r *recordingUserExporter) ExportUser(u internal.User) error {
+	r.gotUser = u
+	r.userCalled++
+	return nil
+}
+
+func TestWriteUserToExporter_DispatchesToUserExporter(t *testing.T) {
+	exp := &recordingUserExporter{}
+	user := internal.User{UserData: internal.UserData{UserID: 99, Email: "a@b"}}
+
+	if err := writeUserToExporter(user, exp, "json"); err != nil {
+		t.Fatalf("writeUserToExporter: %v", err)
+	}
+	if exp.userCalled != 1 {
+		t.Errorf("ExportUser call count = %d, want 1", exp.userCalled)
+	}
+	if exp.bytesCalled != 0 {
+		t.Errorf("Export([]byte) was called %d times; should not be reached when UserExporter is satisfied", exp.bytesCalled)
+	}
+	if exp.gotUser.UserData.UserID != 99 {
+		t.Errorf("ExportUser got UserID=%d, want 99", exp.gotUser.UserData.UserID)
+	}
+}
+
+func TestWriteUserToExporter_FallsBackToBytes(t *testing.T) {
+	exp := &recordingByteExporter{}
+	user := internal.User{UserData: internal.UserData{UserID: 7, Email: "a@b"}}
+
+	if err := writeUserToExporter(user, exp, "json"); err != nil {
+		t.Fatalf("writeUserToExporter: %v", err)
+	}
+	if exp.called != 1 {
+		t.Fatalf("Export([]byte) call count = %d, want 1", exp.called)
+	}
+	if len(exp.gotBytes) == 0 {
+		t.Fatal("expected non-empty marshaled payload")
+	}
+	// Round-trip the bytes to confirm we got valid JSON of the user.
+	var roundTripped internal.User
+	if err := json.Unmarshal(exp.gotBytes, &roundTripped); err != nil {
+		t.Fatalf("payload was not valid JSON: %v", err)
+	}
+	if roundTripped.UserData.UserID != 7 {
+		t.Errorf("round-tripped UserID = %d, want 7", roundTripped.UserData.UserID)
 	}
 }
 

@@ -81,11 +81,19 @@ func (s *S3SQLiteExport) uploadLocalDB(ctx context.Context) error {
 		return errors.New("local sqlite path is empty; was Setup called?")
 	}
 
+	// In WAL mode recent commits live in <path>-wal until a checkpoint flushes
+	// them into the main file. We're about to stream the main file to S3, so
+	// force a checkpoint first or the upload may be missing the latest run's
+	// data.
+	if err := s.SQLite.Checkpoint(); err != nil {
+		return fmt.Errorf("prepare local sqlite for upload: %w", err)
+	}
+
 	f, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("open local sqlite %q: %w", path, err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	info, err := f.Stat()
 	if err != nil {

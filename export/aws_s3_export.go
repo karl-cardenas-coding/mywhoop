@@ -82,7 +82,7 @@ func NewAwsS3Export(region, bucket, profile string, client *http.Client, f *File
 
 	s3Client := s3.NewFromConfig(cfg)
 
-	err = fileExportDefaults(f)
+	fileCfg, err := fileExportDefaults(f)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func NewAwsS3Export(region, bucket, profile string, client *http.Client, f *File
 		Region:     region,
 		Bucket:     bucket,
 		S3Client:   s3Client,
-		FileConfig: *f,
+		FileConfig: *fileCfg,
 	}, nil
 }
 
@@ -131,14 +131,22 @@ func (f *AWS_S3) CleanUp() error {
 	return nil
 }
 
-// fileExportDefaults sets the default values for the file export
-func fileExportDefaults(f *FileExport) error {
+// fileExportDefaults returns a populated *FileExport for use by the S3 exporter.
+// Passing nil yields a fresh struct with sensible defaults; passing an existing
+// struct fills in any zero-valued fields. The returned pointer is always non-nil
+// on a nil error, and is always safe for the caller to dereference.
+//
+// Note: the previous in-place version mutated *f and silently swapped in a
+// local default when nil was passed. The local-swap never reached the caller,
+// so dereferencing the original nil pointer in NewAwsS3Export would crash.
+// Returning the value explicitly fixes that footgun.
+func fileExportDefaults(f *FileExport) (*FileExport, error) {
 
 	supportedFileTypes := []string{"json", "xlsx", "sqlite"}
 
 	h, err := os.UserHomeDir()
 	if err != nil {
-		return errors.New("unable to get user home directory")
+		return nil, errors.New("unable to get user home directory")
 	}
 
 	if f == nil {
@@ -149,25 +157,21 @@ func fileExportDefaults(f *FileExport) error {
 			FileNamePrefix: "",
 			ServerMode:     true,
 		}
-
 	}
 
-	if f != nil {
+	if f.FilePath == "" {
+		f.FilePath = path.Join(h, "data")
+	}
 
-		if f.FilePath == "" {
-			f.FilePath = path.Join(h, "data")
-		}
-
-		if f.FileType == "" {
-			f.FileType = "json"
-		}
+	if f.FileType == "" {
+		f.FileType = "json"
 	}
 
 	if !slices.Contains(supportedFileTypes, f.FileType) {
 		f.FileType = "json"
 	}
 
-	return nil
+	return f, nil
 }
 
 // generateName generates the name of the file to be created
