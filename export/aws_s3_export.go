@@ -12,11 +12,10 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"slices"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
-	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/transfermanager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
@@ -82,7 +81,7 @@ func NewAwsS3Export(region, bucket, profile string, client *http.Client, f *File
 
 	s3Client := s3.NewFromConfig(cfg)
 
-	err = fileExportDefaults(f)
+	fileCfg, err := fileExportDefaults(f)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +90,7 @@ func NewAwsS3Export(region, bucket, profile string, client *http.Client, f *File
 		Region:     region,
 		Bucket:     bucket,
 		S3Client:   s3Client,
-		FileConfig: *f,
+		FileConfig: *fileCfg,
 	}, nil
 }
 
@@ -102,47 +101,25 @@ func (f *AWS_S3) Export(data []byte) error {
 		return errors.New("s3 client is required")
 	}
 
-	s3c := f.S3Client
-
 	err := uploadCheck(&data, &f.FileConfig, f.Bucket)
 	if err != nil {
 		return err
 	}
 
 	fileName := generateObjectKey(f.FileConfig)
+	contentType := determineContentType(f.FileConfig.FileType)
 
-	// If the data is greater than 5 MB part size, upload the data in parts.
-	if int64(len(data)) > manager.MinUploadPartSize {
-
-		largeBuffer := bytes.NewReader(data)
-		uploader := manager.NewUploader(s3c, func(u *manager.Uploader) {
-			u.PartSize = manager.MinUploadPartSize * 1024 * 1024
-		})
-		_, err := uploader.Upload(context.TODO(), &s3.PutObjectInput{
-			Bucket:   &f.Bucket,
-			Key:      &fileName,
-			Body:     largeBuffer,
-			Metadata: map[string]string{"Content-Type": determineContentType(f.FileConfig.FileType)},
-		})
-
-		if err != nil {
-			return err
-		}
-
-	}
-
-	// If the data is less than 5 MB, upload the data as a single part.
-	if int64(len(data)) <= manager.MinUploadPartSize {
-
-		_, err = s3c.PutObject(context.TODO(), &s3.PutObjectInput{
-			Bucket:   &f.Bucket,
-			Key:      &fileName,
-			Body:     bytes.NewReader(data),
-			Metadata: map[string]string{"Content-Type": determineContentType(f.FileConfig.FileType)},
-		})
-		if err != nil {
-			return err
-		}
+	// Transfer manager v2 transparently picks single-part vs multipart based on
+	// the configured MultipartUploadThreshold, so we no longer branch on size.
+	tm := transfermanager.New(f.S3Client)
+	_, err = tm.UploadObject(context.TODO(), &transfermanager.UploadObjectInput{
+		Bucket:      &f.Bucket,
+		Key:         &fileName,
+		Body:        bytes.NewReader(data),
+		ContentType: &contentType,
+	})
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -153,14 +130,20 @@ func (f *AWS_S3) CleanUp() error {
 	return nil
 }
 
-// fileExportDefaults sets the default values for the file export
-func fileExportDefaults(f *FileExport) error {
-
-	supportedFileTypes := []string{"json", "xlsx"}
+// fileExportDefaults returns a populated *FileExport for use by the S3 exporter.
+// Passing nil yields a fresh struct with sensible defaults; passing an existing
+// struct fills in any zero-valued fields. The returned pointer is always non-nil
+// on a nil error, and is always safe for the caller to dereference.
+//
+// Note: the previous in-place version mutated *f and silently swapped in a
+// local default when nil was passed. The local-swap never reached the caller,
+// so dereferencing the original nil pointer in NewAwsS3Export would crash.
+// Returning the value explicitly fixes that footgun.
+func fileExportDefaults(f *FileExport) (*FileExport, error) {
 
 	h, err := os.UserHomeDir()
 	if err != nil {
-		return errors.New("unable to get user home directory")
+		return nil, errors.New("unable to get user home directory")
 	}
 
 	if f == nil {
@@ -171,25 +154,22 @@ func fileExportDefaults(f *FileExport) error {
 			FileNamePrefix: "",
 			ServerMode:     true,
 		}
-
 	}
 
-	if f != nil {
-
-		if f.FilePath == "" {
-			f.FilePath = path.Join(h, "data")
-		}
-
-		if f.FileType == "" {
-			f.FileType = "json"
-		}
+	if f.FilePath == "" {
+		f.FilePath = path.Join(h, "data")
 	}
 
-	if !slices.Contains(supportedFileTypes, f.FileType) {
+	if f.FileType == "" {
 		f.FileType = "json"
 	}
 
-	return nil
+	if !IsValidFileType(f.FileType) {
+		return nil, fmt.Errorf("unsupported fileType %q; supported: %v",
+			f.FileType, SupportedFileTypes)
+	}
+
+	return f, nil
 }
 
 // generateName generates the name of the file to be created
@@ -257,6 +237,8 @@ func determineContentType(fileType string) string {
 		return "text/csv"
 	case "xlsx":
 		return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	case "sqlite":
+		return "application/vnd.sqlite3"
 	default:
 		return "application/json"
 	}

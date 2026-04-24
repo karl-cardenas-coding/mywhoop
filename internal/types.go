@@ -270,10 +270,19 @@ func (e Event) String() string {
 	return string(e)
 }
 
-// Export is the interface for exporting data
+// Export is the interface for exporters that accept pre-serialized bytes (json, xlsx).
 type Export interface {
 	Setup() error
 	Export(data []byte) error
+	CleanUp() error
+}
+
+// UserExporter is the interface for exporters that accept the structured User value directly.
+// Exporters that write to formats where the shape matters (e.g. SQLite) implement this so they
+// don't have to round-trip through []byte.
+type UserExporter interface {
+	Setup() error
+	ExportUser(user User) error
 	CleanUp() error
 }
 

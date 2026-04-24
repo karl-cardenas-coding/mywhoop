@@ -17,7 +17,7 @@ tasks:
     desc: Check for open source licenses
     cmds:
       - echo "Checking for open source licenses"
-      - ~/go/bin/go-licenses report github.com/karl-cardenas-coding/mywhoop --template=docs/open-source.tpl > docs/open-source.md
+      - ~/go/bin/go-licenses report github.com/karl-cardenas-coding/mywhoop --confidence_threshold=0.8 --template=docs/open-source.tpl > docs/open-source.md
 
   tests:
     desc: Run tests
@@ -61,3 +61,12 @@ tasks:
       - echo "Building the Docker image"
       - docker build -t mywhoop .
 
+  fmt:
+    desc: Format the code
+    cmds:
+      - go fmt ./...
+
+  lint:
+    desc: Lint the code
+    cmds:
+      - golangci-lint run ./...

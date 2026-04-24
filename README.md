@@ -18,7 +18,7 @@ MyWhoop is a tool intended to help you take ownership of your Whoop data. You ca
 - 🔐 **Login**: A simple interface to log into the Whoop developer portal and save an authentication token locally. The token is required to interact with the Whoop API.
 - 🗄️ **Server**: Automatically download your Whoop data daily and save it to a local file or export it to a remote location.
 - 📬 **Notifications**: Receive notifications when new data is available or when an error occurs.
-- 💾 **Data Export**: Export your Whoop data to a remote location like S3 bucket.
+- 💾 **Data Export**: Export your Whoop data as JSON, Excel, or into a local SQLite database, with optional upload to an S3 bucket.
 - 🗂️ **Extensions**: Data exporters and notification services can be extended to support additional use cases. Check out the [Extensions](#extensions-️) section to learn more.
 - 📦 **No Dependencies**: MyWhoop is available as a stand-alone binary or Docker image. No additional software is required to get started.
 
@@ -65,7 +65,7 @@ mywhoop dump
 | ------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | --------- |
 | `--location` | `-l`       | The location to save the Whoop data file.                                                                                                                                                                                                                                                                         | No       | `./data/` |
 | `--filter`   | `-f`       | Specify a filter string to filter the data. For example to download all the data from January 2024 `start=2024-01-01T00:00:00.000Z&end=2024-01-31T00:00:00.000Z`. You can learn more about the filter syntax in the Whoop API [Pagination](https://developer.whoop.com/docs/developing/pagination) documentation. | No       | `""`      |
-| `--output`  | `-o`        | The output format. Supported types are `json` or `xlsx`.  | No       | `json`    |
+| `--output`  | `-o`        | The output format. Supported types are `json`, `xlsx`, or `sqlite`.  | No       | `json`    |
 
 #### Filter
 
@@ -140,10 +140,12 @@ MyWhoop supports extensions for data exporters and notification services. Export
 
 ### Data Exporters
 
-| Name   | Description                                                                             | Configuration                                                  |
-| ------ | --------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| File   | This is the default exporter. The exporter saves the Whoop data to a local file.        | [File Exporter](./docs/configuration_reference.md#file-export) |
-| AWS S3 | The [AWS S3](https://aws.amazon.com/s3/) exporter saves the Whoop data to an S3 bucket. | [AWS S3 Exporter](./docs/configuration_reference.md#s3-export) |
+| Name        | Description                                                                                                                                   | Configuration                                                  |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| File        | The default exporter. Saves the Whoop data to a local file in `json`, `xlsx`, or `sqlite` format.                                             | [File Exporter](./docs/configuration_reference.md#file-export) |
+| SQLite      | Writes your Whoop data into a local SQLite database (one row per sleep, cycle, recovery, and workout), upserting on each run so history accumulates. | [File Exporter](./docs/configuration_reference.md#file-export) |
+| AWS S3      | The [AWS S3](https://aws.amazon.com/s3/) exporter uploads your Whoop data to an S3 bucket as `json`, `xlsx`, or `sqlite`.                     | [AWS S3 Exporter](./docs/configuration_reference.md#s3-export) |
+| S3 + SQLite | Maintains a local SQLite database and uploads the full file to S3 after every run. Enable bucket versioning if you want historical snapshots. | [AWS S3 Exporter](./docs/configuration_reference.md#s3-export) |
 
 ### Notification Services
 

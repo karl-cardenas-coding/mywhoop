@@ -282,7 +282,7 @@ func downloadWhoopData(ctx context.Context, config internal.ConfigurationData, c
 
 	var user internal.User
 
-	finalDataRaw, err := getData(ctx, user, client, token, ua, getFileType(config))
+	user, err = fetchUserData(ctx, user, client, token, ua)
 	if err != nil {
 		slog.Error("unable to get data", "error", err)
 		notifyErr := notify.Publish(client, []byte(fmt.Sprintf("Failed to get data from the Whoop API. Additional context below: \n %s", err)), internal.EventErrors.String())
@@ -292,20 +292,10 @@ func downloadWhoopData(ctx context.Context, config internal.ConfigurationData, c
 		os.Exit(1)
 	}
 
-	err = exp.Export(finalDataRaw)
+	err = writeUserToExporter(user, exp, getFileType(config))
 	if err != nil {
 		slog.Error("unable to export data", "error", err)
 		notifyErr := notify.Publish(client, []byte(fmt.Sprintf("Failed to export data. Additional context below: \n %s", err)), internal.EventErrors.String())
-		if notifyErr != nil {
-			slog.Error("unable to send notification", "error", notifyErr)
-		}
-		os.Exit(1)
-	}
-
-	err = exp.CleanUp()
-	if err != nil {
-		slog.Error("unable to clean up export", "error", err)
-		notifyErr := notify.Publish(client, []byte(fmt.Sprintf("Failed to clean up export. Additional context below: \n %s", err)), internal.EventErrors.String())
 		if notifyErr != nil {
 			slog.Error("unable to send notification", "error", notifyErr)
 		}
@@ -364,8 +354,10 @@ func refreshJWT(ctx context.Context, client *http.Client, credentialsFilePath st
 	return nil
 }
 
-// getData queries the Whoop API and gets the user data
-func getData(ctx context.Context, user internal.User, client *http.Client, token oauth2.Token, ua, fileType string) ([]byte, error) {
+// fetchUserData queries the Whoop API and returns the populated User value for the last
+// 24 hours of data. Serialization happens later in writeUserToExporter so we only pay for
+// the bytes form if the chosen exporter actually needs it.
+func fetchUserData(ctx context.Context, user internal.User, client *http.Client, token oauth2.Token, ua string) (internal.User, error) {
 
 	startTime, endTime := internal.GenerateLast24HoursString()
 	filterString := fmt.Sprintf("start=%s&end=%s", startTime, endTime)
@@ -375,72 +367,43 @@ func getData(ctx context.Context, user internal.User, client *http.Client, token
 	measurements, err := user.GetUserMeasurements(ctx, client, internal.DEFAULT_WHOOP_API_USER_MEASUREMENT_DATA_URL, token.AccessToken, ua)
 	if err != nil {
 		internal.LogError(err)
-		return []byte{}, err
+		return user, err
 	}
-
 	user.UserMeasurements = *measurements
 
 	sleep, err := user.GetSleepCollection(ctx, client, internal.DEFAULT_WHOOP_API_USER_SLEEP_DATA_URL, token.AccessToken, filterString, ua)
 	if err != nil {
 		internal.LogError(err)
-		return []byte{}, err
+		return user, err
 	}
-
 	sleep.NextToken = nil
 	user.SleepCollection = *sleep
 
 	recovery, err := user.GetRecoveryCollection(ctx, client, internal.DEFAULT_WHOOP_API_RECOVERY_DATA_URL, token.AccessToken, filterString, ua)
 	if err != nil {
 		internal.LogError(err)
-		return []byte{}, err
+		return user, err
 	}
-
 	recovery.NextToken = nil
 	user.RecoveryCollection = *recovery
 
 	workout, err := user.GetWorkoutCollection(ctx, client, internal.DEFAULT_WHOOP_API_WORKOUT_DATA_URL, token.AccessToken, filterString, ua)
 	if err != nil {
 		internal.LogError(err)
-		return []byte{}, err
+		return user, err
 	}
-
 	workout.NextToken = nil
 	user.WorkoutCollection = *workout
 
 	cycle, err := user.GetCycleCollection(ctx, client, internal.DEFAULT_WHOOP_API_CYCLE_DATA_URL, token.AccessToken, filterString, ua)
 	if err != nil {
 		internal.LogError(err)
-		return []byte{}, err
+		return user, err
 	}
-
 	cycle.NextToken = nil
 	user.CycleCollection = *cycle
 
-	var finalDataRaw []byte
-	switch fileType {
-	case "json":
-		finalDataRaw, err = json.MarshalIndent(user, "", "  ")
-		if err != nil {
-			internal.LogError(err)
-			return finalDataRaw, err
-		}
-	case "xlsx":
-		finalDataRaw, err = internal.ConvertToExcel(user)
-		if err != nil {
-			internal.LogError(err)
-			return finalDataRaw, err
-		}
-	default:
-		finalDataRaw, err = json.MarshalIndent(user, "", "  ")
-		if err != nil {
-			internal.LogError(err)
-			return finalDataRaw, err
-		}
-
-	}
-
-	return finalDataRaw, nil
-
+	return user, nil
 }
 
 // loggerConverter converts the string log level to the gocron log level

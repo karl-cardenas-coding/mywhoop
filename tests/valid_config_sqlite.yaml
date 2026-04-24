@@ -1,0 +1,16 @@
+# Copyright (c) karl-cardenas-coding
+# SPDX-License-Identifier: Apache-2.0
+
+# Test config for SQLite export (writes every minute, first run ASAP after startup)
+export:
+  method: file
+  fileExport:
+    fileName: "user"
+    filePath: "data/"
+    fileType: "sqlite"
+    fileNamePrefix: ""
+    serverMode: true
+server:
+  enabled: true
+  crontab: "* * * * *"
+debug: debug
