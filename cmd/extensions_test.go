@@ -113,14 +113,29 @@ func TestDetermineExporterExtension(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			// t.Setenv scopes the variable to this subtest and auto-restores
+			// the original value on cleanup, so we never clobber the caller's
+			// real AWS shell state and subtests don't leak env vars into each
+			// other (the previous outer-level t.Cleanup ran only once at the
+			// end of TestDetermineExporterExtension, which is why this test
+			// was flaky under -shuffle on).
+			if test.setAWScreds {
+				t.Setenv("AWS_ACCESS_KEY_ID", "1234")
+				t.Setenv("AWS_SECRET_ACCESS_KEY", "abcd")
+				t.Setenv("AWS_DEFAULT_REGION", "us-west-2")
+			} else {
+				// Isolate from any ambient credentials on the host (shell
+				// env, ~/.aws/credentials via AWS_PROFILE, etc.) so the
+				// "aws with error" case deterministically fails auth.
+				t.Setenv("AWS_ACCESS_KEY_ID", "")
+				t.Setenv("AWS_SECRET_ACCESS_KEY", "")
+				t.Setenv("AWS_DEFAULT_REGION", "")
+				t.Setenv("AWS_PROFILE", "")
+			}
 
 			cFlags := cliFlags{
 				dataLocation: test.dataLocation,
 				output:       test.output,
-			}
-
-			if test.setEnvCreds {
-				setEnvCreds(false, false, test.setAWScreds)
 			}
 
 			test.client = client
@@ -144,14 +159,6 @@ func TestDetermineExporterExtension(t *testing.T) {
 					}
 				}
 			}
-
-		})
-		t.Cleanup(func() {
-
-			_ = os.Unsetenv("AWS_ACCESS_KEY_ID")
-			_ = os.Unsetenv("AWS_SECRET_ACCESS_KEY")
-			_ = os.Unsetenv("AWS_DEFAULT_REGION")
-
 		})
 	}
 }
@@ -208,12 +215,9 @@ func TestDetermineExporterExtension_SQLiteBranches(t *testing.T) {
 	})
 
 	t.Run("s3+sqlite returns S3SQLiteExport", func(t *testing.T) {
-		setEnvCreds(false, false, true)
-		t.Cleanup(func() {
-			_ = os.Unsetenv("AWS_ACCESS_KEY_ID")
-			_ = os.Unsetenv("AWS_SECRET_ACCESS_KEY")
-			_ = os.Unsetenv("AWS_DEFAULT_REGION")
-		})
+		t.Setenv("AWS_ACCESS_KEY_ID", "1234")
+		t.Setenv("AWS_SECRET_ACCESS_KEY", "abcd")
+		t.Setenv("AWS_DEFAULT_REGION", "us-west-2")
 
 		cfg := internal.ConfigurationData{
 			Export: internal.ConfigExport{
@@ -243,12 +247,9 @@ func TestDetermineExporterExtension_SQLiteBranches(t *testing.T) {
 	})
 
 	t.Run("s3+json still returns AWS_S3", func(t *testing.T) {
-		setEnvCreds(false, false, true)
-		t.Cleanup(func() {
-			_ = os.Unsetenv("AWS_ACCESS_KEY_ID")
-			_ = os.Unsetenv("AWS_SECRET_ACCESS_KEY")
-			_ = os.Unsetenv("AWS_DEFAULT_REGION")
-		})
+		t.Setenv("AWS_ACCESS_KEY_ID", "1234")
+		t.Setenv("AWS_SECRET_ACCESS_KEY", "abcd")
+		t.Setenv("AWS_DEFAULT_REGION", "us-west-2")
 
 		cfg := internal.ConfigurationData{
 			Export: internal.ConfigExport{
@@ -292,9 +293,9 @@ type recordingUserExporter struct {
 	bytesCalled int
 }
 
-func (r *recordingUserExporter) Setup() error          { return nil }
-func (r *recordingUserExporter) CleanUp() error        { return nil }
-func (r *recordingUserExporter) Export(_ []byte) error { r.bytesCalled++; return nil }
+func (r *recordingUserExporter) Setup() error                  { return nil }
+func (r *recordingUserExporter) CleanUp() error                { return nil }
+func (r *recordingUserExporter) Export(_ []byte) error         { r.bytesCalled++; return nil }
 func (r *recordingUserExporter) ExportUser(u internal.User) error {
 	r.gotUser = u
 	r.userCalled++
