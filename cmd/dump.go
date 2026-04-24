@@ -5,10 +5,12 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"strings"
 
+	"github.com/karl-cardenas-coding/mywhoop/export"
 	"github.com/karl-cardenas-coding/mywhoop/internal"
 	"github.com/spf13/cobra"
 )
@@ -23,6 +25,15 @@ var dumpCmd = &cobra.Command{
 	Use:   "dump",
 	Short: "Dump all your Whoop data to a file or another form of export.",
 	Long:  "Dump all your Whoop data to a file or another form of export.",
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		normalized := strings.ToLower(output)
+		if normalized != "" && !export.IsValidFileType(normalized) {
+			return fmt.Errorf("invalid --output %q; supported values: %s",
+				output, strings.Join(export.SupportedFileTypes, ", "))
+		}
+		output = normalized
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		return dump(rootCmd.Context())
@@ -64,7 +75,7 @@ func dump(ctx context.Context) error {
 	cliFlags := cliFlags{
 		dataLocation: dataLocation,
 		filter:       filter,
-		output:       strings.ToLower(output),
+		output:       output,
 	}
 
 	ok, token, err := internal.VerfyToken(cfg.Credentials.CredentialsFile)

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -343,30 +344,31 @@ func TestFileAWSS3ExportDefaults(t *testing.T) {
 		description string
 		file        *FileExport
 		expected    *FileExport
+		wantErr     bool
 	}{
 		{
-			0,
-			"Test case 1: File export with empty file export",
-			&FileExport{},
-			&FileExport{
+			id:          0,
+			description: "Test case 1: File export with empty file export",
+			file:        &FileExport{},
+			expected: &FileExport{
 				FilePath:       homePath,
 				FileType:       "json",
 				FileName:       "",
 				FileNamePrefix: "",
 				ServerMode:     true,
 			},
-		}, {
-
-			0,
-			"Test case 2: File export with custom file path",
-			&FileExport{
+		},
+		{
+			id:          0,
+			description: "Test case 2: File export with custom file path",
+			file: &FileExport{
 				FilePath:       "/tmp",
 				FileType:       "json",
 				FileName:       "user",
 				FileNamePrefix: "",
 				ServerMode:     true,
 			},
-			&FileExport{
+			expected: &FileExport{
 				FilePath:       "/tmp",
 				FileType:       "json",
 				FileName:       "user",
@@ -375,16 +377,16 @@ func TestFileAWSS3ExportDefaults(t *testing.T) {
 			},
 		},
 		{
-			0,
-			"Test case 3: File export with server mode disabled",
-			&FileExport{
+			id:          0,
+			description: "Test case 3: File export with server mode disabled",
+			file: &FileExport{
 				FilePath:       homePath,
 				FileType:       "json",
 				FileName:       "user",
 				FileNamePrefix: "",
 				ServerMode:     false,
 			},
-			&FileExport{
+			expected: &FileExport{
 				FilePath:       homePath,
 				FileType:       "json",
 				FileName:       "user",
@@ -393,34 +395,28 @@ func TestFileAWSS3ExportDefaults(t *testing.T) {
 			},
 		},
 		{
-			0,
-			"Test case 4: File export with invalid file type",
-			&FileExport{
+			id:          0,
+			description: "Test case 4: File export with invalid file type returns error",
+			file: &FileExport{
 				FilePath:       homePath,
 				FileType:       "csv",
 				FileName:       "user",
 				FileNamePrefix: "",
 				ServerMode:     true,
 			},
-			&FileExport{
-				FilePath:       homePath,
-				FileType:       "json",
-				FileName:       "user",
-				FileNamePrefix: "",
-				ServerMode:     true,
-			},
+			wantErr: true,
 		},
 		{
-			0,
-			"Test case 5: File export with empty file name",
-			&FileExport{
+			id:          0,
+			description: "Test case 5: File export with empty file name",
+			file: &FileExport{
 				FilePath:       homePath,
 				FileType:       "json",
 				FileName:       "",
 				FileNamePrefix: "",
 				ServerMode:     true,
 			},
-			&FileExport{
+			expected: &FileExport{
 				FilePath:       homePath,
 				FileType:       "json",
 				FileName:       "",
@@ -429,17 +425,16 @@ func TestFileAWSS3ExportDefaults(t *testing.T) {
 			},
 		},
 		{
-
-			0,
-			"Test case 7: File export with Excel file type",
-			&FileExport{
+			id:          0,
+			description: "Test case 7: File export with Excel file type",
+			file: &FileExport{
 				FilePath:       "/tmp",
 				FileType:       "xlsx",
 				FileName:       "user",
 				FileNamePrefix: "",
 				ServerMode:     true,
 			},
-			&FileExport{
+			expected: &FileExport{
 				FilePath:       "/tmp",
 				FileType:       "xlsx",
 				FileName:       "user",
@@ -452,6 +447,14 @@ func TestFileAWSS3ExportDefaults(t *testing.T) {
 	for index, tc := range tests {
 		tc.id = index + 1
 		file, err := fileExportDefaults(tc.file)
+
+		if tc.wantErr {
+			if err == nil {
+				t.Errorf("%s: expected error, got file=%+v", tc.description, file)
+			}
+			continue
+		}
+
 		if err != nil {
 			t.Errorf("%s: Unexpected error: %v", tc.description, err)
 			continue
@@ -477,6 +480,25 @@ func TestFileAWSS3ExportDefaults(t *testing.T) {
 		if file.FileNamePrefix != tc.expected.FileNamePrefix {
 			t.Errorf("%s: Expected file name prefix %s, got %s", tc.description, tc.expected.FileNamePrefix, file.FileNamePrefix)
 		}
+	}
+}
+
+// TestFileExportDefaults_RejectsUnsupportedFileType pins down the new contract
+// that unknown non-empty fileTypes are rejected loudly instead of being
+// silently remapped to "json". This is the regression test for the
+// `fileType: xlxs` class of config bugs.
+func TestFileExportDefaults_RejectsUnsupportedFileType(t *testing.T) {
+	cases := []string{"csv", "xlxs", "yaml", "parquet"}
+	for _, ft := range cases {
+		t.Run(ft, func(t *testing.T) {
+			_, err := fileExportDefaults(&FileExport{FileType: ft})
+			if err == nil {
+				t.Fatalf("expected error for fileType %q, got nil", ft)
+			}
+			if !strings.Contains(err.Error(), "unsupported fileType") {
+				t.Errorf("error %q did not mention 'unsupported fileType'", err.Error())
+			}
+		})
 	}
 }
 

@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"slices"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
@@ -142,8 +141,6 @@ func (f *AWS_S3) CleanUp() error {
 // Returning the value explicitly fixes that footgun.
 func fileExportDefaults(f *FileExport) (*FileExport, error) {
 
-	supportedFileTypes := []string{"json", "xlsx", "sqlite"}
-
 	h, err := os.UserHomeDir()
 	if err != nil {
 		return nil, errors.New("unable to get user home directory")
@@ -167,8 +164,9 @@ func fileExportDefaults(f *FileExport) (*FileExport, error) {
 		f.FileType = "json"
 	}
 
-	if !slices.Contains(supportedFileTypes, f.FileType) {
-		f.FileType = "json"
+	if !IsValidFileType(f.FileType) {
+		return nil, fmt.Errorf("unsupported fileType %q; supported: %v",
+			f.FileType, SupportedFileTypes)
 	}
 
 	return f, nil

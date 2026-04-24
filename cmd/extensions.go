@@ -66,6 +66,14 @@ func determineExporterExtension(cfg internal.ConfigurationData, client *http.Cli
 			cfg.Export.FileExport.FileType = cFlags.output
 		}
 
+		// Defense in depth: PreRunE already rejects invalid --output, but
+		// the same FileType field can arrive from the YAML config in server
+		// mode, so validate once here before constructing the exporter.
+		if ft := cfg.Export.FileExport.FileType; ft != "" && !export.IsValidFileType(ft) {
+			return nil, fmt.Errorf("unsupported fileType %q; supported: %s",
+				ft, strings.Join(export.SupportedFileTypes, ", "))
+		}
+
 		if cfg.Export.FileExport.FileType == "sqlite" {
 			slog.Info("File + SQLite export method specified")
 			return internal.NewSQLiteExport(
@@ -90,6 +98,11 @@ func determineExporterExtension(cfg internal.ConfigurationData, client *http.Cli
 		}
 		if cFlags.output != "" {
 			cfg.Export.AWSS3.FileConfig.FileType = cFlags.output
+		}
+
+		if ft := cfg.Export.AWSS3.FileConfig.FileType; ft != "" && !export.IsValidFileType(ft) {
+			return nil, fmt.Errorf("unsupported fileType %q; supported: %s",
+				ft, strings.Join(export.SupportedFileTypes, ", "))
 		}
 
 		awsS3, err := export.NewAwsS3Export(
@@ -154,7 +167,11 @@ func writeUserToExporter(user internal.User, exporter internal.Export, outputTyp
 }
 
 // marshalUser converts a User into bytes appropriate for the given output format.
-// Unknown formats fall back to pretty-printed JSON.
+// Unknown formats return an error: upstream validation (PreRunE on dumpCmd and
+// determineExporterExtension) guarantees we never reach this function with an
+// unsupported value, so hitting the default means someone bypassed validation
+// and we want to know loudly rather than silently producing JSON bytes in a
+// file named .xlxs.
 func marshalUser(user internal.User, outputType string) ([]byte, error) {
 	switch strings.ToLower(outputType) {
 	case "xlsx":
@@ -162,6 +179,6 @@ func marshalUser(user internal.User, outputType string) ([]byte, error) {
 	case "json", "":
 		return json.MarshalIndent(user, "", "  ")
 	default:
-		return json.MarshalIndent(user, "", "  ")
+		return nil, fmt.Errorf("marshalUser: unsupported output type %q", outputType)
 	}
 }

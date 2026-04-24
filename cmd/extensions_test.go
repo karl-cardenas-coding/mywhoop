@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/karl-cardenas-coding/mywhoop/export"
@@ -291,13 +292,104 @@ type recordingUserExporter struct {
 	bytesCalled int
 }
 
-func (r *recordingUserExporter) Setup() error          { return nil }
-func (r *recordingUserExporter) CleanUp() error        { return nil }
-func (r *recordingUserExporter) Export(_ []byte) error { r.bytesCalled++; return nil }
+func (r *recordingUserExporter) Setup() error                  { return nil }
+func (r *recordingUserExporter) CleanUp() error                { return nil }
+func (r *recordingUserExporter) Export(_ []byte) error         { r.bytesCalled++; return nil }
 func (r *recordingUserExporter) ExportUser(u internal.User) error {
 	r.gotUser = u
 	r.userCalled++
 	return nil
+}
+
+// TestDetermineExporterExtension_RejectsInvalidFileType pins the defense-in-depth
+// check in determineExporterExtension. PreRunE catches invalid --output values
+// from the CLI, but the same FileType field also comes from the YAML config in
+// server mode - this test makes sure both the file and s3 branches refuse to
+// build an exporter when the type is something like "xlxs".
+func TestDetermineExporterExtension_RejectsInvalidFileType(t *testing.T) {
+	client := internal.CreateHTTPClient()
+
+	t.Run("file method rejects xlxs", func(t *testing.T) {
+		cfg := internal.ConfigurationData{
+			Export: internal.ConfigExport{
+				Method: "file",
+				FileExport: export.FileExport{
+					FilePath: t.TempDir(),
+					FileType: "xlxs",
+				},
+			},
+		}
+		exp, err := determineExporterExtension(cfg, client, cliFlags{})
+		if err == nil {
+			t.Fatalf("expected error for file+xlxs, got exporter %T", exp)
+		}
+		if !strings.Contains(err.Error(), "unsupported fileType") {
+			t.Errorf("error %q did not mention 'unsupported fileType'", err.Error())
+		}
+	})
+
+	t.Run("file method rejects via --output override", func(t *testing.T) {
+		cfg := internal.ConfigurationData{
+			Export: internal.ConfigExport{
+				Method: "file",
+				FileExport: export.FileExport{
+					FilePath: t.TempDir(),
+					FileType: "json",
+				},
+			},
+		}
+		_, err := determineExporterExtension(cfg, client, cliFlags{output: "yaml"})
+		if err == nil {
+			t.Fatal("expected error when --output=yaml overrides a valid config")
+		}
+	})
+
+	t.Run("s3 method rejects xlxs before building client", func(t *testing.T) {
+		// Credentials intentionally unset: the validation should fire before
+		// NewAwsS3Export is called, so we should see the fileType error rather
+		// than a credential error.
+		cfg := internal.ConfigurationData{
+			Export: internal.ConfigExport{
+				Method: "s3",
+				AWSS3: export.AWS_S3{
+					Region: "us-west-2",
+					Bucket: "mybucket",
+					FileConfig: export.FileExport{
+						FileType: "xlxs",
+					},
+				},
+			},
+		}
+		_, err := determineExporterExtension(cfg, client, cliFlags{})
+		if err == nil {
+			t.Fatal("expected error for s3+xlxs")
+		}
+		if !strings.Contains(err.Error(), "unsupported fileType") {
+			t.Errorf("error %q did not mention 'unsupported fileType' (did validation run AFTER NewAwsS3Export?)", err.Error())
+		}
+	})
+}
+
+// TestMarshalUser_RejectsUnknown is a belt-and-suspenders test: upstream code
+// guarantees marshalUser never sees an unsupported outputType, but we want a
+// loud failure if anyone ever wires a new dispatch path that bypasses that
+// validation. Previously the default branch silently returned JSON bytes.
+func TestMarshalUser_RejectsUnknown(t *testing.T) {
+	user := internal.User{UserData: internal.UserData{UserID: 1}}
+
+	if _, err := marshalUser(user, "xlxs"); err == nil {
+		t.Fatal("expected marshalUser(\"xlxs\") to return an error")
+	}
+	if _, err := marshalUser(user, "csv"); err == nil {
+		t.Fatal("expected marshalUser(\"csv\") to return an error")
+	}
+
+	// sqlite is supported elsewhere but marshalUser is only for byte-stream
+	// exporters; it is not expected to handle sqlite. Treat it as unsupported
+	// at the marshalUser boundary.
+	if _, err := marshalUser(user, "sqlite"); err == nil {
+		t.Fatal("expected marshalUser(\"sqlite\") to return an error (sqlite is handled by UserExporter dispatch, not marshalUser)")
+	}
 }
 
 func TestWriteUserToExporter_DispatchesToUserExporter(t *testing.T) {
